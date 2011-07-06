@@ -7,16 +7,30 @@
 
 #include "Disaggregate.h"
 #include "Array.h"
+#include "Signature.h"
 #include <iostream>
 #include <glog/logging.h>
+#include <fstream>
 
 int main(int argc, char * argv[])
 {
     google::InitGoogleLogging(argv[0]);
-    Array<int> a(10000);
+    google::LogToStderr();
 
-    std::cout << "Test complete." << std::endl;
+    Signature sig("washer.csv", 1);
 
+    SigArray a;
+    sig.resample(a, 100);
+
+    std::fstream fs;
+    fs.open("output100.csv", std::ifstream::out);
+    if (!fs.good()) {
+        LOG(FATAL) << "Can't open output.csv";
+    }
+    fs << a;
+    fs.close();
+
+    LOG(INFO) << "Shutting down...";
     google::ShutdownGoogleLogging();
     return 0;
 }

@@ -24,7 +24,7 @@ endif
 #################################################
 
 # COMMON OBJECT FILES
-COMMONOBJS = $(SRC)Disaggregate.o
+COMMONOBJS = $(SRC)Disaggregate.o $(SRC)Signature.o
 
 # COMPILATION RULES
 ###################
