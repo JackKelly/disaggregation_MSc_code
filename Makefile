@@ -11,7 +11,7 @@ ifeq ($(origin CXX), undefined)
 endif
 
 ifeq ($(origin LDFLAGS), undefined)
-	LDFLAGS = -g -Wall -lglog -O0 # -std=c++0x # -lserial
+	LDFLAGS = -g -Wall -lglog -O0 -std=c++0x # -lserial
 endif
 
 ifeq ($(origin CXXFLAGS), undefined)
@@ -24,7 +24,7 @@ endif
 #################################################
 
 # COMMON OBJECT FILES
-COMMONOBJS = $(SRC)Disaggregate.o $(SRC)Signature.o
+COMMONOBJS = $(SRC)Disaggregate.o $(SRC)Signature.o $(SRC)Utils.o $(SRC)Device.o
 
 # COMPILATION RULES
 ###################

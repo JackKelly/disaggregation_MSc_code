@@ -19,7 +19,9 @@ public:
     Signature( const char* filename, const int _samplePeriod );
     virtual ~Signature();
 
-    void downSample( SigArray& output, const int newPeriod );
+    void downSample( SigArray * output, const int newPeriod );
+
+    const SigArray& getSigArray() const;
 
 private:
 
@@ -33,8 +35,6 @@ private:
     void loadData( std::ifstream& fs, SigArray* data );
 
     int  countDataPoints( std::ifstream& fs );
-
-    int  roundToNearestInt( const double input );
 
     void cropAndStore( const SigArray& data );
 

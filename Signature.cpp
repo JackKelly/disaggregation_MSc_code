@@ -7,6 +7,7 @@
 
 #include "Signature.h"
 #include "Common.h"
+#include "Utils.h"
 #include <glog/logging.h>
 #include <fstream>
 #include <cstdlib>
@@ -69,6 +70,11 @@ void Signature::loadData(ifstream& fs, SigArray* data)
     LOG(INFO) << "Entered " << count << " ints into data array.";
 }
 
+const SigArray& Signature::getSigArray() const
+{
+    return rawReading;
+}
+
 /**
  * Find the number of numeric data points in file
  *
@@ -94,11 +100,6 @@ int Signature::countDataPoints( ifstream& fs )
     fs.seekg( 0, ios_base::beg ); // seek to beginning of file
 
     return count;
-}
-
-int Signature::roundToNearestInt( const double input )
-{
-    return floor( input + 0.5 );
 }
 
 void Signature::cropAndStore( const SigArray& data )
@@ -134,7 +135,7 @@ const int Signature::findNumTrailingZeros( const SigArray& data )
  * @param output
  * @param newPeriod
  */
-void Signature::downSample( SigArray& output, const int newPeriod )
+void Signature::downSample( SigArray * output, const int newPeriod )
 {
     int inner, inputIndex, outputIndex, outerLimit;
     SigArrayDataType accumulator;
@@ -142,7 +143,7 @@ void Signature::downSample( SigArray& output, const int newPeriod )
     LOG(INFO) << "Resampling...";
 
     const int newSize = (int)ceil(rawReading.size / ( (double)newPeriod / (double)samplePeriod ));
-    output.setSize( newSize );
+    output->setSize( newSize );
 
 
     const int mod = newPeriod % samplePeriod;
@@ -169,7 +170,7 @@ void Signature::downSample( SigArray& output, const int newPeriod )
                 inputIndex = inner+(outputIndex*stepSize);
                 accumulator += rawReading[ inputIndex ];
             }
-            output[ outputIndex ] = accumulator/stepSize;
+            (*output)[ outputIndex ] = accumulator/stepSize;
         }
 
         // Do the remainder (if there is any)
@@ -180,8 +181,8 @@ void Signature::downSample( SigArray& output, const int newPeriod )
                 accumulator += rawReading[i];
                 LOG(INFO) << "i=" << i << ", rawReading[i]=" << rawReading[i];
             }
-            output[ newSize-1 ] = accumulator/(delta-1);
-            LOG(INFO) << "Filled remainder.  output[" << newSize-1 << "]=" << output[newSize-1];
+            (*output)[ newSize-1 ] = accumulator/(delta-1);
+            LOG(INFO) << "Filled remainder.  output[" << newSize-1 << "]=" << (*output)[newSize-1];
         }
 
     } else {

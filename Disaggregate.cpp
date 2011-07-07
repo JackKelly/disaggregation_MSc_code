@@ -8,27 +8,33 @@
 #include "Disaggregate.h"
 #include "Array.h"
 #include "Signature.h"
+#include "Statistic.h"
+#include "Device.h"
 #include <iostream>
 #include <glog/logging.h>
 #include <fstream>
 
 int main(int argc, char * argv[])
 {
-    google::InitGoogleLogging(argv[0]);
+    google::InitGoogleLogging( argv[0] );
     google::LogToStderr();
 
-    Signature sig("washer.csv", 1);
+    Signature sig( "washer.csv", 1 );
+    HistogramArray ha;
+    sig.getSigArray().histogram( &ha );
+    ha.dumpToFile( "histogram.csv" );
 
     SigArray a;
-    sig.downSample(a, 100);
+    sig.downSample( &a, 100 );
 
-    std::fstream fs;
-    fs.open("output100.csv", std::ifstream::out);
-    if (!fs.good()) {
-        LOG(FATAL) << "Can't open output.csv";
-    }
-    fs << a;
-    fs.close();
+    int pop[8] = {2,4,4,4,5,5,7,9};
+    Array<int> stdevTest(8, pop);
+    Statistic<int> stat(stdevTest);
+
+    std::cout << stat << std::endl;
+
+    Device washer;
+    washer.getReadingFromCSV( "washer.csv", 1 );
 
     LOG(INFO) << "Shutting down...";
     google::ShutdownGoogleLogging();
