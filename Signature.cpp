@@ -134,10 +134,10 @@ const int Signature::findNumTrailingZeros( const SigArray& data )
  * @param output
  * @param newPeriod
  */
-void Signature::resample( SigArray& output, const int newPeriod )
+void Signature::downSample( SigArray& output, const int newPeriod )
 {
     int inner, inputIndex, outputIndex, outerLimit;
-    SigArrayValueType accumulator;
+    SigArrayDataType accumulator;
 
     LOG(INFO) << "Resampling...";
 

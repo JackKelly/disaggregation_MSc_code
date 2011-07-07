@@ -20,7 +20,7 @@ int main(int argc, char * argv[])
     Signature sig("washer.csv", 1);
 
     SigArray a;
-    sig.resample(a, 100);
+    sig.downSample(a, 100);
 
     std::fstream fs;
     fs.open("output100.csv", std::ifstream::out);

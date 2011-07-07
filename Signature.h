@@ -11,15 +11,15 @@
 #include "Array.h"
 #include <fstream>
 
-typedef double SigArrayValueType;
-typedef Array<SigArrayValueType> SigArray;
+typedef double SigArrayDataType;
+typedef Array<SigArrayDataType> SigArray;
 
 class Signature {
 public:
     Signature( const char* filename, const int _samplePeriod );
     virtual ~Signature();
 
-    void resample( SigArray& output, const int newPeriod );
+    void downSample( SigArray& output, const int newPeriod );
 
 private:
 

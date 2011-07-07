@@ -13,22 +13,35 @@
 #include <cstdlib> // for std::exit
 #include <glog/logging.h>
 #include <iostream>
-
+#include <memory>
 
 /**
  * Very simple, light weight Array struct.
  */
 template <class T>
 struct Array {
+//    std::shared_ptr<T> data;
     T * data;
     int size;
 
     Array() : data(0), size(0)
     {}
 
-    Array(const int _size)
+    explicit Array(const int _size)
     {
         setSize(_size);
+    }
+
+    /**
+     * Copy constructor
+     */
+    Array(const Array<T>& other)
+    {
+        this->size = other.size;
+
+        for (int i=0; i<size; i++) {
+            data[i] = other[i];
+        }
     }
 
     ~Array()
@@ -38,11 +51,17 @@ struct Array {
         }
     }
 
+    /**
+     * Mutable subscript operator.  Fast.  No range checking
+     */
     T& operator[](const int i)
     {
         return data[i];
     }
 
+    /**
+     * Const subscript operator.  Fast.  No range checking
+     */
     const T& operator[](const int i) const
     {
         return data[i];
@@ -80,7 +99,7 @@ struct Array {
         }
     }
 
-    friend std::ostream& operator<<(std::ostream& o, const Array<T>& a)
+    friend std::ostream& operator<<(std::ostream& o, const Array<T> a)
     {
         for (int i=0; i<a.size; i++) {
             o << a[i] << std::endl;
