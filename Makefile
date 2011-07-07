@@ -11,7 +11,7 @@ ifeq ($(origin CXX), undefined)
 endif
 
 ifeq ($(origin LDFLAGS), undefined)
-	LDFLAGS = -g -Wall -lglog -O0 -std=c++0x # -lserial
+	LDFLAGS = -g -Wall -lglog -O0 # -std=c++0x # -lserial
 endif
 
 ifeq ($(origin CXXFLAGS), undefined)

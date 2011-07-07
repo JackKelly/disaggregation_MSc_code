@@ -13,14 +13,12 @@
 #include <cstdlib> // for std::exit
 #include <glog/logging.h>
 #include <iostream>
-#include <memory>
 
 /**
  * Very simple, light weight Array struct.
  */
 template <class T>
 struct Array {
-//    std::shared_ptr<T> data;
     T * data;
     int size;
 
