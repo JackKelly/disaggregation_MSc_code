@@ -16,14 +16,14 @@
 
 
 /**
- * Very simple Array struct
+ * Very simple, light weight Array struct.
  */
 template <class T>
 struct Array {
-    T * value;
+    T * data;
     int size;
 
-    Array() : value(0), size(0)
+    Array() : data(0), size(0)
     {}
 
     Array(const int _size)
@@ -33,9 +33,19 @@ struct Array {
 
     ~Array()
     {
-        if ( value != 0 ) {
-            delete [] value;
+        if ( data != 0 ) {
+            delete [] data;
         }
+    }
+
+    T& operator[](const int i)
+    {
+        return data[i];
+    }
+
+    const T& operator[](const int i) const
+    {
+        return data[i];
     }
 
     void setSize(const int _size)
@@ -43,11 +53,12 @@ struct Array {
         size = _size;
         LOG(INFO) << "Creating array with size = " << size;
         try {
-            if ( value!=0 ) { // check if this has already been used
-                delete [] value;
-                value=0;
+            if ( data!=0 ) { // check if this has already been used
+                LOG(INFO) << "Deleting existing Array struct to make way for a new one of size " << _size;
+                delete [] data;
+                data=0;
             }
-            value = new T[size];
+            data = new T[size];
         } catch (std::bad_alloc& ba) {
             LOG(FATAL) << "Failed to allocate memory: " << ba.what();
         }
@@ -55,24 +66,24 @@ struct Array {
 
     void copyCrop(const Array<T>& source, const int cropFront, const int cropBack)
     {
-        if ( source.size==0 || source.value==0 ) {
+        if ( source.size==0 || source.data==0 ) {
             LOG(WARNING) << "Nothing to copy.";
             return;
         }
 
-        if ( this->size==0 || this->value==0 ) {
+        if ( this->size==0 || this->data==0 ) {
             this->setSize( source.size - cropFront - cropBack );
         }
 
         for (int i = 0; i<size; i++ ) {
-            value[i] = source.value[i+cropFront];
+            data[i] = source[i+cropFront];
         }
     }
 
     friend std::ostream& operator<<(std::ostream& o, const Array<T>& a)
     {
         for (int i=0; i<a.size; i++) {
-            o << a.value[i] << std::endl;
+            o << a[i] << std::endl;
         }
         return o;
     }

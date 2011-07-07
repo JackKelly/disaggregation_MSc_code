@@ -62,7 +62,7 @@ void Signature::loadData(ifstream& fs, SigArray* data)
     while ( ! fs.eof() ) {
         ch = fs.peek();
         if ( isdigit(ch) ) {
-            fs >> data->value[ count++ ];  // attempt to read a float from the file
+            fs >> (*data)[ count++ ];  // attempt to read a float from the file
         }
         fs.ignore( 255, '\n' );  // skip to next line
     }
@@ -113,7 +113,7 @@ void Signature::cropAndStore( const SigArray& data )
 const int Signature::findNumLeadingZeros( const SigArray& data )
 {
     int count = 0;
-    while ( data.value[count]==0 && count<data.size ) {
+    while ( data[count]==0 && count<data.size ) {
         count++;
     }
     return count;
@@ -122,7 +122,7 @@ const int Signature::findNumLeadingZeros( const SigArray& data )
 const int Signature::findNumTrailingZeros( const SigArray& data )
 {
     int count = data.size-1;
-    while ( data.value[count]==0 && count>0 ) {
+    while ( data[count]==0 && count>0 ) {
         count--;
     }
     return (data.size-count)-1;
@@ -167,9 +167,9 @@ void Signature::resample( SigArray& output, const int newPeriod )
             accumulator=0;
             for (inner=0; inner<stepSize; inner++) {
                 inputIndex = inner+(outputIndex*stepSize);
-                accumulator += rawReading.value[ inputIndex ];
+                accumulator += rawReading[ inputIndex ];
             }
-            output.value[ outputIndex ] = accumulator/stepSize;
+            output[ outputIndex ] = accumulator/stepSize;
         }
 
         // Do the remainder (if there is any)
@@ -177,11 +177,11 @@ void Signature::resample( SigArray& output, const int newPeriod )
             accumulator=0;
             int i;
             for (i=inputIndex; i<rawReading.size; i++) {
-                accumulator += rawReading.value[i];
-                LOG(INFO) << "i=" << i << ", rawReading.value[i]=" << rawReading.value[i];
+                accumulator += rawReading[i];
+                LOG(INFO) << "i=" << i << ", rawReading[i]=" << rawReading[i];
             }
-            output.value[ newSize-1 ] = accumulator/(delta-1);
-            LOG(INFO) << "Filled remainder.  output.value[" << newSize-1 << "]=" << output.value[newSize-1];
+            output[ newSize-1 ] = accumulator/(delta-1);
+            LOG(INFO) << "Filled remainder.  output[" << newSize-1 << "]=" << output[newSize-1];
         }
 
     } else {
