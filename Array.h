@@ -15,9 +15,11 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <cassert>
 
 template <class T> struct Array;  // forward declaration so the HistogramArray typedef works
 typedef Array<uint16_t> HistogramArray;
+typedef Array<double>   RollingAvArray;
 
 /**
  * Very simple, light weight Array struct.
@@ -55,10 +57,18 @@ struct Array {
      */
     Array(const Array<T>& other)
     {
-        this->size = other.size;
+        setSize(other.size);
 
         for (int i=0; i<size; i++) {
             data[i] = other[i];
+        }
+    }
+
+    Array<T>& operator=(const Array<T>& source)
+    {
+        setSize(source.size);
+        for (int i=0; i<size; i++) {
+            data[i] = source[i];
         }
     }
 
@@ -87,6 +97,9 @@ struct Array {
 
     void setSize(const int _size)
     {
+        if (size == _size)
+            return;
+
         size = _size;
         LOG(INFO) << "Setting array size = " << size;
         try {
@@ -150,6 +163,55 @@ struct Array {
         }
         fs << *this;
         fs.close();
+    }
+
+    /**
+     * Returns a rolling average of same length as the original array.
+     *
+     * @param ra = Initally an empty RollingAvArray.  Returned with Rolling Averages.
+     * @param length = number of items to use in the average.  Must be odd.
+     */
+    void rollingAv(RollingAvArray * ra, const int length=5) const
+    {
+        assert( length%2 );  // length must be odd
+        assert( length>1 );
+        assert( length<size);
+
+        // setup ra
+        ra->setSize(this->size);
+
+        int i, count;
+        T accumulator, accumulatorDown;
+
+        int middleOfLength = ((length-1)/2)+1;
+
+        // First do the first (length-1)/2 elements of the RollingAvArray
+        // and the last (length-1)/2 elements
+        (*ra)[0] = data[0];
+        for (i=1; i<(middleOfLength-1); i++) {
+            accumulator = 0;
+            accumulatorDown = 0;
+            for (int inner=0; inner<=(i*2); inner++) {
+                accumulator += data[inner];
+                accumulatorDown += data[size-1-inner];
+            }
+            (*ra)[i] = (double)accumulator / ( (i*2) + 1 );
+            (*ra)[size-1-i] = (double)accumulatorDown / ( (i*2) + 1 );
+        }
+
+        // Now do the main chunk of the array
+        for (; i<=(size-middleOfLength); i++) {
+            accumulator = 0;
+            count=0;
+            for (int inner=(i-middleOfLength+1); inner<(i+middleOfLength); inner++) {
+                accumulator += data[inner];
+                count++;
+            }
+            (*ra)[i] = (double)accumulator/length;
+        }
+
+        // Do the last element of the array
+        (*ra)[size-1] = data[size-1];
     }
 
     friend std::ostream& operator<<(std::ostream& o, const Array<T>& a)

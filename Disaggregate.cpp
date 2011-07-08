@@ -27,14 +27,23 @@ int main(int argc, char * argv[])
     SigArray a;
     sig.downSample( &a, 100 );
 
-    int pop[8] = {2,4,4,4,5,5,7,9};
-    Array<int> stdevTest(8, pop);
+    RollingAvArray raHist;
+    ha.rollingAv(&raHist,39);
+    raHist.dumpToFile( "raHistogram39.csv" );
+
+    int pop[10] = {2,4,4,4,5,5,7,9,3,4};
+    Array<int> stdevTest(10, pop);
     Statistic<int> stat(stdevTest);
 
     std::cout << stat << std::endl;
 
     Device washer;
     washer.getReadingFromCSV( "washer.csv", 1 );
+
+    Array<int> raTest(10, pop);
+    RollingAvArray raArray;
+    raTest.rollingAv(&raArray,7);
+    std::cout << raArray << std::endl;
 
     LOG(INFO) << "Shutting down...";
     google::ShutdownGoogleLogging();
