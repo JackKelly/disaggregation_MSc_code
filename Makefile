@@ -3,7 +3,8 @@
 #################################################
 
 # Directories
-SRC = ./
+SRC = ./src/
+TEST = ./tests/
 
 # SET DEFAULTS (which can be overriden)
 ifeq ($(origin CXX), undefined)
@@ -26,8 +27,9 @@ endif
 # COMMON OBJECT FILES
 COMMONOBJS = $(SRC)Disaggregate.o $(SRC)Signature.o $(SRC)Utils.o $(SRC)Device.o
 
-# COMPILATION RULES
-###################
+#####################
+# COMPILATION RULES #
+#####################
 
 disaggregate: $(COMMONOBJS)
 	$(CXX) -o $@ $(COMMONOBJS) $(INC) $(LDFLAGS) -lm
@@ -36,6 +38,9 @@ disaggregate: $(COMMONOBJS)
 .C.o:
 	$(CXX) $< -c $(CXXFLAGS) $(INC)
 	
+# TESTING
+test:
+	g++ -Wall -g -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp -std=c++0x -lboost_unit_test_framework && $(TEST)ArrayTest 
 
 # AUTOMATIC DEPENDENCY DETECTION
 # http://www.wlug.org.nz/MakefileHowto
@@ -51,4 +56,4 @@ DEPS := $(patsubst %.o,%.d,$(COMMONOBJS))
 #################################################
 
 clean:
-	rm -f *.o *.d
+	rm -f $(SRC)*.o $(SRC)*.d
