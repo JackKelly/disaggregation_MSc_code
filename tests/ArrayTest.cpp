@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE( copyConstructor )
     BOOST_CHECK( src == dest );
 }
 
-BOOST_AUTO_TEST_CASE( operatorEquals )
+BOOST_AUTO_TEST_CASE( testAssignmentAndEqualityoperators )
 {
     const size_t SIZE = 10;
     int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE( rollingAvTest )
     const size_t SIZE = 10;
     int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
     Array<int> raTest(SIZE, pop);
-    RollingAvArray raArray;
+    RollingAv_t raArray;
     raTest.rollingAv(&raArray,7);
 
     double answers[SIZE] = {
@@ -183,4 +183,19 @@ BOOST_AUTO_TEST_CASE( setSizeTest )
 
     // Check we can write to every element
     checkWrite( da );
+}
+
+BOOST_AUTO_TEST_CASE( histogram )
+{
+    const size_t SIZE = 10;
+    int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
+    Array<int> arrayTestSrc(SIZE, pop);
+    Histogram_t hist(10);
+    arrayTestSrc.histogram( &hist );
+                       // 0 1 2 3 4 5 6 7 8 9
+    uint32_t answers[] = {0,0,1,1,4,2,0,1,0,1};
+
+    for (size_t i=0; i<SIZE; i++) {
+        BOOST_CHECK_EQUAL(answers[i], hist[i]);
+    }
 }

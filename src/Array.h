@@ -17,9 +17,9 @@
 #include <cstdint>
 #include <cassert>
 
-template <class T> struct Array;  // forward declaration so the HistogramArray typedef works
-typedef Array<uint16_t> HistogramArray;
-typedef Array<double>   RollingAvArray;
+template <class T> struct Array;  // forward declaration so the Histogram_t typedef works
+typedef Array<uint32_t> Histogram_t;
+typedef Array<double>   RollingAv_t;
 
 /**
  * Very simple, light weight Array struct.
@@ -27,7 +27,7 @@ typedef Array<double>   RollingAvArray;
 template <class T>
 struct Array {
     T * data;
-    size_t size;
+    size_t size; // size_t is 8bytes wide on x86_64
 
     Array() : data(0), size(0)
     {}
@@ -160,11 +160,13 @@ struct Array {
     /**
      * Create a histogram.
      *
-     * @param hist = an empty Array<uint16_t> object
+     * @param hist = an empty Array<uint32_t> object
      */
-    void histogram(HistogramArray * hist) const
+    void histogram(Histogram_t * hist) const
     {
-        hist->setSize(3500); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
+        if (hist->size == 0) {
+            hist->setSize(3500); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
+        }
         hist->initAllEntriesTo(0);
 
         for (size_t i=0; i<size; i++) {
@@ -188,10 +190,10 @@ struct Array {
     /**
      * Returns a rolling average of same length as the original array.
      *
-     * @param ra = Initally an empty RollingAvArray.  Returned with Rolling Averages.
+     * @param ra = Initally an empty RollingAv_t.  Returned with Rolling Averages.
      * @param length = number of items to use in the average.  Must be odd.
      */
-    void rollingAv(RollingAvArray * ra, const size_t length=5) const
+    void rollingAv(RollingAv_t * ra, const size_t length=5) const
     {
         assert( length%2 );  // length must be odd
         assert( length>1 );
@@ -205,7 +207,7 @@ struct Array {
 
         size_t middleOfLength = ((length-1)/2)+1;
 
-        // First do the first (length-1)/2 elements of the RollingAvArray
+        // First do the first (length-1)/2 elements of the RollingAv_t
         // and the last (length-1)/2 elements
         (*ra)[0] = data[0];
         for (i=1; i<(middleOfLength-1); i++) {

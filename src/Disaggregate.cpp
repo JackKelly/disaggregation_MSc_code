@@ -20,14 +20,14 @@ int main(int argc, char * argv[])
     google::LogToStderr();
 
     Signature sig( "washer.csv", 1 );
-    HistogramArray ha;
+    Histogram_t ha;
     sig.getSigArray().histogram( &ha );
     ha.dumpToFile( "histogram.csv" );
 
     SigArray a;
     sig.downSample( &a, 100 );
 
-    RollingAvArray raHist;
+    RollingAv_t raHist;
     ha.rollingAv(&raHist,39);
     raHist.dumpToFile( "raHistogram39.csv" );
 
@@ -41,7 +41,7 @@ int main(int argc, char * argv[])
     washer.getReadingFromCSV( "washer.csv", 1 );
 
     Array<int> raTest(10, pop);
-    RollingAvArray raArray;
+    RollingAv_t raArray;
     raTest.rollingAv(&raArray,7);
     std::cout << raArray << std::endl;
 

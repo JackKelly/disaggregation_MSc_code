@@ -39,8 +39,8 @@ disaggregate: $(COMMONOBJS)
 	$(CXX) $< -c $(CXXFLAGS) $(INC)
 	
 # TESTING
-test:
-	g++ -Wall -g -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp -std=c++0x -lboost_unit_test_framework && $(TEST)ArrayTest 
+test: $(TEST)ArrayTest.cpp $(SRC)Array.h $(SRC)Utils.o
+	g++ -Wall -g -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(SRC)Utils.cpp -std=c++0x -lboost_unit_test_framework && $(TEST)ArrayTest 
 
 # AUTOMATIC DEPENDENCY DETECTION
 # http://www.wlug.org.nz/MakefileHowto
