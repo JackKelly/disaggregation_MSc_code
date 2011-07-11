@@ -21,7 +21,7 @@ using namespace std;
  * Constructor for opening a CSV file
  *
  */
-Signature::Signature(const char* filename, const int _samplePeriod)
+Signature::Signature(const char* filename, const size_t _samplePeriod)
 : samplePeriod(_samplePeriod)
 {
     ifstream dataFile;
@@ -55,8 +55,7 @@ void Signature::openFile(ifstream& fs, const char* filename)
 void Signature::loadData(ifstream& fs, SigArray* data)
 {
     assert( data );
-    const int numDataPoints =  countDataPoints( fs );
-    data->setSize( numDataPoints );
+    data->setSize( countDataPoints( fs ) );
 
     int count = 0;
     char ch;
@@ -81,7 +80,7 @@ const SigArray& Signature::getSigArray() const
  * @param fs
  * @return number of data points
  */
-int Signature::countDataPoints( ifstream& fs )
+const size_t Signature::countDataPoints( ifstream& fs ) const
 {
     int count = 0;
     char line[255];
@@ -104,25 +103,25 @@ int Signature::countDataPoints( ifstream& fs )
 
 void Signature::cropAndStore( const SigArray& data )
 {
-    const int numLeadingZeros  = findNumLeadingZeros( data );
-    const int numTrailingZeros = findNumTrailingZeros( data );
+    const size_t numLeadingZeros  = findNumLeadingZeros( data );
+    const size_t numTrailingZeros = findNumTrailingZeros( data );
     LOG(INFO) << numLeadingZeros << " leading zero(s) and " << numTrailingZeros << " trailing zero(s) found.";
 
     rawReading.copyCrop( data, numLeadingZeros, numTrailingZeros );
 }
 
-const int Signature::findNumLeadingZeros( const SigArray& data )
+const size_t Signature::findNumLeadingZeros( const SigArray& data )
 {
-    int count = 0;
+    size_t count = 0;
     while ( data[count]==0 && count<data.size ) {
         count++;
     }
     return count;
 }
 
-const int Signature::findNumTrailingZeros( const SigArray& data )
+const size_t Signature::findNumTrailingZeros( const SigArray& data )
 {
-    int count = data.size-1;
+    size_t count = data.size-1;
     while ( data[count]==0 && count>0 ) {
         count--;
     }
@@ -135,22 +134,22 @@ const int Signature::findNumTrailingZeros( const SigArray& data )
  * @param output
  * @param newPeriod
  */
-void Signature::downSample( SigArray * output, const int newPeriod )
+void Signature::downSample( SigArray * output, const size_t newPeriod )
 {
-    int inner, inputIndex, outputIndex, outerLimit;
+    size_t inner, inputIndex, outputIndex, outerLimit;
     SigArrayDataType accumulator;
 
     LOG(INFO) << "Resampling...";
 
-    const int newSize = (int)ceil(rawReading.size / ( (double)newPeriod / (double)samplePeriod ));
+    const size_t newSize = (int)ceil(rawReading.size / ( (double)newPeriod / (double)samplePeriod ));
     output->setSize( newSize );
 
 
-    const int mod = newPeriod % samplePeriod;
+    const size_t mod = newPeriod % samplePeriod;
     if (mod==0) {
         // newPeriod % samplePeriod == 0; so then just take an average of each step
-        const int stepSize = newPeriod/samplePeriod;
-        const int delta = (newSize*newPeriod) - (rawReading.size*samplePeriod);
+        const size_t stepSize = newPeriod/samplePeriod;
+        const size_t delta = (newSize*newPeriod) - (rawReading.size*samplePeriod);
 
         if (delta==0) {
             outerLimit = newSize;
@@ -176,7 +175,7 @@ void Signature::downSample( SigArray * output, const int newPeriod )
         // Do the remainder (if there is any)
         if (delta != 0) {
             accumulator=0;
-            int i;
+            size_t i;
             for (i=inputIndex; i<rawReading.size; i++) {
                 accumulator += rawReading[i];
                 LOG(INFO) << "i=" << i << ", rawReading[i]=" << rawReading[i];

@@ -27,12 +27,12 @@ typedef Array<double>   RollingAvArray;
 template <class T>
 struct Array {
     T * data;
-    int size;
+    size_t size;
 
     Array() : data(0), size(0)
     {}
 
-    explicit Array(const int _size)
+    explicit Array(const size_t _size) : data(0), size(0)
     {
         setSize(_size);
     }
@@ -43,11 +43,10 @@ struct Array {
      * @param _size
      * @param _data
      */
-    explicit Array(const int _size, const T * _data)
+    explicit Array(const size_t _size, const T * _data) : data(0), size(0)
     {
-        data=0;
         setSize(_size);
-        for (int i=0; i<size; i++) {
+        for (size_t i=0; i<size; i++) {
             data[i] = _data[i];
         }
     }
@@ -55,11 +54,11 @@ struct Array {
     /**
      * Copy constructor
      */
-    Array(const Array<T>& other)
+    Array(const Array<T>& other) : data(0), size(0)
     {
         setSize(other.size);
 
-        for (int i=0; i<size; i++) {
+        for (size_t i=0; i<size; i++) {
             data[i] = other[i];
         }
     }
@@ -67,9 +66,24 @@ struct Array {
     Array<T>& operator=(const Array<T>& source)
     {
         setSize(source.size);
-        for (int i=0; i<size; i++) {
+        for (size_t i=0; i<size; i++) {
             data[i] = source[i];
         }
+
+        return *this;
+    }
+
+    bool operator==(const Array<T>& other)
+    {
+        if (size != other.size)
+            return false;
+
+        for (size_t i=0; i<size; i++) {
+            if (data[i] != other[i])
+                return false;
+        }
+
+        return true;
     }
 
     ~Array()
@@ -82,7 +96,7 @@ struct Array {
     /**
      * Mutable subscript operator.  Fast.  No range checking
      */
-    T& operator[](const int i)
+    T& operator[](const size_t i)
     {
         return data[i];
     }
@@ -90,12 +104,12 @@ struct Array {
     /**
      * Const subscript operator.  Fast.  No range checking
      */
-    const T& operator[](const int i) const
+    const T& operator[](const size_t i) const
     {
         return data[i];
     }
 
-    void setSize(const int _size)
+    void setSize(const size_t _size)
     {
         if (size == _size)
             return;
@@ -114,25 +128,31 @@ struct Array {
         }
     }
 
-    void copyCrop(const Array<T>& source, const int cropFront, const int cropBack)
+    /**
+     * Copy from source to this object, starting at cropFront index and
+     * ignoring the last cropBack items from the source.
+     *
+     * @param source
+     * @param cropFront
+     * @param cropBack
+     */
+    void copyCrop(const Array<T>& source, const size_t cropFront, const size_t cropBack)
     {
         if ( source.size==0 || source.data==0 ) {
             LOG(WARNING) << "Nothing to copy.";
             return;
         }
 
-        if ( this->size==0 || this->data==0 ) {
-            this->setSize( source.size - cropFront - cropBack );
-        }
+        this->setSize( source.size - cropFront - cropBack );
 
-        for (int i = 0; i<size; i++ ) {
+        for (size_t i = 0; i<size; i++ ) {
             data[i] = source[i+cropFront];
         }
     }
 
     void initAllEntriesTo(const T initValue)
     {
-        for (int i = 0; i<size; i++) {
+        for (size_t i = 0; i<size; i++) {
             data[i] = initValue;
         }
     }
@@ -147,7 +167,7 @@ struct Array {
         hist->setSize(3500); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
         hist->initAllEntriesTo(0);
 
-        for (int i=0; i<size; i++) {
+        for (size_t i=0; i<size; i++) {
             (*hist)[ Utils::roundToNearestInt( data[i] ) ]++;
         }
 
@@ -171,7 +191,7 @@ struct Array {
      * @param ra = Initally an empty RollingAvArray.  Returned with Rolling Averages.
      * @param length = number of items to use in the average.  Must be odd.
      */
-    void rollingAv(RollingAvArray * ra, const int length=5) const
+    void rollingAv(RollingAvArray * ra, const size_t length=5) const
     {
         assert( length%2 );  // length must be odd
         assert( length>1 );
@@ -180,10 +200,10 @@ struct Array {
         // setup ra
         ra->setSize(this->size);
 
-        int i, count;
+        size_t i;
         T accumulator, accumulatorDown;
 
-        int middleOfLength = ((length-1)/2)+1;
+        size_t middleOfLength = ((length-1)/2)+1;
 
         // First do the first (length-1)/2 elements of the RollingAvArray
         // and the last (length-1)/2 elements
@@ -191,7 +211,7 @@ struct Array {
         for (i=1; i<(middleOfLength-1); i++) {
             accumulator = 0;
             accumulatorDown = 0;
-            for (int inner=0; inner<=(i*2); inner++) {
+            for (size_t inner=0; inner<=(i*2); inner++) {
                 accumulator += data[inner];
                 accumulatorDown += data[size-1-inner];
             }
@@ -202,10 +222,8 @@ struct Array {
         // Now do the main chunk of the array
         for (; i<=(size-middleOfLength); i++) {
             accumulator = 0;
-            count=0;
-            for (int inner=(i-middleOfLength+1); inner<(i+middleOfLength); inner++) {
+            for (size_t inner=(i-middleOfLength+1); inner<(i+middleOfLength); inner++) {
                 accumulator += data[inner];
-                count++;
             }
             (*ra)[i] = (double)accumulator/length;
         }
@@ -216,7 +234,7 @@ struct Array {
 
     friend std::ostream& operator<<(std::ostream& o, const Array<T>& a)
     {
-        for (int i=0; i<a.size; i++) {
+        for (size_t i=0; i<a.size; i++) {
             o << a[i] << std::endl;
         }
         return o;

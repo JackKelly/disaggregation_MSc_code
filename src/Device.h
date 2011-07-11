@@ -19,7 +19,7 @@ public:
     Device();
     virtual ~Device();
 
-    void getReadingFromCSV(const char * filename, const int samplePeriod);
+    void getReadingFromCSV(const char * filename, const size_t samplePeriod);
 
 private:
     /************************

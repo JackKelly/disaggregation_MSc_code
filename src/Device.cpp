@@ -23,7 +23,7 @@ Device::~Device() {
     }
 }
 
-void Device::getReadingFromCSV(const char * filename, const int samplePeriod)
+void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod)
 {
     Signature * sig = new Signature( filename, samplePeriod );
     signatures.push_back( sig );

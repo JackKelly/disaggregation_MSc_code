@@ -16,10 +16,10 @@ typedef Array<SigArrayDataType> SigArray;
 
 class Signature {
 public:
-    Signature( const char* filename, const int _samplePeriod );
+    Signature( const char* filename, const size_t _samplePeriod );
     virtual ~Signature();
 
-    void downSample( SigArray * output, const int newPeriod );
+    void downSample( SigArray * output, const size_t newPeriod );
 
     const SigArray& getSigArray() const;
 
@@ -34,20 +34,20 @@ private:
 
     void loadData( std::ifstream& fs, SigArray* data );
 
-    int  countDataPoints( std::ifstream& fs );
+    const size_t  countDataPoints( std::ifstream& fs ) const;
 
     void cropAndStore( const SigArray& data );
 
-    const int findNumLeadingZeros( const SigArray& data );
+    const size_t findNumLeadingZeros( const SigArray& data );
 
-    const int findNumTrailingZeros( const SigArray& data );
+    const size_t findNumTrailingZeros( const SigArray& data );
 
     /************************
      *  Member variables    *
      ************************/
 
     SigArray rawReading;
-    int samplePeriod;
+    size_t samplePeriod;
 
 };
 
