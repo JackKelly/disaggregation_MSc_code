@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE( histogram )
     }
 }
 
-BOOST_AUTO_TEST_CASE( max1 )
+BOOST_AUTO_TEST_CASE( max )
 {
     const size_t SIZE = 10;
 
@@ -212,6 +212,7 @@ BOOST_AUTO_TEST_CASE( max1 )
     int maxValue;
     size_t indexOfMax = arrayTestSrc.max( &maxValue, 0, SIZE );
 
+    // Trying the max() overloaded with a mask
     BOOST_CHECK_EQUAL(indexOfMax, 7);
     BOOST_CHECK_EQUAL(maxValue, 9);
 
@@ -238,4 +239,18 @@ BOOST_AUTO_TEST_CASE( max1 )
     BOOST_CHECK_EQUAL(indexOfMax, 1);
     BOOST_CHECK_EQUAL(maxValue, 4);
 
+}
+
+BOOST_AUTO_TEST_CASE( descendPeak )
+{
+    const size_t SIZE = 23;
+                   //0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
+    int pop[SIZE] = {6,5,4,3,2,3,5,7,8,9,8,7,6,5,4,3,5,4,2,1,1,1,0};
+    Array<int> arrayTestSrc(SIZE, pop);
+
+    size_t start, end;
+    arrayTestSrc.descendPeak(9, &start, &end);
+
+    BOOST_CHECK_EQUAL( start, 3);
+    BOOST_CHECK_EQUAL( end  ,16);
 }

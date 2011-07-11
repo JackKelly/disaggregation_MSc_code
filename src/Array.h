@@ -287,7 +287,7 @@ struct Array {
             return max(maxValue, 0, size );
         }
 
-        // check there are an even number of items in the list
+        // check there are an even number of items in the list (start, end pairs)
         assert( ( mask.size() % 2 )==0 );
 
         mask.sort();
@@ -296,7 +296,7 @@ struct Array {
         size_t indexOfMaxSoFar=0, indexOfMaxThisLoop=0, start=0, end;
         std::list<size_t>::const_iterator it=mask.begin();
 
-        while ( it!=mask.end() ) {
+        while ( it != mask.end() ) {
             end = *(it++);
             indexOfMaxThisLoop = max( &maxThisLoop, start, end );
             if (maxThisLoop > maxSoFar) {
@@ -308,6 +308,51 @@ struct Array {
         *maxValue = maxSoFar;
         return indexOfMaxSoFar;
     }
+
+    void descendPeak(const size_t peak, size_t* start, size_t* end, size_t retries = 1)
+    {
+        size_t i = peak;
+        size_t retriesRight = retries, retriesLeft = retries;
+
+        // Descend right side of peak
+        while ( true ) {
+            i++;
+            if ( i >= size ) {
+                *end = size;
+                break;
+            }
+
+            if ( data[i] >= data[i-1] ) {
+                retriesRight--;
+
+                if ( retriesRight == 0 ) {
+                    *end = i;
+                    break;
+                }
+            }
+        }
+
+        // Descend left side of peak
+        i = peak;
+        while ( true ) {
+            i--;
+            if ( i <= 0 ) {
+                *start = 0;
+                break;
+            }
+
+            if ( data[i] >= data[i+1] ) {
+                retriesLeft--;
+
+                if ( retriesLeft == 0 ) {
+                    *start = i;
+                    break;
+                }
+            }
+
+        }
+    }
+
 
     friend std::ostream& operator<<(std::ostream& o, const Array<T>& a)
     {

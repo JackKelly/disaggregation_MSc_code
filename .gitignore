@@ -7,6 +7,7 @@
 *.o
 *.so
 disaggregate
+ArrayTest
 
 # Compiled Object files
 *.slo
