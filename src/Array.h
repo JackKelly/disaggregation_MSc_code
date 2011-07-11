@@ -16,6 +16,7 @@
 #include <fstream>
 #include <cstdint>
 #include <cassert>
+#include <list>
 
 template <class T> struct Array;  // forward declaration so the Histogram_t typedef works
 typedef Array<uint32_t> Histogram_t;
@@ -232,6 +233,80 @@ struct Array {
 
         // Do the last element of the array
         (*ra)[size-1] = data[size-1];
+    }
+
+    /**
+     * Return the index of and the value of the largest element of the Array
+     *
+     * @param maxValue = return value
+     * @param start
+     * @param end
+     * @return
+     */
+    const size_t max(T* maxValue, const size_t start=0, size_t end=0) const
+    {
+        if (end==0)
+            end = size;
+
+        assert( start <= end );
+
+        if (start == end) {
+            *maxValue = data[start];
+            return start;
+        }
+
+        T maxSoFar=0;
+        size_t indexOfMaxSoFar=start;
+
+        for (size_t i=start; i<end; i++) {
+            if (data[i] > maxSoFar) {
+                maxSoFar = data[i];
+                indexOfMaxSoFar = i;
+            }
+        }
+
+        *maxValue = maxSoFar;
+        return indexOfMaxSoFar;
+    }
+
+    /**
+     * Find the max value outside of the mask.
+     *
+     * @param maxValue = return max value
+     *
+     * @param mask - a list of (mask start index, mask end index) pairs describing the mask.
+     * The masks must not overlap.  The mask includes the start and end index.
+     *
+     * @return an index to the max value.  If there are two equal values
+     * then we only return the first we come to.
+     */
+    const size_t max(T* maxValue, std::list<size_t>& mask) const
+    {
+        if ( mask.empty() ) {
+            LOG(INFO) << "Mask is empty.";
+            return max(maxValue, 0, size );
+        }
+
+        // check there are an even number of items in the list
+        assert( ( mask.size() % 2 )==0 );
+
+        mask.sort();
+
+        T maxSoFar=0, maxThisLoop=0;
+        size_t indexOfMaxSoFar=0, indexOfMaxThisLoop=0, start=0, end;
+        std::list<size_t>::const_iterator it=mask.begin();
+
+        while ( it!=mask.end() ) {
+            end = *(it++);
+            indexOfMaxThisLoop = max( &maxThisLoop, start, end );
+            if (maxThisLoop > maxSoFar) {
+                maxSoFar = maxThisLoop;
+                indexOfMaxSoFar = indexOfMaxThisLoop;
+            }
+            start = *(it++) + 1; // "+1" so we exclude the end of the mask
+        }
+        *maxValue = maxSoFar;
+        return indexOfMaxSoFar;
     }
 
     friend std::ostream& operator<<(std::ostream& o, const Array<T>& a)

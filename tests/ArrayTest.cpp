@@ -4,6 +4,7 @@
 #include "../src/Array.h"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
+#include <list>
 
 template <class T>
 void checkWrite(Array<T>& a)
@@ -198,4 +199,43 @@ BOOST_AUTO_TEST_CASE( histogram )
     for (size_t i=0; i<SIZE; i++) {
         BOOST_CHECK_EQUAL(answers[i], hist[i]);
     }
+}
+
+BOOST_AUTO_TEST_CASE( max1 )
+{
+    const size_t SIZE = 10;
+
+                  // 0 1 2 3 4 5 6 7 8 9
+    int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
+    Array<int> arrayTestSrc(SIZE, pop);
+
+    int maxValue;
+    size_t indexOfMax = arrayTestSrc.max( &maxValue, 0, SIZE );
+
+    BOOST_CHECK_EQUAL(indexOfMax, 7);
+    BOOST_CHECK_EQUAL(maxValue, 9);
+
+    size_t maskCArray[] = {3,5, 7,9};
+    std::list<size_t> mask(maskCArray, maskCArray+4);
+    indexOfMax = arrayTestSrc.max( &maxValue, mask );
+
+    BOOST_CHECK_EQUAL(indexOfMax, 6);
+    BOOST_CHECK_EQUAL(maxValue, 7);
+
+    // A different mask
+    size_t maskCArray2[] = {3,5, 8,9};
+    std::list<size_t> mask2(maskCArray2, maskCArray2+4);
+    indexOfMax = arrayTestSrc.max( &maxValue, mask2 );
+
+    BOOST_CHECK_EQUAL(indexOfMax, 7);
+    BOOST_CHECK_EQUAL(maxValue, 9);
+
+    // A different mask
+    size_t maskCArray3[] = {3,7, 8,9};
+    std::list<size_t> mask3(maskCArray3, maskCArray3+4);
+    indexOfMax = arrayTestSrc.max( &maxValue, mask3 );
+
+    BOOST_CHECK_EQUAL(indexOfMax, 1);
+    BOOST_CHECK_EQUAL(maxValue, 4);
+
 }
