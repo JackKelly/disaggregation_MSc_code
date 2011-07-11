@@ -309,6 +309,14 @@ struct Array {
         return indexOfMaxSoFar;
     }
 
+    /**
+     * Find where the peak plateaus or starts climbing again.
+     *
+     * @param peak - the index of the highest value in the peak
+     * @param start - return index of the start of the hill
+     * @param end - return index of the end of the hill
+     * @param retries - the "tolerance"
+     */
     void descendPeak(const size_t peak, size_t* start, size_t* end, size_t retries = 1)
     {
         size_t i = peak;
