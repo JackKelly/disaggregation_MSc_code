@@ -9,19 +9,26 @@
 #define SIGNATURE_H_
 
 #include "Array.h"
+#include "Statistic.h"
+#include <list>
 #include <fstream>
 
-typedef double SigArrayDataType;
-typedef Array<SigArrayDataType> SigArray;
+typedef double Sample_t;
+typedef Array<Sample_t> SigArray_t;
+typedef std::list<Statistic<Histogram_t>> PowerStates_t;
 
 class Signature {
 public:
+
     Signature( const char* filename, const size_t _samplePeriod );
+
     virtual ~Signature();
 
-    void downSample( SigArray * output, const size_t newPeriod );
+    void downSample( SigArray_t * output, const size_t newPeriod );
 
-    const SigArray& getSigArray() const;
+    const SigArray_t& getSigArray() const;
+
+    const PowerStates_t& getPowerStates();
 
 private:
 
@@ -32,22 +39,25 @@ private:
 
     void openFile( std::ifstream& fs, const char* filename );
 
-    void loadData( std::ifstream& fs, SigArray* data );
+    void loadData( std::ifstream& fs, SigArray_t* data );
 
     const size_t  countDataPoints( std::ifstream& fs ) const;
 
-    void cropAndStore( const SigArray& data );
+    void cropAndStore( const SigArray_t& data );
 
-    const size_t findNumLeadingZeros( const SigArray& data );
+    const size_t findNumLeadingZeros( const SigArray_t& data );
 
-    const size_t findNumTrailingZeros( const SigArray& data );
+    const size_t findNumTrailingZeros( const SigArray_t& data );
+
+    void findPowerStates();
 
     /************************
      *  Member variables    *
      ************************/
 
-    SigArray rawReading;
+    SigArray_t rawReading;
     size_t samplePeriod;
+    PowerStates_t powerStates;
 
 };
 

@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE( histogram )
     const size_t SIZE = 10;
     int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
     Array<int> arrayTestSrc(SIZE, pop);
-    Histogram_t hist(10);
+    HistogramArray_t hist(10);
     arrayTestSrc.histogram( &hist );
                        // 0 1 2 3 4 5 6 7 8 9
     uint32_t answers[] = {0,0,1,1,4,2,0,1,0,1};
@@ -205,9 +205,9 @@ BOOST_AUTO_TEST_CASE( max )
 {
     const size_t SIZE = 10;
 
-                  // 0 1 2 3 4 5 6 7 8 9
-    int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
-    Array<int> arrayTestSrc(SIZE, pop);
+    // 0 1 2 3 4 5 6 7 8 9
+int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
+Array<int> arrayTestSrc(SIZE, pop);
 
     int maxValue;
     size_t indexOfMax = arrayTestSrc.max( &maxValue, 0, SIZE );
@@ -239,6 +239,27 @@ BOOST_AUTO_TEST_CASE( max )
     BOOST_CHECK_EQUAL(indexOfMax, 1);
     BOOST_CHECK_EQUAL(maxValue, 4);
 
+    // A different mask, starting at 0
+                   // 0 1 2 3 4 5 6 7 8 9
+    int pop2[SIZE] = {2,9,4,4,5,5,7,9,3,4};
+    Array<int> arrayTestSrc2(SIZE, pop2);
+
+    size_t maskCArray4[] = {0,3, 8,9};
+    std::list<size_t> mask4(maskCArray4, maskCArray4 + 4);
+    indexOfMax = arrayTestSrc2.max( &maxValue, mask4 );
+
+    BOOST_CHECK_EQUAL(indexOfMax, 7);
+    BOOST_CHECK_EQUAL(maxValue, 9);
+
+    // A different mask, starting at zero, only 1 mask
+    size_t maskCArray5[] = {0,3};
+    std::list<size_t> mask5(maskCArray5, maskCArray5 + 2);
+    indexOfMax = arrayTestSrc2.max( &maxValue, mask5 );
+
+    BOOST_CHECK_EQUAL(indexOfMax, 7);
+    BOOST_CHECK_EQUAL(maxValue, 9);
+
+
 }
 
 BOOST_AUTO_TEST_CASE( descendPeak )
@@ -253,4 +274,25 @@ BOOST_AUTO_TEST_CASE( descendPeak )
 
     BOOST_CHECK_EQUAL( start, 3);
     BOOST_CHECK_EQUAL( end  ,16);
+}
+
+BOOST_AUTO_TEST_CASE( rollingAverageClass )
+{
+    RollingAverage<int> ra(5);
+    ra.newValue(1);
+    ra.newValue(2);
+
+    BOOST_CHECK_EQUAL(ra.value(), 1.5);
+
+    ra.newValue(3);
+    ra.newValue(4);
+    ra.newValue(5);
+
+    BOOST_CHECK_EQUAL(ra.value(), 3);
+
+    ra.newValue(6);
+    ra.newValue(7);
+
+    BOOST_CHECK_EQUAL(ra.value(), 5);
+
 }

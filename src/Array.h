@@ -18,9 +18,52 @@
 #include <cassert>
 #include <list>
 
-template <class T> struct Array;  // forward declaration so the Histogram_t typedef works
-typedef Array<uint32_t> Histogram_t;
-typedef Array<double>   RollingAv_t;
+template <class T> struct  Array;  // forward declaration so the HistogramArray_t typedef works
+typedef uint32_t           Histogram_t;
+typedef Array<Histogram_t> HistogramArray_t;
+typedef Array<double>      RollingAv_t;
+
+template <class T>
+class RollingAverage {
+public:
+    RollingAverage(const size_t _size) : size(_size), index(0), filled(0), full(0)
+    {
+        data = new T[size];
+        for (size_t i=0; i<size; i++) {
+            data[i] = 0;
+        }
+    }
+
+    ~RollingAverage()
+    {
+        delete [] data;
+    }
+
+    void newValue(const T newVal)
+    {
+        data[index++] = newVal;
+        if (index >= size)
+            index = 0;
+        if (!full) {
+            if (filled++ > size)
+                full = true;
+        }
+    }
+
+    const double value() {
+        T accumulator=0;
+        for (size_t i=0; i<size; i++) {
+            accumulator+=data[i];
+        }
+        return (double)accumulator/ (full ? size : filled);
+    }
+private:
+    T * data;
+    size_t size;
+    size_t index;
+    size_t filled;
+    bool   full;
+};
 
 /**
  * Very simple, light weight Array struct.
@@ -163,7 +206,7 @@ struct Array {
      *
      * @param hist = an empty Array<uint32_t> object
      */
-    void histogram(Histogram_t * hist) const
+    void histogram(HistogramArray_t * hist) const
     {
         if (hist->size == 0) {
             hist->setSize(3500); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
@@ -245,10 +288,13 @@ struct Array {
      */
     const size_t max(T* maxValue, const size_t start=0, size_t end=0) const
     {
+        LOG(INFO) << "max(start=" << start << ",end=" << end << ")";
         if (end==0)
             end = size;
 
-        assert( start <= end );
+        assert( start <= end  );
+        assert( start <  size );
+        assert( end   <= size );
 
         if (start == end) {
             *maxValue = data[start];
@@ -284,27 +330,57 @@ struct Array {
     {
         if ( mask.empty() ) {
             LOG(INFO) << "Mask is empty.";
-            return max(maxValue, 0, size );
+            return max( maxValue, 0, size );
         }
 
         // check there are an even number of items in the list (start, end pairs)
         assert( ( mask.size() % 2 )==0 );
 
         mask.sort();
+        for (std::list<size_t>::const_iterator it=mask.begin(); it!=mask.end(); it++) {
+            LOG(INFO) << *it;
+        }
+
 
         T maxSoFar=0, maxThisLoop=0;
         size_t indexOfMaxSoFar=0, indexOfMaxThisLoop=0, start=0, end;
         std::list<size_t>::const_iterator it=mask.begin();
 
+        // Deal with the case where the start of the first mask is 0
+        if (*it == 0) {
+            it++;
+            start = *(it++) + 1;
+        }
+
+        // Find the max between each mask
         while ( it != mask.end() ) {
             end = *(it++);
+
+            // Deal with the case where 2 adjacent masks, mask A and mask B and A.end == B.start
+            if ( end == (start-1) ) {
+                start = *(it++) + 1;
+                continue;
+            }
+
             indexOfMaxThisLoop = max( &maxThisLoop, start, end );
             if (maxThisLoop > maxSoFar) {
                 maxSoFar = maxThisLoop;
                 indexOfMaxSoFar = indexOfMaxThisLoop;
             }
             start = *(it++) + 1; // "+1" so we exclude the end of the mask
+            if (start >= size)
+                break;
         }
+
+        // Now get the max from the end of the last mask until the end of the array
+        if (start < size) {
+            indexOfMaxThisLoop = max( &maxThisLoop, start, size );
+            if (maxThisLoop > maxSoFar) {
+                maxSoFar = maxThisLoop;
+                indexOfMaxSoFar = indexOfMaxThisLoop;
+            }
+        }
+
         *maxValue = maxSoFar;
         return indexOfMaxSoFar;
     }
@@ -358,6 +434,99 @@ struct Array {
                 }
             }
 
+        }
+    }
+
+    void findPeaks( std::list<size_t> * boundaries )
+    {
+        LOG(INFO) << "findPeaks...";
+        const double KNEE_GRAD_THRESHOLD = 1.0;
+        const double SHOULDER_GRAD_THRESHOLD = 0.1;
+        const size_t RA_LENGTH = 13; /* Length of rolling average. Best if odd. */
+        size_t middleOfRA;
+        enum {NO_MANS_LAND, ASCENDING, PEAK, DESCENDING, UNSURE} state;
+        state = NO_MANS_LAND;
+        RollingAverage<int> gradientRA(RA_LENGTH);
+        T kneeHeight=0, peakHeight=0, descent=0, ascent=0;
+
+        // Load the Rolling Average array
+        for (size_t i=(size-2); i>(size-RA_LENGTH); i--) {
+            gradientRA.newValue( (int)(data[i] - data[i+1]) );
+        }
+
+        // start at the end of the array, working backwards.
+        for (size_t i=(size-RA_LENGTH); i>0; i--) {
+            // keep a rolling average of the gradient
+            gradientRA.newValue( (int)(data[i] - data[i+1]) );
+            middleOfRA = i+((RA_LENGTH/2)+1);
+//            LOG(INFO) << "data[" << i << "]=" << data[i] << " data[" << i+1 << "]=" << data[i+1]
+//                      << "(int)(data[i]-data[i+1])=" << (int)(data[i] - data[i+1]) << " grad=" << gradientRA.value();
+
+            switch (state) {
+            case NO_MANS_LAND:
+                if (gradientRA.value() > KNEE_GRAD_THRESHOLD) {
+                    // when the gradient goes over a certain threshold, mark that as ASCENDING,
+                    //    and record index in 'boundaries' and kneeHeight
+                    state=ASCENDING;
+                    LOG(INFO) << "ASCENDING " << middleOfRA;
+                    boundaries->push_front( middleOfRA );
+                    kneeHeight = data[ middleOfRA ];
+                }
+                // TODO deal with descent from NO_MANS_LAND
+                break;
+            case ASCENDING:
+                // when gradient drops to 0, state = PEAK, record peakHeight
+                if (gradientRA.value() < SHOULDER_GRAD_THRESHOLD) {
+                    state=PEAK;
+                    LOG(INFO) << "PEAK " << middleOfRA;
+                    peakHeight = data[ middleOfRA ];
+                    ascent = peakHeight - kneeHeight;
+                }
+                break;
+            case PEAK:
+                // when gradient goes below a certain threshold, state = DESCENDING
+                if (gradientRA.value() < -SHOULDER_GRAD_THRESHOLD) {
+                    state=DESCENDING;
+                    LOG(INFO) << "DESCENDING " << middleOfRA;
+                }
+                break;
+            case DESCENDING:
+                // when gradient goes to 0, check height.  If we've descended less than 30% our ascent height then don't mark
+                //   in 'boundaries', instead re-mark as ASCENDING
+                // else mark in 'boundaries' and state=NO_MANS_LAND
+                if (gradientRA.value() > -KNEE_GRAD_THRESHOLD) {
+                    // check how far we've descended from the shoulder
+                    descent = peakHeight - data[ middleOfRA ];
+
+                    if (descent < (0.3 * ascent)) {
+                        state=UNSURE;
+                        LOG(INFO) << "UNSURE " << middleOfRA;
+                    } else {
+                        state=NO_MANS_LAND;
+                        LOG(INFO) << "NO_MANS_LAND " << middleOfRA;
+                        boundaries->push_front( middleOfRA );
+                    }
+                }
+                break;
+            case UNSURE:
+                // We were descending but hit a plateau prematurely.
+                // Find out if we're descending or ascending
+                if (gradientRA.value() < -SHOULDER_GRAD_THRESHOLD) {
+                    state = DESCENDING;
+                    LOG(INFO) << "DESCENDING " << middleOfRA;
+                }
+
+                if (gradientRA.value() > KNEE_GRAD_THRESHOLD) {
+                    state = ASCENDING;
+                    LOG(INFO) << "ASCENDING " << middleOfRA;
+                }
+
+                break;
+            };
+        }
+
+        if (state != NO_MANS_LAND) {
+            boundaries->push_front(0);
         }
     }
 

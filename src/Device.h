@@ -25,13 +25,13 @@ private:
     /************************
      *  Member functions    *
      ************************/
-    void updatePowerStates(const Array<SigArrayDataType>& readings);
+    void updatePowerStates(const Array<Sample_t>& readings);
 
 
     /************************
      *  Member variables    *
      ************************/
-    std::list<Statistic<SigArrayDataType>*> powerStates;
+    std::list<Statistic<Sample_t>*> powerStates;
     std::vector<Signature*> signatures;
     std::string name;
 };

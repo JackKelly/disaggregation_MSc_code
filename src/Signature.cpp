@@ -8,12 +8,14 @@
 #include "Signature.h"
 #include "Common.h"
 #include "Utils.h"
+#include "Statistic.h"
 #include <glog/logging.h>
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
 #include <cmath>
+#include <list>
 
 using namespace std;
 
@@ -27,7 +29,7 @@ Signature::Signature(const char* filename, const size_t _samplePeriod)
     ifstream dataFile;
     openFile( dataFile, filename );
 
-    SigArray data;
+    SigArray_t data;
     loadData( dataFile, &data );
     dataFile.close();
 
@@ -36,6 +38,63 @@ Signature::Signature(const char* filename, const size_t _samplePeriod)
 
 Signature::~Signature()
 {}
+
+const PowerStates_t& Signature::getPowerStates()
+{
+    if ( powerStates.empty() ) {
+        findPowerStates();
+    }
+
+    return powerStates;
+}
+
+/**
+ * Runs through 'rawReading' to find power states.  'rawReading' must be
+ * populated before this function is called.
+ */
+void Signature::findPowerStates()
+{
+    LOG(INFO) << "Finding power states...";
+    assert ( rawReading.size ); // make sure rawReading is populated
+
+    // Create a histogram
+    HistogramArray_t hist;
+    rawReading.histogram( &hist );
+
+    // Take a 21-stage rolling av
+    RollingAv_t histRA;
+    hist.rollingAv( &histRA , 31 );
+
+    histRA.dumpToFile("histRA.csv");
+
+    // histRA now contains a smoothed histogram of 'rawReading'
+
+    Sample_t maxValue;
+    size_t   indexOfMaxValue, start, end;
+    list<size_t> stateBoundaries;
+    /* Now loop through the smoothed histogram to find the positions
+     * of each peak
+     * Loop until size of max is less than, say, 5% of rawReading.size */
+    do {
+        //    Find max (masked by list of peaks)
+        indexOfMaxValue = histRA.max( &maxValue, stateBoundaries );
+
+        //    Descend peak
+        histRA.descendPeak( indexOfMaxValue, &start, &end, 15);
+
+        //    Find stats for peak and append to powerStates
+        powerStates.push_back( Statistic<Histogram_t>( hist, start, end ) );
+
+        //    Append start and end of peak to list
+        stateBoundaries.push_back( start );
+        stateBoundaries.push_back( end   );
+
+        LOG(INFO) << "Power state found. maxVal=" << maxValue << " indexOfMax=" << indexOfMaxValue << " Start=" << start << " end=" << end << " stats: " << powerStates.back();
+
+    } while ( maxValue > (0.002*rawReading.size) );
+
+
+}
 
 void Signature::openFile(ifstream& fs, const char* filename)
 {
@@ -50,9 +109,9 @@ void Signature::openFile(ifstream& fs, const char* filename)
 /**
  *
  * @param fs
- * @param data = a pointer to a valid but empty SigArray
+ * @param data = a pointer to a valid but empty SigArray_t
  */
-void Signature::loadData(ifstream& fs, SigArray* data)
+void Signature::loadData(ifstream& fs, SigArray_t* data)
 {
     assert( data );
     data->setSize( countDataPoints( fs ) );
@@ -69,7 +128,7 @@ void Signature::loadData(ifstream& fs, SigArray* data)
     LOG(INFO) << "Entered " << count << " ints into data array.";
 }
 
-const SigArray& Signature::getSigArray() const
+const SigArray_t& Signature::getSigArray() const
 {
     return rawReading;
 }
@@ -101,7 +160,12 @@ const size_t Signature::countDataPoints( ifstream& fs ) const
     return count;
 }
 
-void Signature::cropAndStore( const SigArray& data )
+/**
+ * Remove leading zeros and trailing zeros from 'data'
+ *
+ * @param data
+ */
+void Signature::cropAndStore( const SigArray_t& data )
 {
     const size_t numLeadingZeros  = findNumLeadingZeros( data );
     const size_t numTrailingZeros = findNumTrailingZeros( data );
@@ -110,7 +174,7 @@ void Signature::cropAndStore( const SigArray& data )
     rawReading.copyCrop( data, numLeadingZeros, numTrailingZeros );
 }
 
-const size_t Signature::findNumLeadingZeros( const SigArray& data )
+const size_t Signature::findNumLeadingZeros( const SigArray_t& data )
 {
     size_t count = 0;
     while ( data[count]==0 && count<data.size ) {
@@ -119,7 +183,7 @@ const size_t Signature::findNumLeadingZeros( const SigArray& data )
     return count;
 }
 
-const size_t Signature::findNumTrailingZeros( const SigArray& data )
+const size_t Signature::findNumTrailingZeros( const SigArray_t& data )
 {
     size_t count = data.size-1;
     while ( data[count]==0 && count>0 ) {
@@ -134,10 +198,10 @@ const size_t Signature::findNumTrailingZeros( const SigArray& data )
  * @param output
  * @param newPeriod
  */
-void Signature::downSample( SigArray * output, const size_t newPeriod )
+void Signature::downSample( SigArray_t * output, const size_t newPeriod )
 {
     size_t inner, inputIndex, outputIndex, outerLimit;
-    SigArrayDataType accumulator;
+    Sample_t accumulator;
 
     LOG(INFO) << "Resampling...";
 

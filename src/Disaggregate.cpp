@@ -19,12 +19,13 @@ int main(int argc, char * argv[])
     google::InitGoogleLogging( argv[0] );
     google::LogToStderr();
 
+    /*
     Signature sig( "washer.csv", 1 );
-    Histogram_t ha;
+    HistogramArray_t ha;
     sig.getSigArray().histogram( &ha );
     ha.dumpToFile( "histogram.csv" );
 
-    SigArray a;
+    SigArray_t a;
     sig.downSample( &a, 100 );
 
     RollingAv_t raHist;
@@ -36,14 +37,17 @@ int main(int argc, char * argv[])
     Statistic<int> stat(stdevTest);
 
     std::cout << stat << std::endl;
+*/
 
     Device washer;
-    washer.getReadingFromCSV( "washer.csv", 1 );
+    washer.getReadingFromCSV( "data/watts_up/washer.csv", 1 );
 
+
+    /*
     Array<int> raTest(10, pop);
     RollingAv_t raArray;
     raTest.rollingAv(&raArray,7);
-    std::cout << raArray << std::endl;
+    std::cout << raArray << std::endl;*/
 
     LOG(INFO) << "Shutting down...";
     google::ShutdownGoogleLogging();
