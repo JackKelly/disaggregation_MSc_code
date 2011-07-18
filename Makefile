@@ -25,7 +25,7 @@ endif
 #################################################
 
 # COMMON OBJECT FILES
-COMMONOBJS = $(SRC)Disaggregate.o $(SRC)Signature.o $(SRC)Utils.o $(SRC)Device.o
+COMMONOBJS = $(SRC)Disaggregate.o $(SRC)Signature.o $(SRC)Utils.o $(SRC)Device.o $(SRC)GNUplot.o
 
 #####################
 # COMPILATION RULES #
@@ -39,8 +39,15 @@ disaggregate: $(COMMONOBJS)
 	$(CXX) $< -c $(CXXFLAGS) $(INC)
 	
 # TESTING
-test: $(TEST)ArrayTest.cpp $(SRC)Array.h $(SRC)Utils.o
-	g++ -Wall -g -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(SRC)Utils.cpp -std=c++0x -lboost_unit_test_framework && $(TEST)ArrayTest 
+TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework
+
+testAll: ArrayTest GNUplotTest
+
+ArrayTest: $(TEST)ArrayTest.cpp $(SRC)Array.h $(SRC)Utils.o
+	g++ $(TESTCXXFLAGS) -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(SRC)Utils.o && $(TEST)ArrayTest 
+
+GNUplotTest: $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o
+	g++ $(TESTCXXFLAGS) -o $(TEST)GNUplotTest $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o && $(TEST)GNUplotTest
 
 # AUTOMATIC DEPENDENCY DETECTION
 # http://www.wlug.org.nz/MakefileHowto

@@ -28,17 +28,11 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod)
 {
     Signature * sig = new Signature( filename, samplePeriod );
     signatures.push_back( sig );
-//    sig->getPowerStates();
+    PowerStates_t powerStatesForThisSig = sig->getPowerStates();
 
+    /*
     HistogramArray_t hist;
 
-/*    SigArray_t downSampled;
-    sig->downSample( &downSampled , 4 );
-
-
-    downSampled.histogram( &hist );
-    hist.dumpToFile( "smoothedHist.csv" );
-*/
     sig->getSigArray().histogram( &hist );
 
     std::list<size_t> boundaries;
@@ -47,4 +41,5 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod)
     for (std::list<size_t>::const_iterator it=boundaries.begin(); it!=boundaries.end(); it++) {
         std::cout << *it << std::endl;
     }
+    */
 }

@@ -57,42 +57,37 @@ void Signature::findPowerStates()
     LOG(INFO) << "Finding power states...";
     assert ( rawReading.size ); // make sure rawReading is populated
 
+    rawReading.drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
+
     // Create a histogram
     HistogramArray_t hist;
     rawReading.histogram( &hist );
+    hist.drawGraph( "rawHistogram", "power (Watts)", "frequency", "[0:200] [0:100]" );
 
-    // Take a 21-stage rolling av
-    RollingAv_t histRA;
-    hist.rollingAv( &histRA , 31 );
+    // find the boundaries of the different power states in the histogram
+    std::list<size_t> boundaries;
+    hist.findPeaks( &boundaries );
 
-    histRA.dumpToFile("histRA.csv");
+    // calculate proper stats for power states...
+    assert( (boundaries.size() % 2)==0 ); // check there's an even number of entries
 
-    // histRA now contains a smoothed histogram of 'rawReading'
+    // Go through each pair of boundaries, working out stats for each
+    size_t front, back;
+    for (std::list<size_t>::const_iterator it=boundaries.begin(); it!=boundaries.end(); it++) {
 
-    Sample_t maxValue;
-    size_t   indexOfMaxValue, start, end;
-    list<size_t> stateBoundaries;
-    /* Now loop through the smoothed histogram to find the positions
-     * of each peak
-     * Loop until size of max is less than, say, 5% of rawReading.size */
-    do {
-        //    Find max (masked by list of peaks)
-        indexOfMaxValue = histRA.max( &maxValue, stateBoundaries );
+        front = *it;
+        back  = *(++it);
 
-        //    Descend peak
-        histRA.descendPeak( indexOfMaxValue, &start, &end, 15);
+        powerStates.push_back( Statistic<Histogram_t>( hist, front, back ) );
 
-        //    Find stats for peak and append to powerStates
-        powerStates.push_back( Statistic<Histogram_t>( hist, start, end ) );
+        std::cout << powerStates.back() << std::endl;
+    }
 
-        //    Append start and end of peak to list
-        stateBoundaries.push_back( start );
-        stateBoundaries.push_back( end   );
+    // draw box-and-wisker plots over histogram.  Called a candlestick in gnuplot.
+    //   see http://www.manpagez.com/info/gnuplot/gnuplot-4.4.0/gnuplot_125.php
+    //   and http://gnuplot.sourceforge.net/demo/candlesticks.html
 
-        LOG(INFO) << "Power state found. maxVal=" << maxValue << " indexOfMax=" << indexOfMaxValue << " Start=" << start << " end=" << end << " stats: " << powerStates.back();
-
-    } while ( maxValue > (0.002*rawReading.size) );
-
+    // maybe try manually entering list of boundaries, worked out by eye
 
 }
 

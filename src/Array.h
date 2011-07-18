@@ -10,6 +10,7 @@
 
 #include "Common.h"
 #include "Utils.h"
+#include "GNUplot.h"
 #include <iostream>
 #include <glog/logging.h>
 #include <iostream>
@@ -387,6 +388,7 @@ struct Array {
 
     /**
      * Find where the peak plateaus or starts climbing again.
+     * This doesn't work anywhere near as well as 'findPeaks()'.
      *
      * @param peak - the index of the highest value in the peak
      * @param start - return index of the start of the hill
@@ -444,7 +446,7 @@ struct Array {
         const double SHOULDER_GRAD_THRESHOLD = 0.1;
         const size_t RA_LENGTH = 13; /* Length of rolling average. Best if odd. */
         size_t middleOfRA;
-        enum {NO_MANS_LAND, ASCENDING, PEAK, DESCENDING, UNSURE} state;
+        enum { NO_MANS_LAND, ASCENDING, PEAK, DESCENDING, UNSURE } state;
         state = NO_MANS_LAND;
         RollingAverage<int> gradientRA(RA_LENGTH);
         T kneeHeight=0, peakHeight=0, descent=0, ascent=0;
@@ -528,6 +530,27 @@ struct Array {
         if (state != NO_MANS_LAND) {
             boundaries->push_front(0);
         }
+    }
+
+    void drawGraph(const std::string& name,
+                   const std::string& xlabel = "",
+                   const std::string& ylabel = "",
+                   const std::string& args = "")
+    {
+        // Dump data to a temporary file
+        dumpToFile( "arrayData.dat" );
+
+        // Plot
+        GNUplot gnu_plot;
+        gnu_plot( "set title \"" + name + "\"" );
+        gnu_plot( "set terminal svg size 1500 700" );
+        gnu_plot( "set samples 1001" ); // high quality
+        gnu_plot( "set nokey" );
+        gnu_plot( "set output \"" + name + ".svg\"" );
+        gnu_plot( "set xlabel \"" + xlabel + "\"" );
+        gnu_plot( "set ylabel \"" + ylabel + "\"" );
+        gnu_plot( "plot " + args + " \"arrayData.dat\" with l lw 1" );
+
     }
 
 

@@ -24,12 +24,61 @@ struct Statistic {
     T stdev;
     T min;
     T max;
+    size_t numDataPoints;
     std::string name;
 
     /************************
      *  Member functions    *
      ************************/
-    Statistic(const Array<T>& data, const size_t beginning=0, size_t end=0)
+
+    /**
+     * Constructor from histogram data
+     *
+     * @param data
+     * @param beginning
+     * @param end
+     */
+    Statistic(const HistogramArray_t& data, const size_t beginning=0, size_t end=0)
+    : mean(0), stdev(0), numDataPoints(0)
+    {
+        register T accumulator = 0;
+        register T currentVal;
+
+        if (end==0) { // default value used
+            end = data.size;
+        }
+
+        assert(end >  beginning);
+        assert(end <= data.size);
+
+        min = beginning;
+        max = end;
+
+        // Find the mean, min and max
+        for (size_t i=beginning; i<end; i++) {
+            currentVal = data[i];
+
+            numDataPoints += currentVal;
+            accumulator   += ( currentVal * i );
+        }
+        mean = accumulator / numDataPoints;
+
+        // Find the population standard deviation
+        accumulator = 0;
+        for (size_t i=beginning; i<end; i++) {
+            accumulator += pow( ( i -  mean ), 2 ) * data[i];
+        }
+        stdev = sqrt(accumulator / numDataPoints);
+    }
+
+    /**
+     * Default constructor.
+     *
+     * @param data
+     * @param beginning
+     * @param end
+     */
+/*    Statistic(const Array<T>& data, const size_t beginning=0, size_t end=0)
     : mean(0), stdev(0)
     {
         register T accumulator = 0;
@@ -68,10 +117,11 @@ struct Statistic {
         }
         stdev = sqrt(accumulator / length);
     }
+ */
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {
-        o << "mean=" << s.mean << ", min=" << s.min << ", max=" << s.max << ", stdev=" << s.stdev;
+        o << "min=" << s.min << ", mean=" << s.mean << ", max=" << s.max << ", stdev=" << s.stdev;
         return o;
     }
 
