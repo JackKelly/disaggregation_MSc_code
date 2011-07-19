@@ -439,12 +439,21 @@ struct Array {
         }
     }
 
+    /**
+     * Attempts to automatically find the peaks.
+     *
+     * Starts from end of array and works backwards.  At each step, calculates a rolling
+     * average of the gradient.  If the value of this rolling average is above KNEE_GRAD_THRESHOLD
+     * then it enters the 'ASCENDING' state... etc...
+     *
+     * @param boundaries - output parameter
+     */
     void findPeaks( std::list<size_t> * boundaries )
     {
         LOG(INFO) << "findPeaks...";
-        const double KNEE_GRAD_THRESHOLD = 1.0;
-        const double SHOULDER_GRAD_THRESHOLD = 0.1;
-        const size_t RA_LENGTH = 13; /* Length of rolling average. Best if odd. */
+        const double KNEE_GRAD_THRESHOLD = 0.6;
+        const double SHOULDER_GRAD_THRESHOLD = 0.6;
+        const size_t RA_LENGTH = 31; /* Length of rolling average. Best if odd. */
         size_t middleOfRA;
         enum { NO_MANS_LAND, ASCENDING, PEAK, DESCENDING, UNSURE } state;
         state = NO_MANS_LAND;
@@ -456,10 +465,15 @@ struct Array {
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
         }
 
+        double * RA = new double[(size-RA_LENGTH)+1];
+
         // start at the end of the array, working backwards.
         for (size_t i=(size-RA_LENGTH); i>0; i--) {
             // keep a rolling average of the gradient
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
+
+            RA[i] = gradientRA.value();
+
             middleOfRA = i+((RA_LENGTH/2)+1);
 //            LOG(INFO) << "data[" << i << "]=" << data[i] << " data[" << i+1 << "]=" << data[i+1]
 //                      << "(int)(data[i]-data[i+1])=" << (int)(data[i] - data[i+1]) << " grad=" << gradientRA.value();
@@ -530,6 +544,17 @@ struct Array {
         if (state != NO_MANS_LAND) {
             boundaries->push_front(0);
         }
+
+        // For debugging purposes, dump RA'd data to file
+        std::fstream ra_file;
+        ra_file.open( "RA_hist.dat", std::fstream::out);
+        for (size_t i = 0; i<(size-RA_LENGTH); i++) {
+            ra_file << RA[i] << std::endl;
+        }
+        ra_file.close();
+
+        delete [] RA;
+
     }
 
     void drawGraph(const std::string& name,

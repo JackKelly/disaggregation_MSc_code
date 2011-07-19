@@ -48,6 +48,37 @@ const PowerStates_t& Signature::getPowerStates()
     return powerStates;
 }
 
+void Signature::drawGraphWithCandlesticks( const HistogramArray_t& hist )
+{
+    // dump data to temp file
+    hist.dumpToFile( "hist.dat" );
+
+    const std::string name("hist");
+
+    GNUplot gnu_plot;
+
+    gnu_plot( "set title \"" + name + "\"" );
+    gnu_plot( "set terminal svg size 600 500" );
+    gnu_plot( "set samples 1001" ); // high quality
+    gnu_plot( "set output \"" + name + ".svg\"" );
+    gnu_plot( "set xlabel \"power (Watts)\"" );
+    gnu_plot( "set ylabel \"frequency\"" );
+    gnu_plot( "plot [0:2500]  "
+              "\"hist.dat\" with l lw 1 title \"raw histogram\", "
+              "\"RA_hist.dat\" with l lw 1 title \"31-step rolling average of histogram gradient\", "
+              "\"x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
+
+    // output for LaTeX
+    gnu_plot( "set format \"$%g$\"" );
+    gnu_plot( "set terminal epslatex colour solid size 15cm, 10cm" );
+    gnu_plot( "set output \"" + name + ".tex\"" );
+    gnu_plot( "plot [0:2400] "
+              "\"hist.dat\" with l lw 1 title \"raw histogram\", "
+              "\"RA_hist.dat\" with l lw 1 title \"31-step rolling average of histogram gradient\", "
+              "\"x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
+
+}
+
 /**
  * Runs through 'rawReading' to find power states.  'rawReading' must be
  * populated before this function is called.
@@ -59,10 +90,19 @@ void Signature::findPowerStates()
 
     rawReading.drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
 
+/*    SigArray_t downSampled;
+    downSample( &downSampled, 6);
+    downSampled.drawGraph( "DownSampled6", "time (seconds)", "power (Watts)", "[] []" );
+*/
+
     // Create a histogram
     HistogramArray_t hist;
     rawReading.histogram( &hist );
-    hist.drawGraph( "rawHistogram", "power (Watts)", "frequency", "[0:200] [0:100]" );
+    hist.drawGraph( "Hist_from_raw", "power (Watts)", "frequency", "[0:2500] [0:100]" );
+
+//    RollingAv_t RAhist;
+//    hist.rollingAv( &RAhist, 21 );
+//    RAhist.drawGraph( "RA10_of_Hist_from_raw", "power (Watts)", "frequency", "[0:2500] [0:100]" );
 
     // find the boundaries of the different power states in the histogram
     std::list<size_t> boundaries;
@@ -73,6 +113,8 @@ void Signature::findPowerStates()
 
     // Go through each pair of boundaries, working out stats for each
     size_t front, back;
+    fstream dataFile;
+    dataFile.open( "x_err_bars.dat", fstream::out );
     for (std::list<size_t>::const_iterator it=boundaries.begin(); it!=boundaries.end(); it++) {
 
         front = *it;
@@ -81,7 +123,12 @@ void Signature::findPowerStates()
         powerStates.push_back( Statistic<Histogram_t>( hist, front, back ) );
 
         std::cout << powerStates.back() << std::endl;
+
+        powerStates.back().xErrorBarOutputLine( dataFile );
     }
+    dataFile.close();
+
+    drawGraphWithCandlesticks( hist );
 
     // draw box-and-wisker plots over histogram.  Called a candlestick in gnuplot.
     //   see http://www.manpagez.com/info/gnuplot/gnuplot-4.4.0/gnuplot_125.php

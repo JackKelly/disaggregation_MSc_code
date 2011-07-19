@@ -30,6 +30,8 @@ public:
 
     const PowerStates_t& getPowerStates();
 
+    void drawGraphWithCandlesticks( const HistogramArray_t& );
+
 private:
 
     /************************
