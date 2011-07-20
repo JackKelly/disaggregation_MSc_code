@@ -40,7 +40,7 @@ int main(int argc, char * argv[])
 */
 
     Device washer("Washer");
-    washer.getReadingFromCSV( "data/watts_up/washer.csv", 1 );
+    washer.getReadingFromCSV( "data/watts_up/washer.csv", 1, 70, 2500 );
 
 
     /*

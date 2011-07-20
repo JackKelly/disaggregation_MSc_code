@@ -19,15 +19,15 @@ public:
     Device(const std::string _name);
     virtual ~Device();
 
-    void getReadingFromCSV(const char * filename, const size_t samplePeriod);
+    void getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack);
 
 private:
     /************************
      *  Member functions    *
      ************************/
-    void updatePowerStates();
+    void updatePowerStates( const size_t rollingAvLength );
 
-    void updatePowerStateSequence();
+    void updatePowerStateSequence( const size_t rollingAvLength );
 
     PowerStates_t::const_iterator getPowerState( const Sample_t sample );
 

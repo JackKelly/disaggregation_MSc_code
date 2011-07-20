@@ -23,7 +23,7 @@ using namespace std;
  * Constructor for opening a CSV file
  *
  */
-Signature::Signature(const char* filename, const size_t _samplePeriod)
+Signature::Signature(const char* filename, const size_t _samplePeriod, const size_t cropFront, const size_t cropBack )
 : samplePeriod(_samplePeriod)
 {
     ifstream dataFile;
@@ -33,16 +33,20 @@ Signature::Signature(const char* filename, const size_t _samplePeriod)
     loadData( dataFile, &data );
     dataFile.close();
 
-    cropAndStore( data );
+    if ( cropFront == 0 ) {
+        rawReading.copyCrop( data, findNumLeadingZeros( data ), findNumTrailingZeros( data ) );
+    } else {
+        rawReading.copyCrop( data, cropFront, cropBack );
+    }
 }
 
 Signature::~Signature()
 {}
 
-const PowerStates_t& Signature::getPowerStates()
+const PowerStates_t& Signature::getPowerStates( const size_t rollingAvLength )
 {
     if ( powerStates.empty() ) {
-        findPowerStates();
+        findPowerStates( rollingAvLength );
     }
 
     return powerStates;
@@ -53,12 +57,12 @@ void Signature::drawGraphWithStateBars( const HistogramArray_t& hist )
     // dump data to temp file
     hist.dumpToFile( "hist.dat" );
 
-    const std::string name("hist");
+    const std::string name("histWithStateBars");
 
     GNUplot gnu_plot;
 
     gnu_plot( "set title \"" + name + "\"" );
-    gnu_plot( "set terminal svg size 600 500" );
+    gnu_plot( "set terminal svg size 1200 800" );
     gnu_plot( "set samples 1001" ); // high quality
     gnu_plot( "set output \"" + name + ".svg\"" );
     gnu_plot( "set xlabel \"power (Watts)\"" );
@@ -83,22 +87,29 @@ void Signature::drawGraphWithStateBars( const HistogramArray_t& hist )
  * Runs through 'rawReading' to find power states.  'rawReading' must be
  * populated before this function is called.
  */
-void Signature::findPowerStates()
+void Signature::findPowerStates( const size_t rollingAvLength )
 {
-    LOG(INFO) << "Finding power states...";
+    LOG(INFO) << "Finding power states...rollingAvLength = " << rollingAvLength;
     assert ( rawReading.size ); // make sure rawReading is populated
 
     rawReading.drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
 
-/*    SigArray_t downSampled;
-    downSample( &downSampled, 6);
-    downSampled.drawGraph( "DownSampled6", "time (seconds)", "power (Watts)", "[] []" );
-*/
-
     // Create a histogram
     HistogramArray_t hist;
-    rawReading.histogram( &hist );
-    hist.drawGraph( "Hist_from_raw", "power (Watts)", "frequency", "[0:2500] [0:100]" );
+    string description;
+
+    if (rollingAvLength > 1) {
+        RollingAv_t rollingAv;
+        rawReading.rollingAv( &rollingAv, rollingAvLength );
+        rollingAv.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
+        rollingAv.histogram( &hist );
+        description = "Hist_from_rollingAv";
+    } else {
+        rawReading.histogram( &hist );
+        description = "Hist_from_raw";
+    }
+
+    hist.drawGraph( description, "power (Watts)", "frequency", "[0:2500] [0:100]" );
 
 //    RollingAv_t RAhist;
 //    hist.rollingAv( &RAhist, 21 );
@@ -237,19 +248,6 @@ const size_t Signature::countDataPoints( ifstream& fs ) const
     return count;
 }
 
-/**
- * Remove leading zeros and trailing zeros from 'data'
- *
- * @param data
- */
-void Signature::cropAndStore( const SigArray_t& data )
-{
-    const size_t numLeadingZeros  = findNumLeadingZeros( data );
-    const size_t numTrailingZeros = findNumTrailingZeros( data );
-    LOG(INFO) << numLeadingZeros << " leading zero(s) and " << numTrailingZeros << " trailing zero(s) found.";
-
-    rawReading.copyCrop( data, numLeadingZeros, numTrailingZeros );
-}
 
 const size_t Signature::findNumLeadingZeros( const SigArray_t& data )
 {

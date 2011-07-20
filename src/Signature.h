@@ -21,7 +21,8 @@ typedef std::list<PowerState_t> PowerStates_t;
 class Signature {
 public:
 
-    Signature( const char* filename, const size_t _samplePeriod );
+    Signature( const char* filename, const size_t _samplePeriod,
+               const size_t cropFront = 0, const size_t cropBack = 0 );
 
     virtual ~Signature();
 
@@ -29,7 +30,7 @@ public:
 
     const SigArray_t& getRawReading() const;
 
-    const PowerStates_t& getPowerStates();
+    const PowerStates_t& getPowerStates( const size_t rollingAvLength);
 
     const size_t getSamplePeriod();
 
@@ -48,13 +49,11 @@ private:
 
     const size_t  countDataPoints( std::ifstream& fs ) const;
 
-    void cropAndStore( const SigArray_t& data );
-
     const size_t findNumLeadingZeros( const SigArray_t& data );
 
     const size_t findNumTrailingZeros( const SigArray_t& data );
 
-    void findPowerStates();
+    void findPowerStates( const size_t rollingAvLength );
 
     void fillGapsInPowerStates( const HistogramArray_t& hist );
 

@@ -23,16 +23,18 @@ Device::~Device() {
     }
 }
 
-void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod)
+void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack)
 {
     // Create a new signature
-    Signature * sig = new Signature( filename, samplePeriod );
+    Signature * sig = new Signature( filename, samplePeriod, cropFront, cropBack );
     signatures.push_back( sig );
 
-    // Update powerstates
-    updatePowerStates();
+    const size_t rollingAvLength = 31;
 
-    updatePowerStateSequence();
+    // Update powerstates
+    updatePowerStates( rollingAvLength );
+
+    updatePowerStateSequence( rollingAvLength );
 }
 
 /**
@@ -40,13 +42,13 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod)
  *
  * This must be called after a new signature has been added to 'signatures'
  */
-void Device::updatePowerStates()
+void Device::updatePowerStates( const size_t rollingAvLength )
 {
     // sanity check
     assert( ! signatures.empty() );
 
     // get power states from last signatures
-    powerStates = signatures.back()->getPowerStates();
+    powerStates = signatures.back()->getPowerStates( rollingAvLength );
 
     /* TODO: deal with the case where we already have some powerStates stored
      * and we want to merge the new power states from the new signature with
@@ -59,18 +61,21 @@ void Device::updatePowerStates()
  *
  * This must be called after 'powerStates' has been populated
  */
-void Device::updatePowerStateSequence()
+void Device::updatePowerStateSequence( const size_t rollingAvLength )
 {
     // sanity check
     assert( ! powerStates.empty() );
 
-    const SigArray_t& rawReading = signatures.back()->getRawReading();
+    RollingAv_t reading;
+    signatures.back()->getRawReading().rollingAv( &reading, rollingAvLength);
+
+//    reading = signatures.back()->getRawReading();
+
+
     const size_t samplePeriod    = signatures.back()->getSamplePeriod();
 
     PowerStateSequenceItem powerStateSequenceItem;
     PowerStates_t::const_iterator currentPowerState;
-
-
 
     // Find start of first powerState
 /*
@@ -86,8 +91,8 @@ void Device::updatePowerStateSequence()
     state = NO_MANS_LAND;
 
     // Go through raw reading finding occurences of each power state
-    for (size_t i=0; i<rawReading.size; i++ ) {
-        currentPowerState = getPowerState( rawReading[i] );
+    for (size_t i=0; i<reading.size; i++ ) {
+        currentPowerState = getPowerState( reading[i] );
 
         switch (state) {
         case WITHIN_STATE:
@@ -125,7 +130,7 @@ void Device::updatePowerStateSequence()
 
     // Handle case where final state is left hanging after for loop
     if ( state == WITHIN_STATE ) {
-        powerStateSequenceItem.endTime = rawReading.size*samplePeriod;
+        powerStateSequenceItem.endTime = reading.size*samplePeriod;
         powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
         LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
                 << "\tendTime=" << powerStateSequenceItem.endTime

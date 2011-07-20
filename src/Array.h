@@ -453,7 +453,7 @@ struct Array {
         LOG(INFO) << "findPeaks...";
         const double KNEE_GRAD_THRESHOLD = 0.6;
         const double SHOULDER_GRAD_THRESHOLD = 0.6;
-        const size_t RA_LENGTH = 31; /* Length of rolling average. Best if odd. */
+        const size_t RA_LENGTH = 19; /* Length of rolling average. Best if odd. */
         size_t middleOfRA;
         enum { NO_MANS_LAND, ASCENDING, PEAK, DESCENDING, UNSURE } state;
         state = NO_MANS_LAND;
