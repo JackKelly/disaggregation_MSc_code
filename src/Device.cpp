@@ -80,15 +80,15 @@ void Device::updatePowerStateSequence()
 
         assert( currentPowerState != powerStates.end() );
 
-        if (currentPowerState == prevPowerState) {
-            duration++;
-        } else {
+        duration++;
+
+        if (currentPowerState != prevPowerState) {
             // then we've hit a powerState transition
             powerStateSequenceItem.powerState = prevPowerState;
             powerStateSequenceItem.duration   = duration*samplePeriod;
-            LOG(INFO) << "Power state sequence item: " << *currentPowerState << "\tduration=" << duration*samplePeriod;
+            LOG(INFO) << "Power state sequence item: " << *prevPowerState << "\tduration=" << duration*samplePeriod;
             powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
-            duration = 1;
+            duration = 0;
         }
 
         prevPowerState = currentPowerState;
@@ -96,7 +96,7 @@ void Device::updatePowerStateSequence()
 
     // Handle case where final state is left hanging after for loop
     if ( duration != 0 ) {
-        powerStateSequenceItem.powerState = prevPowerState;
+        powerStateSequenceItem.powerState = currentPowerState;
         powerStateSequenceItem.duration   = duration*samplePeriod;
         LOG(INFO) << "Power state sequence item: " << *currentPowerState << "\tduration=" << duration*samplePeriod;
         powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
