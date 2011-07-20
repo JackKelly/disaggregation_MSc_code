@@ -16,7 +16,7 @@
 
 class Device {
 public:
-    Device();
+    Device(const std::string _name);
     virtual ~Device();
 
     void getReadingFromCSV(const char * filename, const size_t samplePeriod);
@@ -25,15 +25,27 @@ private:
     /************************
      *  Member functions    *
      ************************/
-    void updatePowerStates(const Array<Sample_t>& readings);
+    void updatePowerStates();
+
+    void updatePowerStateSequence();
+
+    PowerStates_t::const_iterator getPowerState( const Sample_t sample );
 
 
     /************************
      *  Member variables    *
      ************************/
-    std::list<Statistic<Sample_t>*> powerStates;
-    std::vector<Signature*> signatures;
     std::string name;
+    PowerStates_t powerStates;
+    std::vector<Signature*> signatures;
+
+    struct PowerStateSequenceItem {
+        PowerStates_t::const_iterator powerState; /*!< TODO: Does the same iterator point to the same element, no matter if an item is subsequently entered before the item?  */
+        size_t duration;          /*!< in seconds  */
+    };
+
+    std::list<PowerStateSequenceItem> powerStateSequence;
+
 };
 
 #endif /* DEVICE_H_ */

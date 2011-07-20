@@ -20,8 +20,8 @@ struct Statistic {
     /************************
      *  Member variables    *
      ************************/
-    T mean;
-    T stdev;
+    double mean;
+    double stdev;
     T min;
     T max;
     size_t numDataPoints;
@@ -35,8 +35,8 @@ struct Statistic {
      * Constructor from histogram data
      *
      * @param data
-     * @param beginning
-     * @param end
+     * @param beginning (gets included in stats)
+     * @param end (excluded from stats)
      */
     Statistic(const HistogramArray_t& data, const size_t beginning=0, size_t end=0)
     : mean(0), stdev(0), numDataPoints(0)
@@ -61,7 +61,7 @@ struct Statistic {
             numDataPoints += currentVal;
             accumulator   += ( currentVal * i );
         }
-        mean = accumulator / numDataPoints;
+        mean = (double)accumulator / numDataPoints;
 
         // Find the population standard deviation
         accumulator = 0;
@@ -121,7 +121,7 @@ struct Statistic {
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {
-        o << "min=" << s.min << ", mean=" << s.mean << ", max=" << s.max << ", stdev=" << s.stdev;
+        o << "min=" << s.min << "\tmean=" << s.mean << "\tmax=" << s.max << "\tstdev=" << s.stdev << "\tnumDataPoints=" << s.numDataPoints;
         return o;
     }
 

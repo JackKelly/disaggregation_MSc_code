@@ -210,7 +210,7 @@ struct Array {
     void histogram(HistogramArray_t * hist) const
     {
         if (hist->size == 0) {
-            hist->setSize(3500); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
+            hist->setSize( MAX_WATTAGE ); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
         }
         hist->initAllEntriesTo(0);
 
@@ -465,7 +465,7 @@ struct Array {
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
         }
 
-        double * RA = new double[(size-RA_LENGTH)+1];
+        double * RA = new double[(size-RA_LENGTH)+1]; // Just used for data visualisation purposes
 
         // start at the end of the array, working backwards.
         for (size_t i=(size-RA_LENGTH); i>0; i--) {
@@ -475,8 +475,6 @@ struct Array {
             RA[i] = gradientRA.value();
 
             middleOfRA = i+((RA_LENGTH/2)+1);
-//            LOG(INFO) << "data[" << i << "]=" << data[i] << " data[" << i+1 << "]=" << data[i+1]
-//                      << "(int)(data[i]-data[i+1])=" << (int)(data[i] - data[i+1]) << " grad=" << gradientRA.value();
 
             switch (state) {
             case NO_MANS_LAND:
@@ -545,14 +543,13 @@ struct Array {
             boundaries->push_front(0);
         }
 
-        // For debugging purposes, dump RA'd data to file
+        // For debugging purposes, dump rolling average data to file
         std::fstream ra_file;
         ra_file.open( "RA_hist.dat", std::fstream::out);
         for (size_t i = 0; i<(size-RA_LENGTH); i++) {
             ra_file << RA[i] << std::endl;
         }
         ra_file.close();
-
         delete [] RA;
 
     }

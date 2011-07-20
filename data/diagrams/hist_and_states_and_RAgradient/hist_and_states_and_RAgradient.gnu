@@ -1,5 +1,9 @@
 reset
-clear
+
+# LaTeX output
+set terminal epslatex solid colour size 15cm,12cm font "" 8
+set output "histAndStatesAndRAgradient.tex"
+
 unset y2label
 unset y2tics
 unset x2zeroaxis
@@ -12,10 +16,9 @@ gap = 0.02
 size = 0.75
 y1 = -30.0; y2 = 90; y3 = 2747; y4 = 2765
 x1 =  0.0; x2 = 299; x3 = 2155; x4 = 2350 
-# plotRange = "[0:2500]"
-#set title "Washing Machine Histogram with automatically determined state boundaries"
+
 plotHist = "\"hist.dat\" with l lw 1 title \"histogram\""
-plotRAhist = "\"RA_hist.dat\" with l lw 1 title \"31-step rolling average of histogram gradient\""
+plotRAhist = "\"RA_hist.dat\" with l lt 2 lw 1 title \"31-step rolling average of histogram gradient\""
 plotXerrbars = "\"x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\""
 
 set multiplot
@@ -23,9 +26,6 @@ set multiplot
 ###################
 # Bottom left panel
 unset title
-#set xlabel 'Power (Watts)'
-#set ylabel 'Frequency'
-#set key
 unset key
 set border 1+2
 set xtics nomirror
@@ -58,7 +58,7 @@ plot @plotHist, @plotRAhist, @plotXerrbars
 
 #################
 # Top right panel
-set key
+set key # height 20 
 unset xtics
 unset ytics
 unset xlabel
@@ -91,29 +91,32 @@ set yrange [y1:y2]
 set xrange [x3:x4]
 
 set y2range [y1/10:y2/10]
-set y2label "gradient of histogram"
+set y2label "Gradient of histogram"
 set y2tics
 
 
 
 #############################
-# Axis Labels and break marks
+# Axis Labels and graph Title
 
 set label 'Washing Machine Histogram with automatically determined state boundaries' at \
-screen 0.40, \
-0.96 \
-offset (-strlen("Washing Machine Histogram with automatically determined state boundaries")/4.0),0
+screen 0.50, \
+screen 0.96 \
+center
+#offset (-strlen("Washing Machine Histogram with automatically determined state boundaries")/4.0),0
 
-set label 'Histogram Frequency' at \
-screen 0.07, \
+set label 'Histogram frequency' at \
+screen 0.06, \
 bm + 0.5 * (size + gap) \
 rotate by 90 \
-offset 0,-strlen("Histogram Frequency")/4.0
+center
+#offset 0,-strlen("Histogram Frequency")/4.0
 
 set label 'Power (Watts)' at \
 screen 0.50, \
 0.08 \
-offset (-strlen("Power (Watts)")/4.0),0
+center
+#offset (-strlen("Power (Watts)")/4.0),0
 
 
 
@@ -142,10 +145,6 @@ bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) ) + (gap / 4.0) + gap nohea
 
 ########################
 # break marks for x axis
-#set arrow from screen lm + size * (abs(x2-x1) / (abs(x2-x1) + abs(x4-x3) ) ) / 4.0, \
-#tm - gap / 4.0 \
-#to screen lm + gap / 4.0, \
-#bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) ) + gap / 4.0 nohead
 
 # top border
 # left
@@ -173,10 +172,9 @@ bm - (gap / 4.0) \
 to screen lm + size * (abs(x2-x1) / (abs(x2-x1) + abs(x4-x3) ) ) + (gap / 8.0) + gap, \
 bm + (gap / 4.0) nohead
 
-
-
-
-
 plot @plotHist, @plotRAhist axis x1y2, @plotXerrbars
 
 unset multiplot
+
+clear
+unset output # forces buffer to flush

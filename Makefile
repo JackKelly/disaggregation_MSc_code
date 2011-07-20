@@ -64,3 +64,6 @@ DEPS := $(patsubst %.o,%.d,$(COMMONOBJS))
 
 clean:
 	rm -f $(SRC)*.o $(SRC)*.d
+	
+linecount:
+	wc -l $(SRC)*.cpp $(SRC)*.h $(TEST)*.cpp data/diagrams/hist_and_states_and_RAgradient/*.gnu

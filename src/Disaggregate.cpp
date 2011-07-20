@@ -22,7 +22,7 @@ int main(int argc, char * argv[])
     /*
     Signature sig( "washer.csv", 1 );
     HistogramArray_t ha;
-    sig.getSigArray().histogram( &ha );
+    sig.getRawReading().histogram( &ha );
     ha.dumpToFile( "histogram.csv" );
 
     SigArray_t a;
@@ -39,7 +39,7 @@ int main(int argc, char * argv[])
     std::cout << stat << std::endl;
 */
 
-    Device washer;
+    Device washer("Washer");
     washer.getReadingFromCSV( "data/watts_up/washer.csv", 1 );
 
 

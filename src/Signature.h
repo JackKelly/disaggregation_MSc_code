@@ -15,7 +15,8 @@
 
 typedef double Sample_t;
 typedef Array<Sample_t> SigArray_t;
-typedef std::list<Statistic<Histogram_t>> PowerStates_t;
+typedef Statistic<Sample_t> PowerState_t;
+typedef std::list<PowerState_t> PowerStates_t;
 
 class Signature {
 public:
@@ -26,11 +27,13 @@ public:
 
     void downSample( SigArray_t * output, const size_t newPeriod );
 
-    const SigArray_t& getSigArray() const;
+    const SigArray_t& getRawReading() const;
 
     const PowerStates_t& getPowerStates();
 
-    void drawGraphWithCandlesticks( const HistogramArray_t& );
+    const size_t getSamplePeriod();
+
+    void drawGraphWithStateBars( const HistogramArray_t& );
 
 private:
 
@@ -52,6 +55,8 @@ private:
     const size_t findNumTrailingZeros( const SigArray_t& data );
 
     void findPowerStates();
+
+    void fillGapsInPowerStates( const HistogramArray_t& hist );
 
     /************************
      *  Member variables    *

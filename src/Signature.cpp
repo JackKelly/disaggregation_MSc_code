@@ -48,7 +48,7 @@ const PowerStates_t& Signature::getPowerStates()
     return powerStates;
 }
 
-void Signature::drawGraphWithCandlesticks( const HistogramArray_t& hist )
+void Signature::drawGraphWithStateBars( const HistogramArray_t& hist )
 {
     // dump data to temp file
     hist.dumpToFile( "hist.dat" );
@@ -120,21 +120,56 @@ void Signature::findPowerStates()
         front = *it;
         back  = *(++it);
 
-        powerStates.push_back( Statistic<Histogram_t>( hist, front, back ) );
+        powerStates.push_back( PowerState_t( hist, front, back ) );
 
         std::cout << powerStates.back() << std::endl;
 
         powerStates.back().xErrorBarOutputLine( dataFile );
     }
     dataFile.close();
+    drawGraphWithStateBars( hist );
 
-    drawGraphWithCandlesticks( hist );
+    fillGapsInPowerStates( hist );
+}
 
-    // draw box-and-wisker plots over histogram.  Called a candlestick in gnuplot.
-    //   see http://www.manpagez.com/info/gnuplot/gnuplot-4.4.0/gnuplot_125.php
-    //   and http://gnuplot.sourceforge.net/demo/candlesticks.html
+/**
+ * Fill in gaps in the powerStates so that each powerState in the list is nose-to-tail
+ */
+void Signature::fillGapsInPowerStates( const HistogramArray_t& hist )
+{
+    assert( ! powerStates.empty() );
 
-    // maybe try manually entering list of boundaries, worked out by eye
+    PowerStates_t::iterator prevPowerState,
+                            powerState;
+
+    prevPowerState = powerState = powerStates.begin();
+    powerState++;
+
+    for ( ; powerState!=powerStates.end(); powerState++) {
+
+        if (powerState->min != prevPowerState->max &&
+            powerState->min != (prevPowerState->max + 1) ) {
+            // 'prevPowerState' and this 'powerState' are not nose-to-tail so insert a new power state
+
+            LOG(INFO) << "Inserting new power state between " << prevPowerState->max << " and " << powerState->min;
+
+            // Insert new powerState before current powerState
+            powerStates.insert( powerState,
+                                PowerState_t( hist, (prevPowerState->max + 1), powerState->min ) );
+        } // end if
+
+        prevPowerState = powerState;
+    }
+
+    // deal with case where final powerState still doesn't cover upper range
+    if (prevPowerState->max != MAX_WATTAGE) {
+        powerStates.push_back( PowerState_t( hist, (prevPowerState->max + 1), MAX_WATTAGE ) );
+    }
+
+    // debugging code
+    for (powerState = powerStates.begin(); powerState!=powerStates.end(); powerState++) {
+        cout << "Power state = " << *powerState << std::endl;
+    }
 
 }
 
@@ -170,7 +205,7 @@ void Signature::loadData(ifstream& fs, SigArray_t* data)
     LOG(INFO) << "Entered " << count << " ints into data array.";
 }
 
-const SigArray_t& Signature::getSigArray() const
+const SigArray_t& Signature::getRawReading() const
 {
     return rawReading;
 }
@@ -299,3 +334,7 @@ void Signature::downSample( SigArray_t * output, const size_t newPeriod )
 
 }
 
+const size_t Signature::getSamplePeriod()
+{
+    return samplePeriod;
+}
