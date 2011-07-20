@@ -41,7 +41,8 @@ private:
 
     struct PowerStateSequenceItem {
         PowerStates_t::const_iterator powerState; /*!< TODO: Does the same iterator point to the same element, no matter if an item is subsequently entered before the item?  */
-        size_t duration;          /*!< in seconds  */
+        size_t startTime;          /*!< in seconds  */
+        size_t endTime;          /*!< in seconds  */
     };
 
     std::list<PowerStateSequenceItem> powerStateSequence;

@@ -68,38 +68,69 @@ void Device::updatePowerStateSequence()
     const size_t samplePeriod    = signatures.back()->getSamplePeriod();
 
     PowerStateSequenceItem powerStateSequenceItem;
-    PowerStates_t::const_iterator prevPowerState, currentPowerState;
+    PowerStates_t::const_iterator currentPowerState;
 
-    // Process first rawReading entry
-    prevPowerState = getPowerState( rawReading[0] );
-    size_t duration = 0;
 
-    // Go through raw reading, occurences of each power state
-    for ( size_t i = 1; i<rawReading.size; i++ ) {
+
+    // Find start of first powerState
+/*
+       size_t i=0;
+       do {
+        powerStateSequenceItem.powerState = getPowerState( rawReading[i] );
+        powerStateSequenceItem.startTime  = i*samplePeriod;
+        i++;
+        assert ( i != rawReading.size );
+    } while ( powerStateSequenceItem.powerState == powerStates.end() );
+  */
+    enum { WITHIN_STATE, NO_MANS_LAND } state;
+    state = NO_MANS_LAND;
+
+    // Go through raw reading finding occurences of each power state
+    for (size_t i=0; i<rawReading.size; i++ ) {
         currentPowerState = getPowerState( rawReading[i] );
 
-        assert( currentPowerState != powerStates.end() );
+        switch (state) {
+        case WITHIN_STATE:
+            if (currentPowerState != powerStateSequenceItem.powerState) {
+                        // then we've hit a powerState transition
+                        // so store the details of the powerState we've just left
+                        powerStateSequenceItem.endTime   = i*samplePeriod;
+                        powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
 
-        duration++;
+                        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
+                                << "\tendTime=" << powerStateSequenceItem.endTime
+                                << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
+                                << "\t" << *powerStateSequenceItem.powerState;
 
-        if (currentPowerState != prevPowerState) {
-            // then we've hit a powerState transition
-            powerStateSequenceItem.powerState = prevPowerState;
-            powerStateSequenceItem.duration   = duration*samplePeriod;
-            LOG(INFO) << "Power state sequence item: " << *prevPowerState << "\tduration=" << duration*samplePeriod;
-            powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
-            duration = 0;
-        }
-
-        prevPowerState = currentPowerState;
+                        if ( currentPowerState == powerStates.end() ) {
+                            // We've entered an unrecognised state
+                            state = NO_MANS_LAND;
+                        } else {
+                            // We've transitioned directly from one recognised state to another
+                            powerStateSequenceItem.powerState = currentPowerState;
+                            powerStateSequenceItem.startTime  = i*samplePeriod;
+                        }
+            }
+            break;
+        case NO_MANS_LAND:
+            if ( currentPowerState != powerStates.end() ) {
+                // We've entered a recognised state
+                state = WITHIN_STATE;
+                powerStateSequenceItem.powerState = currentPowerState;
+                powerStateSequenceItem.startTime  = i*samplePeriod;
+            }
+            break;
+        };
     }
 
     // Handle case where final state is left hanging after for loop
-    if ( duration != 0 ) {
-        powerStateSequenceItem.powerState = currentPowerState;
-        powerStateSequenceItem.duration   = duration*samplePeriod;
-        LOG(INFO) << "Power state sequence item: " << *currentPowerState << "\tduration=" << duration*samplePeriod;
+    if ( state == WITHIN_STATE ) {
+        powerStateSequenceItem.endTime = rawReading.size*samplePeriod;
         powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
+        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
+                << "\tendTime=" << powerStateSequenceItem.endTime
+                << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
+                << "\t" << *powerStateSequenceItem.powerState;
     }
 
     /* TODO: Detect repeats */
@@ -128,7 +159,6 @@ PowerStates_t::const_iterator Device::getPowerState( const Sample_t sample )
     }
 
     // If we get to here then 'sample' does not fall within any powerState boundary
-    // this should never happen because powerStates should cover the entire range
-    LOG(WARNING) << "Couldn't find sample within powerStates.  sample=" << sample;
+//    LOG(WARNING) << "Couldn't find sample within powerStates.  sample=" << sample;
     return powerStates.end();
 }

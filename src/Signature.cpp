@@ -129,7 +129,7 @@ void Signature::findPowerStates()
     dataFile.close();
     drawGraphWithStateBars( hist );
 
-    fillGapsInPowerStates( hist );
+//    fillGapsInPowerStates( hist );
 }
 
 /**
