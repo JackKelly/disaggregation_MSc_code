@@ -582,7 +582,6 @@ struct Array {
      */
     void loadData(std::fstream& fs)
     {
-        assert( data );
         setSize( Utils::countDataPoints( fs ) );
 
         int count = 0;
