@@ -34,7 +34,7 @@ public:
 
     const size_t getSamplePeriod();
 
-    void drawGraphWithStateBars( const HistogramArray_t& );
+    void drawGraphWithStateBars( const HistogramArray_t&, const size_t rollingAvLength );
 
 private:
 
@@ -42,12 +42,6 @@ private:
      *  Member functions    *
      ************************/
     void editRawReading();
-
-    void openFile( std::ifstream& fs, const char* filename );
-
-    void loadData( std::ifstream& fs, SigArray_t* data );
-
-    const size_t  countDataPoints( std::ifstream& fs ) const;
 
     const size_t findNumLeadingZeros( const SigArray_t& data );
 

@@ -7,9 +7,11 @@
 
 #include "Device.h"
 #include "Signature.h"
+#include "Common.h"
 #include <list>
 #include <glog/logging.h>
 #include <cassert>
+#include <cstring>
 
 using namespace std;
 
@@ -35,6 +37,8 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod,
     updatePowerStates( rollingAvLength );
 
     updatePowerStateSequence( rollingAvLength );
+
+    dumpPowerStateSequenceToFile( );
 }
 
 /**
@@ -77,16 +81,6 @@ void Device::updatePowerStateSequence( const size_t rollingAvLength )
     PowerStateSequenceItem powerStateSequenceItem;
     PowerStates_t::const_iterator currentPowerState;
 
-    // Find start of first powerState
-/*
-       size_t i=0;
-       do {
-        powerStateSequenceItem.powerState = getPowerState( rawReading[i] );
-        powerStateSequenceItem.startTime  = i*samplePeriod;
-        i++;
-        assert ( i != rawReading.size );
-    } while ( powerStateSequenceItem.powerState == powerStates.end() );
-  */
     enum { WITHIN_STATE, NO_MANS_LAND } state;
     state = NO_MANS_LAND;
 
@@ -132,13 +126,58 @@ void Device::updatePowerStateSequence( const size_t rollingAvLength )
     if ( state == WITHIN_STATE ) {
         powerStateSequenceItem.endTime = reading.size*samplePeriod;
         powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
-        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
-                << "\tendTime=" << powerStateSequenceItem.endTime
-                << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
-                << "\t" << *powerStateSequenceItem.powerState;
+//        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
+//                << "\tendTime=" << powerStateSequenceItem.endTime
+//                << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
+//                << "\t" << *powerStateSequenceItem.powerState;
     }
 
     /* TODO: Detect repeats */
+}
+
+/**
+ * Dump the contents of powerStateSequence to a data file ready for
+ * gnuplot to plot using the 'boxxyerrorbars' style (see p42 of the gnuplot 4.4 documentation PDF).
+ *
+ * @param filename
+ */
+void Device::dumpPowerStateSequenceToFile( )
+{
+    // open datafile
+    char * filename = (char*)DIAGRAMS_DIR.c_str() ;
+    strcat( filename, "powerStateSequence/powerStateSequence.dat" );
+
+    fstream dataFile;
+    dataFile.open( filename, fstream::out );
+    if ( ! dataFile.good() ) {
+        LOG(WARNING) << "Failed to open data file " << filename << " for output";
+        return;
+    }
+
+    // Output header information for data file
+    dataFile << "# automatically produced by dumpPowerStateSequenceToFile function\n"
+             << "# " << Utils::todaysDateAndTime() << endl
+             << "# x\ty\txlow\txhigh\tylow\tyhigh" << endl;
+
+    // loop through the 'poewStateSequence' list
+    for (list<PowerStateSequenceItem>::const_iterator powerState=powerStateSequence.begin();
+            powerState!=powerStateSequence.end();
+            powerState++ ) {
+
+        /* The columns required by gnoplot's Xyerrorbars style are:
+         * x  y  xlow  xhigh  ylow  yhigh
+        */
+
+        dataFile << (powerState->startTime + powerState->endTime)/2 << "\t"  // x
+                 << (powerState->powerState->min + powerState->powerState->max)/2 << "\t"  // y
+                 << powerState->startTime << "\t"         // xlow  (== start time)
+                 << powerState->endTime   << "\t"         // xhigh (== end time)
+                 << powerState->powerState->min << "\t"   // ylow  (== min value)
+                 << powerState->powerState->max <<  endl; // yhigh (== max value)
+
+    }
+
+    dataFile.close();
 }
 
 /**
@@ -167,3 +206,38 @@ PowerStates_t::const_iterator Device::getPowerState( const Sample_t sample )
 //    LOG(WARNING) << "Couldn't find sample within powerStates.  sample=" << sample;
     return powerStates.end();
 }
+
+list<size_t> Device::findAlignment( const char * aggregateDataFilename )
+{
+    LOG(INFO) << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename;
+
+    fstream aggregateDataFile;
+    Utils::openFile( aggregateDataFile, "data/current_cost/dataCroppedToKettleToasterWasherTumble.csv", fstream::in );
+
+    Array<size_t> aggregateData;
+    loadCurrentCostData( &aggregateData, aggregateDataFile );
+}
+
+/**
+ * TODO: This currently doesn't handle the fact that the CurrentCost drops a reading every now and then
+ *
+ * @param aggregateData
+ * @param aggregateDataFile
+ */
+void Device::loadCurrentCostData( Array<size_t> * aggregateData, fstream& aggregateDataFile )
+{
+    assert( aggregateData );
+    aggregateData->setSize( Utils::countDataPoints( aggregateDataFile ) );
+
+    int count = 0;
+    char ch;
+    while ( ! aggregateDataFile.eof() ) {
+        ch = aggregateDataFile.peek();
+        if ( isdigit(ch) ) {
+            aggregateDataFile >> (*aggregateData)[ count++ ];  // attempt to read a num from the file
+        }
+        aggregateDataFile.ignore( 255, '\n' );  // skip to next line
+    }
+    LOG(INFO) << "Entered " << count << " data entries into data array.";
+}
+

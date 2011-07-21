@@ -8,9 +8,20 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#include <string>
+#include <fstream>
+
 namespace Utils {
 
 int  roundToNearestInt( const double input );
+
+const char * todaysDateAndTime();
+
+const std::string size_t_to_s( size_t num );
+
+void openFile(std::fstream& fs, const char* filename, const std::fstream::openmode openmode);
+
+const size_t countDataPoints( std::fstream& fs );
 
 } /* namespace Utils */
 

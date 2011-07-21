@@ -1,8 +1,10 @@
 reset
 
 # LaTeX output
-set terminal epslatex solid colour size 15cm,12cm font "" 8
-set output "histAndStatesAndRAgradient.tex"
+# set terminal epslatex solid colour size 15cm,12cm font "" 8
+# set output "histAndStatesAndRAgradient.tex"
+
+
 
 unset y2label
 unset y2tics

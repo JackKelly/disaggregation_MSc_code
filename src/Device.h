@@ -21,6 +21,10 @@ public:
 
     void getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack);
 
+    void dumpPowerStateSequenceToFile();
+
+    std::list<size_t> findAlignment( const char * aggregateDataFilename );
+
 private:
     /************************
      *  Member functions    *
@@ -31,6 +35,7 @@ private:
 
     PowerStates_t::const_iterator getPowerState( const Sample_t sample );
 
+    void loadCurrentCostData( Array<size_t> * aggregateData, std::fstream& aggregateDataFile );
 
     /************************
      *  Member variables    *

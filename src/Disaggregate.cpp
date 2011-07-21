@@ -23,14 +23,14 @@ int main(int argc, char * argv[])
     Signature sig( "washer.csv", 1 );
     HistogramArray_t ha;
     sig.getRawReading().histogram( &ha );
-    ha.dumpToFile( "histogram.csv" );
+    ha.dumpToFile( "data/processed/histogram.csv" );
 
     SigArray_t a;
     sig.downSample( &a, 100 );
 
     RollingAv_t raHist;
     ha.rollingAv(&raHist,39);
-    raHist.dumpToFile( "raHistogram39.csv" );
+    raHist.dumpToFile( "data/processed/raHistogram39.csv" );
 
     int pop[10] = {2,4,4,4,5,5,7,9,3,4};
     Array<int> stdevTest(10, pop);

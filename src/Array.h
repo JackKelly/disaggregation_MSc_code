@@ -545,7 +545,7 @@ struct Array {
 
         // For debugging purposes, dump rolling average data to file
         std::fstream ra_file;
-        ra_file.open( "RA_hist.dat", std::fstream::out);
+        ra_file.open( "data/processed/RA_hist.dat", std::fstream::out);
         for (size_t i = 0; i<(size-RA_LENGTH); i++) {
             ra_file << RA[i] << std::endl;
         }
@@ -560,7 +560,7 @@ struct Array {
                    const std::string& args = "")
     {
         // Dump data to a temporary file
-        dumpToFile( "arrayData.dat" );
+        dumpToFile( "data/processed/arrayData.dat" );
 
         // Plot
         GNUplot gnu_plot;
@@ -568,11 +568,33 @@ struct Array {
         gnu_plot( "set terminal svg size 1500 700" );
         gnu_plot( "set samples 1001" ); // high quality
         gnu_plot( "set nokey" );
-        gnu_plot( "set output \"" + name + ".svg\"" );
+        gnu_plot( "set output \"data/diagrams/" + name + ".svg\"" );
         gnu_plot( "set xlabel \"" + xlabel + "\"" );
         gnu_plot( "set ylabel \"" + ylabel + "\"" );
-        gnu_plot( "plot " + args + " \"arrayData.dat\" with l lw 1" );
+        gnu_plot( "plot " + args + " \"data/processed/arrayData.dat\" with l lw 1" );
 
+    }
+
+    /**
+     *
+     * @param fs
+     * @param data = a pointer to a valid but empty SigArray_t
+     */
+    void loadData(std::fstream& fs)
+    {
+        assert( data );
+        setSize( Utils::countDataPoints( fs ) );
+
+        int count = 0;
+        char ch;
+        while ( ! fs.eof() ) {
+            ch = fs.peek();
+            if ( isdigit(ch) ) {
+                fs >> data[ count++ ];  // attempt to read a float from the file
+            }
+            fs.ignore( 255, '\n' );  // skip to next line
+        }
+        LOG(INFO) << "Entered " << count << " ints into data array.";
     }
 
 

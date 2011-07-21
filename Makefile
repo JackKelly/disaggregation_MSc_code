@@ -49,6 +49,9 @@ ArrayTest: $(TEST)ArrayTest.cpp $(SRC)Array.h $(SRC)Utils.o
 GNUplotTest: $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o
 	g++ $(TESTCXXFLAGS) -o $(TEST)GNUplotTest $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o && $(TEST)GNUplotTest
 
+UtilsTest: $(TEST)UtilsTest.cpp $(SRC)Utils.o
+	g++ $(TESTCXXFLAGS) -o $(TEST)UtilsTest $(TEST)UtilsTest.cpp $(SRC)Utils.o && $(TEST)UtilsTest
+
 # AUTOMATIC DEPENDENCY DETECTION
 # http://www.wlug.org.nz/MakefileHowto
 # also take a look at http://lear.inrialpes.fr/people/klaeser/software_makefile_link_dependencies

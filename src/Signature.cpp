@@ -26,11 +26,11 @@ using namespace std;
 Signature::Signature(const char* filename, const size_t _samplePeriod, const size_t cropFront, const size_t cropBack )
 : samplePeriod(_samplePeriod)
 {
-    ifstream dataFile;
-    openFile( dataFile, filename );
+    fstream dataFile;
+    Utils::openFile( dataFile, filename, fstream::in );
 
     SigArray_t data;
-    loadData( dataFile, &data );
+    data.loadData( dataFile );
     dataFile.close();
 
     if ( cropFront == 0 ) {
@@ -52,10 +52,10 @@ const PowerStates_t& Signature::getPowerStates( const size_t rollingAvLength )
     return powerStates;
 }
 
-void Signature::drawGraphWithStateBars( const HistogramArray_t& hist )
+void Signature::drawGraphWithStateBars( const HistogramArray_t& hist, const size_t raLength )
 {
     // dump data to temp file
-    hist.dumpToFile( "hist.dat" );
+    hist.dumpToFile( "data/processed/hist.dat" );
 
     const std::string name("histWithStateBars");
 
@@ -64,22 +64,24 @@ void Signature::drawGraphWithStateBars( const HistogramArray_t& hist )
     gnu_plot( "set title \"" + name + "\"" );
     gnu_plot( "set terminal svg size 1200 800" );
     gnu_plot( "set samples 1001" ); // high quality
-    gnu_plot( "set output \"" + name + ".svg\"" );
+    gnu_plot( "set output \"data/diagrams/" + name + ".svg\"" );
     gnu_plot( "set xlabel \"power (Watts)\"" );
     gnu_plot( "set ylabel \"frequency\"" );
     gnu_plot( "plot [0:2500]  "
-              "\"hist.dat\" with l lw 1 title \"raw histogram\", "
-              "\"RA_hist.dat\" with l lw 1 title \"31-step rolling average of histogram gradient\", "
-              "\"x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
+              "\"data/processed/hist.dat\" with l lw 1 title \"raw histogram\", "
+              "\"data/processed/RA_hist.dat\" with l lw 1 title \""
+            + Utils::size_t_to_s(raLength) + "-step rolling average of histogram gradient\", "
+              "\"data/processed/x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
 
     // output for LaTeX
     gnu_plot( "set format \"$%g$\"" );
     gnu_plot( "set terminal epslatex colour solid size 15cm, 10cm" );
-    gnu_plot( "set output \"" + name + ".tex\"" );
+    gnu_plot( "set output \"data/diagrams/" + name + ".tex\"" );
     gnu_plot( "plot [0:2400] "
-              "\"hist.dat\" with l lw 1 title \"raw histogram\", "
-              "\"RA_hist.dat\" with l lw 1 title \"31-step rolling average of histogram gradient\", "
-              "\"x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
+              "\"data/processed/hist.dat\" with l lw 1 title \"raw histogram\", "
+              "\"data/processed/RA_hist.dat\" with l lw 1 title \""
+              + Utils::size_t_to_s(raLength) + "-step rolling average of histogram gradient\", ""-step rolling average of histogram gradient\", "
+              "\"data/processed/x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
 
 }
 
@@ -103,7 +105,7 @@ void Signature::findPowerStates( const size_t rollingAvLength )
         rawReading.rollingAv( &rollingAv, rollingAvLength );
         rollingAv.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
         rollingAv.histogram( &hist );
-        description = "Hist_from_rollingAv";
+        description = "Hist_from_" + Utils::size_t_to_s(rollingAvLength) + "-step_rollingAv";
     } else {
         rawReading.histogram( &hist );
         description = "Hist_from_raw";
@@ -125,7 +127,7 @@ void Signature::findPowerStates( const size_t rollingAvLength )
     // Go through each pair of boundaries, working out stats for each
     size_t front, back;
     fstream dataFile;
-    dataFile.open( "x_err_bars.dat", fstream::out );
+    Utils::openFile( dataFile, "data/processed/x_err_bars.dat", fstream::out );
     for (std::list<size_t>::const_iterator it=boundaries.begin(); it!=boundaries.end(); it++) {
 
         front = *it;
@@ -138,7 +140,7 @@ void Signature::findPowerStates( const size_t rollingAvLength )
         powerStates.back().xErrorBarOutputLine( dataFile );
     }
     dataFile.close();
-    drawGraphWithStateBars( hist );
+    drawGraphWithStateBars( hist, rollingAvLength );
 
 //    fillGapsInPowerStates( hist );
 }
@@ -184,70 +186,10 @@ void Signature::fillGapsInPowerStates( const HistogramArray_t& hist )
 
 }
 
-void Signature::openFile(ifstream& fs, const char* filename)
-{
-    fs.open( filename, ifstream::in );
-    if ( ! fs.good() ) {
-        LOG(ERROR) << "Failed to open " << filename << " for reading.";
-        exit(EXIT_ERROR);
-    }
-    LOG(INFO) << "Successfully opened " << filename;
-}
-
-/**
- *
- * @param fs
- * @param data = a pointer to a valid but empty SigArray_t
- */
-void Signature::loadData(ifstream& fs, SigArray_t* data)
-{
-    assert( data );
-    data->setSize( countDataPoints( fs ) );
-
-    int count = 0;
-    char ch;
-    while ( ! fs.eof() ) {
-        ch = fs.peek();
-        if ( isdigit(ch) ) {
-            fs >> (*data)[ count++ ];  // attempt to read a float from the file
-        }
-        fs.ignore( 255, '\n' );  // skip to next line
-    }
-    LOG(INFO) << "Entered " << count << " ints into data array.";
-}
-
 const SigArray_t& Signature::getRawReading() const
 {
     return rawReading;
 }
-
-/**
- * Find the number of numeric data points in file
- *
- * @param fs
- * @return number of data points
- */
-const size_t Signature::countDataPoints( ifstream& fs ) const
-{
-    int count = 0;
-    char line[255];
-
-    while ( ! fs.eof() ) {
-        fs.getline( line, 255 );
-        if ( isdigit(line[0]) ) {
-            count++;
-        }
-    }
-
-    LOG(INFO) << "Found " << count << " data points in file.";
-
-    // Return the read pointer to the beginning of the file
-    fs.clear();
-    fs.seekg( 0, ios_base::beg ); // seek to beginning of file
-
-    return count;
-}
-
 
 const size_t Signature::findNumLeadingZeros( const SigArray_t& data )
 {
