@@ -35,11 +35,12 @@ private:
 
     PowerStates_t::const_iterator getPowerState( const Sample_t sample );
 
-    void loadCurrentCostData( Array<size_t> * aggregateData, std::fstream& aggregateDataFile );
+    struct currentCostReading; // forward declaration
+    void loadCurrentCostData(std::fstream& fs, Array<currentCostReading> * aggData);
 
-    const double LMS(
+    const double LMDiff(
             const size_t agOffset,
-            const Array<size_t>& aggData, // aggregate data array
+            const Array<currentCostReading>& aggData, // aggregate data array
             const SigArray_t& sigArray,
             const size_t aggDataSamplePeriod);
 
@@ -57,6 +58,12 @@ private:
     };
 
     std::list<PowerStateSequenceItem> powerStateSequence;
+
+    struct currentCostReading {
+        size_t timestamp;
+        size_t reading;
+    };
+
 
 };
 

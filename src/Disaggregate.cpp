@@ -39,18 +39,21 @@ int main(int argc, char * argv[])
     std::cout << stat << std::endl;
 */
 
-//    Device toaster("Toaster");
-//    toaster.getReadingFromCSV( "data/watts_up/toaster.csv", 1 ,0 ,0 );
-//    toaster.findAlignment( "data/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
+/*    Device toaster("Toaster");
+    toaster.getReadingFromCSV( "data/watts_up/toaster.csv", 1 ,0 ,0 );
+    toaster.findAlignment( "data/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
+*/
 
-    Device washer("Washer");
-    washer.getReadingFromCSV( "data/watts_up/washer2.csv", 1, 2340, 1000 );
+ /*   Device washer("Washer");
+    washer.getReadingFromCSV( "data/watts_up/washer.csv", 1, 0, 0 );
     washer.findAlignment( "data/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
+*/
+
 //    washer.findAlignment( "data/watts_up/washer2.csv", 1);
 
-//    Device tumble("tumble");
-//    tumble.getReadingFromCSV( "data/watts_up/tumble.csv", 1, 0, 0 );
-//    tumble.findAlignment( "data/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
+    Device tumble("tumble");
+    tumble.getReadingFromCSV( "data/watts_up/tumble.csv", 1, 0, 0 );
+    tumble.findAlignment( "data/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 
     /*
     Array<int> raTest(10, pop);

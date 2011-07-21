@@ -210,15 +210,16 @@ PowerStates_t::const_iterator Device::getPowerState( const Sample_t sample )
 
 list<size_t> Device::findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod )
 {
-    const double THRESHOLD = 204000;
+    const double THRESHOLD = 350;
 
     LOG(INFO) << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename;
 
     // Load aggregate data file
     fstream aggregateDataFile;
     Utils::openFile( aggregateDataFile, aggregateDataFilename, fstream::in );
-    Array<size_t> aggregateData;
-    aggregateData.loadData( aggregateDataFile );
+
+    Array<currentCostReading> aggregateData;
+    loadCurrentCostData( aggregateDataFile, &aggregateData );
     aggregateDataFile.close();
 
     list<size_t> locations;
@@ -234,18 +235,21 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
     for (i = 0;
             i < aggregateData.size - (sigArray.size / (aggDataSamplePeriod / signatures.back()->getSamplePeriod() ));
             i++) {
-        lms = LMS(i, aggregateData, sigArray, aggDataSamplePeriod);
+        lms = LMDiff(i, aggregateData, sigArray, aggDataSamplePeriod);
         if ( lms < THRESHOLD ) {
             locations.push_back( i );
+            LOG(INFO) << name << " found at" << aggregateData[i].timestamp - aggregateData[0].timestamp << " lmS=" << lms;
         }
 
         if ( lms < min ) {
             min = lms;
-            foundAt = i;
+            foundAt = aggregateData[i].timestamp - aggregateData[0].timestamp;
         }
     }
 
-    LOG(INFO) << name << " found at " << foundAt*aggDataSamplePeriod << ", LMS=" << min;
+    LOG(INFO) << "aggregateData[0].timestamp=" << aggregateData[0].timestamp
+            << ", aggregateData[0].reading=" << aggregateData[0].reading;
+    LOG(INFO) << name << " found at " << foundAt << ", LMS=" << min;
 
     LOG(INFO) << "length=" << i*aggDataSamplePeriod;
 
@@ -255,7 +259,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
 }
 
 /**
- * Least Mean Squares.
+ * Least Mean Difference (like LMS but take the absolute rather than the square).
  *
  * Know limitations:
  *   assumes SigArray has a sample period of 1
@@ -267,25 +271,60 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
  * @param aggDataSamplePeriod
  * @return
  */
-const double Device::LMS(
-        const size_t agOffset,
-        const Array<size_t>& aggData, // aggregate data array
+const double Device::LMDiff(
+        const size_t aggOffset,
+        const Array<currentCostReading>& aggData, // aggregate data array
         const SigArray_t& sigArray,
         const size_t aggDataSamplePeriod)
 {
     double accumulator = 0;
 
-    size_t i;
-    for (i=0; i<((sigArray.size/aggDataSamplePeriod)-1); i++) {
-        for (size_t fineTune=0; fineTune<aggDataSamplePeriod; fineTune++) {
-            accumulator += abs( sigArray[(i*aggDataSamplePeriod)+fineTune] - aggData[i+agOffset] );
-        }
+//    for (i=0; i<((sigArray.size/aggDataSamplePeriod)-1); i++) {
+//        for (size_t fineTune=0; fineTune<aggDataSamplePeriod; fineTune++) {
+//            accumulator += abs( sigArray[(i*aggDataSamplePeriod)+fineTune] - aggData[i+agOffset] );
+//        }
 //        accumulator += pow( ( sigArray[(i*aggDataSamplePeriod)] - aggData[i+agOffset] ) ,2);
+//    }
+
+    size_t aggIndex=aggOffset, sigIndex=0, count=0;
+    while (sigIndex < (sigArray.size-aggDataSamplePeriod) && aggIndex < (aggData.size-1)) {
+        for (size_t fineTune = 0; fineTune<aggDataSamplePeriod; fineTune++) {
+            accumulator += abs( sigArray[sigIndex+fineTune] - aggData[aggIndex].reading );
+            count++;
+        }
+        aggIndex++;
+        // Inc sigIndex by however many seconds are between this and the previous aggData recording
+        sigIndex += (aggData[aggIndex].timestamp - aggData[aggIndex-1].timestamp);
+
     }
 
 //    LOG(INFO) << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.size=" << sigArray.size;
 
-//    LOG(INFO) << "Offset=" << agOffset << ", LMS=" << accumulator / (sigArray.size/aggDataSamplePeriod);
+//    LOG(INFO) << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.size/aggDataSamplePeriod);
 
-    return accumulator / (sigArray.size); // average
+    return accumulator / count; // average
 }
+
+/**
+ *
+ * @param fs
+ * @param data = a pointer to a valid but empty SigArray_t
+ */
+void Device::loadCurrentCostData(std::fstream& fs, Array<currentCostReading> * aggData)
+{
+    aggData->setSize( Utils::countDataPoints( fs ) );
+
+    int count = 0;
+    char ch;
+    while ( ! fs.eof() ) {
+        ch = fs.peek();
+        if ( isdigit(ch) ) {
+            fs >> (*aggData)[ count ].timestamp;
+            fs >> (*aggData)[ count ].reading;
+            count++;
+        }
+        fs.ignore( 255, '\n' );  // skip to next line
+    }
+    LOG(INFO) << "Entered " << count << " ints into data array.";
+}
+
