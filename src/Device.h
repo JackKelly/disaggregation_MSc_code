@@ -23,7 +23,7 @@ public:
 
     void dumpPowerStateSequenceToFile();
 
-    std::list<size_t> findAlignment( const char * aggregateDataFilename );
+    std::list<size_t> findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod );
 
 private:
     /************************
@@ -36,6 +36,12 @@ private:
     PowerStates_t::const_iterator getPowerState( const Sample_t sample );
 
     void loadCurrentCostData( Array<size_t> * aggregateData, std::fstream& aggregateDataFile );
+
+    const double LMS(
+            const size_t agOffset,
+            const Array<size_t>& aggData, // aggregate data array
+            const SigArray_t& sigArray,
+            const size_t aggDataSamplePeriod);
 
     /************************
      *  Member variables    *

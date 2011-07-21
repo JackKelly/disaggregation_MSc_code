@@ -12,6 +12,7 @@
 #include <glog/logging.h>
 #include <cassert>
 #include <cstring>
+#include <cstdlib> // abs
 
 using namespace std;
 
@@ -207,37 +208,84 @@ PowerStates_t::const_iterator Device::getPowerState( const Sample_t sample )
     return powerStates.end();
 }
 
-list<size_t> Device::findAlignment( const char * aggregateDataFilename )
+list<size_t> Device::findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod )
 {
+    const double THRESHOLD = 204000;
+
     LOG(INFO) << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename;
 
+    // Load aggregate data file
     fstream aggregateDataFile;
-    Utils::openFile( aggregateDataFile, "data/current_cost/dataCroppedToKettleToasterWasherTumble.csv", fstream::in );
-
+    Utils::openFile( aggregateDataFile, aggregateDataFilename, fstream::in );
     Array<size_t> aggregateData;
-    loadCurrentCostData( &aggregateData, aggregateDataFile );
+    aggregateData.loadData( aggregateDataFile );
+    aggregateDataFile.close();
+
+    list<size_t> locations;
+
+    // Get a handy reference to the last 'rawReading' stored in 'signatures'
+    const SigArray_t& sigArray = signatures.back()->getRawReading();
+
+    double min = 100000000000000000;
+
+    double lms;
+    size_t foundAt;
+    size_t i;
+    for (i = 0;
+            i < aggregateData.size - (sigArray.size / (aggDataSamplePeriod / signatures.back()->getSamplePeriod() ));
+            i++) {
+        lms = LMS(i, aggregateData, sigArray, aggDataSamplePeriod);
+        if ( lms < THRESHOLD ) {
+            locations.push_back( i );
+        }
+
+        if ( lms < min ) {
+            min = lms;
+            foundAt = i;
+        }
+    }
+
+    LOG(INFO) << name << " found at " << foundAt*aggDataSamplePeriod << ", LMS=" << min;
+
+    LOG(INFO) << "length=" << i*aggDataSamplePeriod;
+
+    LOG(INFO) << "min=" << min;
+
+    return locations;
 }
 
 /**
- * TODO: This currently doesn't handle the fact that the CurrentCost drops a reading every now and then
+ * Least Mean Squares.
  *
+ * Know limitations:
+ *   assumes SigArray has a sample period of 1
+ *   doesn't try different alignments of sigArray against aggData
+ *
+ * @param i
  * @param aggregateData
- * @param aggregateDataFile
+ * @param sigArray
+ * @param aggDataSamplePeriod
+ * @return
  */
-void Device::loadCurrentCostData( Array<size_t> * aggregateData, fstream& aggregateDataFile )
+const double Device::LMS(
+        const size_t agOffset,
+        const Array<size_t>& aggData, // aggregate data array
+        const SigArray_t& sigArray,
+        const size_t aggDataSamplePeriod)
 {
-    assert( aggregateData );
-    aggregateData->setSize( Utils::countDataPoints( aggregateDataFile ) );
+    double accumulator = 0;
 
-    int count = 0;
-    char ch;
-    while ( ! aggregateDataFile.eof() ) {
-        ch = aggregateDataFile.peek();
-        if ( isdigit(ch) ) {
-            aggregateDataFile >> (*aggregateData)[ count++ ];  // attempt to read a num from the file
+    size_t i;
+    for (i=0; i<((sigArray.size/aggDataSamplePeriod)-1); i++) {
+        for (size_t fineTune=0; fineTune<aggDataSamplePeriod; fineTune++) {
+            accumulator += abs( sigArray[(i*aggDataSamplePeriod)+fineTune] - aggData[i+agOffset] );
         }
-        aggregateDataFile.ignore( 255, '\n' );  // skip to next line
+//        accumulator += pow( ( sigArray[(i*aggDataSamplePeriod)] - aggData[i+agOffset] ) ,2);
     }
-    LOG(INFO) << "Entered " << count << " data entries into data array.";
-}
 
+//    LOG(INFO) << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.size=" << sigArray.size;
+
+//    LOG(INFO) << "Offset=" << agOffset << ", LMS=" << accumulator / (sigArray.size/aggDataSamplePeriod);
+
+    return accumulator / (sigArray.size); // average
+}
