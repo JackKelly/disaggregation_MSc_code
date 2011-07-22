@@ -210,7 +210,7 @@ PowerStates_t::const_iterator Device::getPowerState( const Sample_t sample )
 
 list<size_t> Device::findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod )
 {
-    const double THRESHOLD = 350;
+    const double THRESHOLD = 250;
 
     LOG(INFO) << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename;
 
@@ -279,26 +279,54 @@ const double Device::LMDiff(
 {
     double accumulator = 0;
 
+// THIS COMMENTED-OUT CODE ASSUMES THERE ARE NO MISSING SAMPLES.  I'M KEEPING IT HERE FOR NOW
+// BECAUSE IT'S USEFUL FOR TESTING BY FINDING A CROPPED DEVICE SIGNATURE WITHIN ITSELF
+//
 //    for (i=0; i<((sigArray.size/aggDataSamplePeriod)-1); i++) {
 //        for (size_t fineTune=0; fineTune<aggDataSamplePeriod; fineTune++) {
 //            accumulator += abs( sigArray[(i*aggDataSamplePeriod)+fineTune] - aggData[i+agOffset] );
 //        }
 //        accumulator += pow( ( sigArray[(i*aggDataSamplePeriod)] - aggData[i+agOffset] ) ,2);
 //    }
+//    LOG(INFO) << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.size=" << sigArray.size;
 
     size_t aggIndex=aggOffset, sigIndex=0, count=0;
-    while (sigIndex < (sigArray.size-aggDataSamplePeriod) && aggIndex < (aggData.size-1)) {
-        for (size_t fineTune = 0; fineTune<aggDataSamplePeriod; fineTune++) {
-            accumulator += abs( sigArray[sigIndex+fineTune] - aggData[aggIndex].reading );
-            count++;
-        }
+
+    // Take the first few readings to establish the level difference
+
+
+// COMPARE START OF AGG DATA WITH START OF SIG DATA
+    while (sigIndex < (sigArray.size-aggDataSamplePeriod) && aggIndex < (aggData.size-1) && count < 50) {
+        accumulator += aggData[aggIndex].reading - sigArray[sigIndex]; // don't take the absolute
+        count++;
         aggIndex++;
         // Inc sigIndex by however many seconds are between this and the previous aggData recording
         sigIndex += (aggData[aggIndex].timestamp - aggData[aggIndex-1].timestamp);
-
     }
 
-//    LOG(INFO) << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.size=" << sigArray.size;
+    /*
+    while (sigIndex < (aggIndex < (aggData.size-1)) && count < 50) {
+        accumulator += aggData[aggIndex].reading; // don't take the absolute
+        count++;
+        aggIndex++;
+    }*/
+
+    int levelDiff = accumulator/count; // -ve if sig is above aggregate
+//    LOG(INFO) << "levelDiff=" << levelDiff;
+
+    accumulator = 0;
+    aggIndex=aggOffset;
+    sigIndex=0;
+    count=0;
+    while (sigIndex < (sigArray.size-aggDataSamplePeriod) && aggIndex < (aggData.size-1)) {
+            for (size_t fineTune = 0; fineTune<aggDataSamplePeriod; fineTune++) {
+                accumulator += abs( (sigArray[sigIndex+fineTune]+levelDiff) - aggData[aggIndex].reading );
+                count++;
+            }
+            aggIndex++;
+            // Inc sigIndex by however many seconds are between this and the previous aggData recording
+            sigIndex += (aggData[aggIndex].timestamp - aggData[aggIndex-1].timestamp);
+    }
 
 //    LOG(INFO) << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.size/aggDataSamplePeriod);
 
