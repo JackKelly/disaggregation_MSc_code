@@ -14,6 +14,9 @@
 #include "Signature.h"
 #include "Statistic.h"
 
+/**
+ * @brief Class for representing "devices" (ie appliances like "dish washer", "lamp" etc)
+ */
 class Device {
 public:
     Device(const std::string _name);
@@ -41,7 +44,7 @@ private:
     const double LMDiff(
             const size_t agOffset,
             const Array<currentCostReading>& aggData, // aggregate data array
-            const SigArray_t& sigArray,
+            const Array<Sample_t>& sigArray,
             const size_t aggDataSamplePeriod);
 
     /************************

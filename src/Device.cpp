@@ -43,7 +43,7 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod,
 }
 
 /**
- * Extract the power states from last signature and add them to this device's powerStates.
+ * @brief Extract the power states from last signature and add them to this device's powerStates.
  *
  * This must be called after a new signature has been added to 'signatures'
  */
@@ -71,7 +71,7 @@ void Device::updatePowerStateSequence( const size_t rollingAvLength )
     // sanity check
     assert( ! powerStates.empty() );
 
-    RollingAv_t reading;
+    Array<Sample_t> reading;
     signatures.back()->getRawReading().rollingAv( &reading, rollingAvLength);
 
 //    reading = signatures.back()->getRawReading();
@@ -225,7 +225,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
     list<size_t> locations;
 
     // Get a handy reference to the last 'rawReading' stored in 'signatures'
-    const SigArray_t& sigArray = signatures.back()->getRawReading();
+    const Array<Sample_t>& sigArray = signatures.back()->getRawReading();
 
     double min = 100000000000000000;
 
@@ -265,17 +265,14 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
  *   assumes SigArray has a sample period of 1
  *   doesn't try different alignments of sigArray against aggData
  *
- * @param i
- * @param aggregateData
- * @param sigArray
- * @param aggDataSamplePeriod
  * @return
  */
 const double Device::LMDiff(
         const size_t aggOffset,
-        const Array<currentCostReading>& aggData, // aggregate data array
-        const SigArray_t& sigArray,
-        const size_t aggDataSamplePeriod)
+        const Array<currentCostReading>& aggData, /**< aggregate data array */
+        const Array<Sample_t>& sigArray,
+        const size_t aggDataSamplePeriod /**< sample period of the aggregate data */
+        )
 {
     double accumulator = 0;
 
@@ -336,7 +333,7 @@ const double Device::LMDiff(
 /**
  *
  * @param fs
- * @param data = a pointer to a valid but empty SigArray_t
+ * @param data = a pointer to a valid but empty Array<Sample_t>
  */
 void Device::loadCurrentCostData(std::fstream& fs, Array<currentCostReading> * aggData)
 {

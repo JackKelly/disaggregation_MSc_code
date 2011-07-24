@@ -9,14 +9,10 @@
 #define SIGNATURE_H_
 
 #include "Array.h"
+#include "Common.h"
 #include "Statistic.h"
 #include <list>
 #include <fstream>
-
-typedef double Sample_t;
-typedef Array<Sample_t> SigArray_t;
-typedef Statistic<Sample_t> PowerState_t;
-typedef std::list<PowerState_t> PowerStates_t;
 
 class Signature {
 public:
@@ -26,15 +22,15 @@ public:
 
     virtual ~Signature();
 
-    void downSample( SigArray_t * output, const size_t newPeriod );
+    void downSample( Array<Sample_t> * output, const size_t newPeriod );
 
-    const SigArray_t& getRawReading() const;
+    const Array<Sample_t>& getRawReading() const;
 
     const PowerStates_t& getPowerStates( const size_t rollingAvLength);
 
     const size_t getSamplePeriod();
 
-    void drawGraphWithStateBars( const HistogramArray_t&, const size_t rollingAvLength );
+    void drawGraphWithStateBars( const Array<Histogram_t>&, const size_t rollingAvLength );
 
 private:
 
@@ -43,19 +39,19 @@ private:
      ************************/
     void editRawReading();
 
-    const size_t findNumLeadingZeros( const SigArray_t& data );
+    const size_t findNumLeadingZeros( const Array<Sample_t>& data );
 
-    const size_t findNumTrailingZeros( const SigArray_t& data );
+    const size_t findNumTrailingZeros( const Array<Sample_t>& data );
 
     void findPowerStates( const size_t rollingAvLength );
 
-    void fillGapsInPowerStates( const HistogramArray_t& hist );
+    void fillGapsInPowerStates( const Array<Histogram_t>& hist );
 
     /************************
      *  Member variables    *
      ************************/
 
-    SigArray_t rawReading;
+    Array<Sample_t> rawReading;
     size_t samplePeriod;
     PowerStates_t powerStates;
 

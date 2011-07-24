@@ -19,11 +19,6 @@
 #include <cassert>
 #include <list>
 
-template <class T> struct  Array;  // forward declaration so the HistogramArray_t typedef works
-typedef uint32_t           Histogram_t;
-typedef Array<Histogram_t> HistogramArray_t;
-typedef Array<double>      RollingAv_t;
-
 template <class T>
 class RollingAverage {
 public:
@@ -207,7 +202,7 @@ struct Array {
      *
      * @param hist = an empty Array<uint32_t> object
      */
-    void histogram(HistogramArray_t * hist) const
+    void histogram(Array<Histogram_t> * hist) const
     {
         if (hist->size == 0) {
             hist->setSize( MAX_WATTAGE ); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
@@ -235,10 +230,10 @@ struct Array {
     /**
      * Returns a rolling average of same length as the original array.
      *
-     * @param ra = Initally an empty RollingAv_t.  Returned with Rolling Averages.
+     * @param ra = Initally an empty Array<Sample_t>.  Returned with Rolling Averages.
      * @param length = number of items to use in the average.  Must be odd.
      */
-    void rollingAv(RollingAv_t * ra, const size_t length=5) const
+    void rollingAv(Array<Sample_t> * ra, const size_t length=5) const
     {
         assert( length%2 );  // length must be odd
         assert( length>1 );
@@ -252,7 +247,7 @@ struct Array {
 
         size_t middleOfLength = ((length-1)/2)+1;
 
-        // First do the first (length-1)/2 elements of the RollingAv_t
+        // First do the first (length-1)/2 elements of the Array<Sample_t>
         // and the last (length-1)/2 elements
         (*ra)[0] = data[0];
         for (i=1; i<(middleOfLength-1); i++) {
@@ -578,7 +573,7 @@ struct Array {
     /**
      *
      * @param fs
-     * @param data = a pointer to a valid but empty SigArray_t
+     * @param data = a pointer to a valid but empty Array<Sample_t>
      */
     void loadData(std::fstream& fs)
     {

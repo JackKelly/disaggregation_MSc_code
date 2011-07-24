@@ -1,9 +1,0 @@
-# automatically produced by dumpPowerStateSequenceToFile function
-# Fri Jul 22 12:17:05 2011
-
-# x	y	xlow	xhigh	ylow	yhigh
-35	6	0	70	0	12
-330	2288.5	217	444	2270	2307
-737	85.5	475	999	72	99
-1034	2288.5	1030	1039	2270	2307
-1205	85.5	1069	1342	72	99

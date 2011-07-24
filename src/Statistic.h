@@ -14,6 +14,7 @@
 #include <cmath>
 #include <iostream>
 #include "Array.h"
+#include "Common.h"
 
 template <class T>
 struct Statistic {
@@ -38,7 +39,7 @@ struct Statistic {
      * @param beginning (gets included in stats)
      * @param end (excluded from stats)
      */
-    Statistic(const HistogramArray_t& data, const size_t beginning=0, size_t end=0)
+    Statistic(const Array<Histogram_t>& data, const size_t beginning=0, size_t end=0)
     : mean(0), stdev(0), numDataPoints(0)
     {
         register T accumulator = 0;
@@ -132,5 +133,9 @@ struct Statistic {
     }
 
 };
+
+typedef Statistic<Sample_t>     PowerState_t;
+typedef std::list<PowerState_t> PowerStates_t;
+
 
 #endif /* STATISTIC_H_ */

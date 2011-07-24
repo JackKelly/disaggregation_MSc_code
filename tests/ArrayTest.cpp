@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE( rollingAvTest )
     const size_t SIZE = 10;
     int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
     Array<int> raTest(SIZE, pop);
-    RollingAv_t raArray;
+    Array<Sample_t> raArray;
     raTest.rollingAv(&raArray,7);
 
     double answers[SIZE] = {
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE( histogram )
     const size_t SIZE = 10;
     int pop[SIZE] = {2,4,4,4,5,5,7,9,3,4};
     Array<int> arrayTestSrc(SIZE, pop);
-    HistogramArray_t hist(10);
+    Array<Histogram_t> hist(10);
     arrayTestSrc.histogram( &hist );
                        // 0 1 2 3 4 5 6 7 8 9
     uint32_t answers[] = {0,0,1,1,4,2,0,1,0,1};

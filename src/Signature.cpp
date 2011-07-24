@@ -29,7 +29,7 @@ Signature::Signature(const char* filename, const size_t _samplePeriod, const siz
     fstream dataFile;
     Utils::openFile( dataFile, filename, fstream::in );
 
-    SigArray_t data;
+    Array<Sample_t> data;
     data.loadData( dataFile );
     dataFile.close();
 
@@ -52,7 +52,7 @@ const PowerStates_t& Signature::getPowerStates( const size_t rollingAvLength )
     return powerStates;
 }
 
-void Signature::drawGraphWithStateBars( const HistogramArray_t& hist, const size_t raLength )
+void Signature::drawGraphWithStateBars( const Array<Histogram_t>& hist, const size_t raLength )
 {
     // dump data to temp file
     hist.dumpToFile( "data/processed/hist.dat" );
@@ -97,11 +97,11 @@ void Signature::findPowerStates( const size_t rollingAvLength )
     rawReading.drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
 
     // Create a histogram
-    HistogramArray_t hist;
+    Array<Histogram_t> hist;
     string description;
 
     if (rollingAvLength > 1) {
-        RollingAv_t rollingAv;
+        Array<Sample_t> rollingAv;
         rawReading.rollingAv( &rollingAv, rollingAvLength );
         rollingAv.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
         rollingAv.histogram( &hist );
@@ -113,7 +113,7 @@ void Signature::findPowerStates( const size_t rollingAvLength )
 
     hist.drawGraph( description, "power (Watts)", "frequency", "[0:2500] [0:100]" );
 
-//    RollingAv_t RAhist;
+//    Array<Sample_t> RAhist;
 //    hist.rollingAv( &RAhist, 21 );
 //    RAhist.drawGraph( "RA10_of_Hist_from_raw", "power (Watts)", "frequency", "[0:2500] [0:100]" );
 
@@ -148,7 +148,7 @@ void Signature::findPowerStates( const size_t rollingAvLength )
 /**
  * Fill in gaps in the powerStates so that each powerState in the list is nose-to-tail
  */
-void Signature::fillGapsInPowerStates( const HistogramArray_t& hist )
+void Signature::fillGapsInPowerStates( const Array<Histogram_t>& hist )
 {
     assert( ! powerStates.empty() );
 
@@ -186,12 +186,12 @@ void Signature::fillGapsInPowerStates( const HistogramArray_t& hist )
 
 }
 
-const SigArray_t& Signature::getRawReading() const
+const Array<Sample_t>& Signature::getRawReading() const
 {
     return rawReading;
 }
 
-const size_t Signature::findNumLeadingZeros( const SigArray_t& data )
+const size_t Signature::findNumLeadingZeros( const Array<Sample_t>& data )
 {
     size_t count = 0;
     while ( data[count]==0 && count<data.size ) {
@@ -200,7 +200,7 @@ const size_t Signature::findNumLeadingZeros( const SigArray_t& data )
     return count;
 }
 
-const size_t Signature::findNumTrailingZeros( const SigArray_t& data )
+const size_t Signature::findNumTrailingZeros( const Array<Sample_t>& data )
 {
     size_t count = data.size-1;
     while ( data[count]==0 && count>0 ) {
@@ -215,7 +215,7 @@ const size_t Signature::findNumTrailingZeros( const SigArray_t& data )
  * @param output
  * @param newPeriod
  */
-void Signature::downSample( SigArray_t * output, const size_t newPeriod )
+void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
 {
     size_t inner, inputIndex, outputIndex, outerLimit;
     Sample_t accumulator;
