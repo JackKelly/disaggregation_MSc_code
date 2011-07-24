@@ -39,15 +39,15 @@ disaggregate: $(COMMONOBJS)
 	$(CXX) $< -c $(CXXFLAGS) $(INC)
 	
 # TESTING
-TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework
+TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework -DGOOGLE_STRIP_LOG=4
 
 testAll: ArrayTest GNUplotTest
 
 ArrayTest: $(TEST)ArrayTest.cpp $(SRC)Array.h $(SRC)Utils.o
 	g++ $(TESTCXXFLAGS) -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(SRC)Utils.o && $(TEST)ArrayTest 
 
-GNUplotTest: $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o
-	g++ $(TESTCXXFLAGS) -o $(TEST)GNUplotTest $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o && $(TEST)GNUplotTest
+GNUplotTest: $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o $(SRC)Utils.o
+	g++ $(TESTCXXFLAGS) -o $(TEST)GNUplotTest $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o $(SRC)Utils.cpp && $(TEST)GNUplotTest
 
 UtilsTest: $(TEST)UtilsTest.cpp $(SRC)Utils.o
 	g++ $(TESTCXXFLAGS) -o $(TEST)UtilsTest $(TEST)UtilsTest.cpp $(SRC)Utils.o && $(TEST)UtilsTest

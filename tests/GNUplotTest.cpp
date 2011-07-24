@@ -6,24 +6,17 @@
 #include <iostream>
 #include <list>
 
-BOOST_AUTO_TEST_CASE( GNUplotConstructorTest )
-{
-    GNUplot gnuplot;
-    BOOST_CHECK( gnuplot.good() );
-}
 
 BOOST_AUTO_TEST_CASE( GNUplotInstantiateTemplateTest )
 {
-    GNUplot gnuplot;
+    GNUplot::PlotVars plotVars;
+    plotVars.inFilename = "TEST_plot";
+    plotVars.outFilename = "TEST_specific_plot";
+    plotVars.title = "This is a test";
+    plotVars.xlabel = "time (Seconds)";
+    plotVars.ylabel = "power (Watts)";
+    plotVars.data.push_back( GNUplot::Data( "data\\/input\\/watts_up\\/washer.csv", "Washer 1" ) );
+    plotVars.data.push_back( GNUplot::Data( "data\\/input\\/watts_up\\/washer2.csv", "Washer 2" ) );
 
-    GNUplotVars gnuPlotVars;
-    gnuPlotVars.inFilename = "TEST_hist_with_power_states";
-    gnuPlotVars.outFilename = "TEST_hist_with_power_states";
-    gnuPlotVars.title = "This is a test";
-    gnuPlotVars.xlabel = "power (Watts)";
-    gnuPlotVars.ylabel = "frequency";
-    gnuPlotVars.gnuPlotData.push_back( GNUplotData( "path\\/to\\/data\\/file1", "data title1" ) );
-    gnuPlotVars.gnuPlotData.push_back( GNUplotData( "pathtodatafile2", "data title2" ) );
-
-    gnuplot.instantiateTemplate( gnuPlotVars );
+    GNUplot::plot( plotVars );
 }

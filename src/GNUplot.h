@@ -11,44 +11,38 @@
 #include <string>
 #include <list>
 
+namespace GNUplot {
+
 /**
  * Structure for storing details about data elements to be plotted.
  */
-struct GNUplotData {
+struct Data {
     std::string dataFile, /**< Data filename (including suffix but without path). Directory = DATA_OUTPUT_PATH config option. */
                 title;    /**< Title of this data element (for displaying in the graph's key). */
-    GNUplotData( const std::string& _dataFile, const std::string& _title )
+    Data( const std::string& _dataFile, const std::string& _title )
     : dataFile(_dataFile), title(_title) {}
 };
 
 /**
  * Structure for storing variables destined for a GNUplot script.
  */
-struct GNUplotVars {
+struct PlotVars {
     std::string inFilename,  /**< template filename (without suffix or path). Directory hard-coded to be '/config'. */
                 outFilename, /**< output filename (without suffix or path). Directory = DATA_OUTPUT_PATH config option. */
                 title,       /**< Graph title. */
                 xlabel,
                 ylabel;
-    std::list<GNUplotData> gnuPlotData; /**< List of data elements to be plotted. */
+    std::list<Data> data; /**< List of data elements to be plotted. */
 };
 
-class GNUplot {
-public:
-    GNUplot() throw( std::string) ;
-    virtual ~GNUplot();
+void plot(
+        PlotVars& gnuPlotVars /**< Variables for insertion into the template. */
+);
 
-    void operator() (const std::string& command);
+void instantiateTemplate(
+        const PlotVars& gnuPlotVars /**< Variables for insertion into the template. */
+);
 
-    const bool good();
-
-    void instantiateTemplate(
-            const GNUplotVars& gnuPlotVars /**< Variables for insertion into the template. */
-    );
-
-protected:
-    FILE * gnuplotpipe;
-    bool isGood;
-};
+}
 
 #endif /* GNUPLOT_H_ */

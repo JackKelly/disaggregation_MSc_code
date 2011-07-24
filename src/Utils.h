@@ -23,6 +23,8 @@ void openFile(std::fstream& fs, const char* filename, const std::fstream::openmo
 
 const size_t countDataPoints( std::fstream& fs );
 
+const bool fileExists( const std::string& filename );
+
 } /* namespace Utils */
 
 #endif /* UTILS_H_ */

@@ -80,3 +80,13 @@ const size_t Utils::countDataPoints( std::fstream& fs )
     return count;
 }
 
+/**
+ * @return true if 'filename' exists
+ */
+const bool Utils::fileExists( const std::string& filename )
+{
+    std::ifstream ifile( filename );
+    return (bool)ifile;
+}
+
+

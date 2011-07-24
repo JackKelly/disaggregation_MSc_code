@@ -6,44 +6,45 @@
  */
 
 #include "GNUplot.h"
+#include "Utils.h"
 #include <string>
 #include <stdio.h>
 #include <iostream>
 
 using namespace std;
 
-GNUplot::GNUplot() throw( string )
+/**
+ * @brief Plot a graph using GNUplot.  See GNUplot::PlotVars for details of what variables
+ * are expected to be instantiated in plotVars.  First checks to see if
+ * config/'plotVars.outFilename'.template.gnu exists.  If it does, it uses that as the template
+ * (so individual devices can have their own specific templates). If it doesn't exist,
+ * the code uses config/'plotVars.inFilename'.template.gnu as the template.
+ *
+ * @todo add path from config option DATA_OUTPUT_PATH.
+ */
+void GNUplot::plot(
+        PlotVars& plotVars /**< Variables for insertion into the template. 'inFilename' will be changed if it config/'inFilename'.template.gnu exists */
+    )
 {
-    gnuplotpipe = popen( "gnuplot" , "w" );
-    if ( gnuplotpipe ) {
-        isGood = true;
-    } else {
-        throw ("Gnuplot not found!");
-        isGood = false;
+
+    /* Check if config/'plotVars.outFilename'.template.gnu exists.
+     * If so, use it as the template.  */
+    if ( Utils::fileExists( string("config/" + plotVars.outFilename + ".template.gnu") ) ) {
+        plotVars.inFilename = plotVars.outFilename;
     }
 
-}
+    instantiateTemplate( plotVars );
 
-GNUplot::~GNUplot()
-{
-    operator()( "exit" );
-    pclose( gnuplotpipe );
-}
+    string plotCommand =
+            "gnuplot data/output/" + plotVars.outFilename + ".gnu";
 
-void GNUplot::operator()(const string& command)
-{
-    fprintf( gnuplotpipe, "%s\n", command.c_str() );
-    fflush( gnuplotpipe );
-}
-
-const bool GNUplot::good()
-{
-    return isGood;
+    system( plotCommand.c_str() );
 }
 
 /**
- * @brief Opens 'gnuPlotVars.inFilename', replaces all the tokens in the template file with
- * variables from 'gnuPlotVars' and outputs the instantiated template as 'gnuPlotVars.outFilename'.
+ * @brief Replaces all the tokens in the template file 'config/plotVars.inFilename' with
+ * variables from 'plotVars' and outputs the instantiated template as 'plotVars.outFilename'
+ * in the directory defined by DATA_OUTPUT_PATH.
  *
  * The find-and-replace functionality is currently implemented using a 'system()' call
  * to 'sed'.  This is a bit of a hack but it was quick to implement, works perfectly
@@ -51,36 +52,40 @@ const bool GNUplot::good()
  * find-and-replace template instantiation system using something like
  * <a href="http://www.boost.org/doc/libs/1_47_0/libs/regex/doc/html/boost_regex/ref/regex_replace.html">
  * Boost.Regex::regex_replace()</a>.
+ *
+ * @todo add path from config option DATA_OUTPUT_PATH.
+ * @todo replace SETTERMINAL and SETOUTPUT
  */
 void GNUplot::instantiateTemplate(
-        const GNUplotVars& gnuPlotVars /**< Variables for insertion into the template. */
+        const PlotVars& plotVars /**< Variables for insertion into the template. */
     )
 {
     string sedCommand =
             "sed -e '"
-             "s/TITLE/" + gnuPlotVars.title + "/g"
-            ";s/XLABEL/" + gnuPlotVars.xlabel + "/g"
-            ";s/YLABEL/" + gnuPlotVars.ylabel + "/g";
+             "s/TITLE/" + plotVars.title + "/g"
+            ";s/XLABEL/" + plotVars.xlabel + "/g"
+            ";s/YLABEL/" + plotVars.ylabel + "/g"
+            ";s/SETTERMINAL/set terminal svg size 1200 800; set samples 1001/g"
+            ";s/SETOUTPUT/set output \"" + plotVars.outFilename + ".svg\"/g";
 
     /* Loop through each gnuPlotData list item...
      *     (would be nice to use C++0x's 'foreach' syntax, but that's only been
-     *      supported in GCC since v4.6, any the DoC machines only run GCC v4.3) */
+     *      supported in GCC since v4.6 but the DoC machines only run GCC v4.3) */
     size_t count = 0;
     string digit;
-    for ( list<GNUplotData>::const_iterator data=gnuPlotVars.gnuPlotData.begin();
-            data != gnuPlotVars.gnuPlotData.end();
+    for ( list<Data>::const_iterator data=plotVars.data.begin();
+            data != plotVars.data.end();
             data++, count++ ) {
 
-        digit = '1' + count;
+        digit = '1' + count; // convert size_t "count" to a single-digit string
         sedCommand +=
                 ";s/DATAFILE" + digit + "/" + data->dataFile + "/g"
                 ";s/DATAKEY"+ digit + "/" + data->title + "/g";
-
     }
 
     sedCommand +=
-            "' config/" + gnuPlotVars.inFilename + ".template.gnu"
-            " > data/output/" + gnuPlotVars.outFilename + ".gnu"; /**< @todo add path from config option DATA_OUTPUT_PATH */
+            "' config/" + plotVars.inFilename + ".template.gnu" // input to sed
+            " > data/output/" + plotVars.outFilename + ".gnu";  // output from sed
 
     cout << sedCommand << endl;
     system( sedCommand.c_str() ) ;
