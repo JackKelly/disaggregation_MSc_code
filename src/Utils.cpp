@@ -42,9 +42,13 @@ const std::string Utils::size_t_to_s( size_t num )
     return str;
 }
 
-void Utils::openFile(std::fstream& fs, const char* filename, const std::fstream::openmode openmode)
+void Utils::openFile(
+        std::fstream& fs,
+        const std::string& filename,
+        const std::fstream::openmode openmode
+        )
 {
-    fs.open( filename, openmode );
+    fs.open( filename.c_str(), openmode );
 
     if ( ! fs.good() ) {
         LOG(ERROR) << "Failed to open " << filename << " for reading.";

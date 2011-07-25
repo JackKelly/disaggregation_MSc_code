@@ -19,7 +19,10 @@ const char * todaysDateAndTime();
 
 const std::string size_t_to_s( size_t num );
 
-void openFile(std::fstream& fs, const char* filename, const std::fstream::openmode openmode);
+void openFile(
+        std::fstream& fs,
+        const std::string& filename,
+        const std::fstream::openmode openmode);
 
 const size_t countDataPoints( std::fstream& fs );
 
