@@ -15,9 +15,9 @@
 #include <fstream>
 
 /**
- * @todo should inherit from Array<Sample_t>, shouldn't it?
+ *
  */
-class Signature {
+class Signature : public Array<Sample_t> {
 public:
 
     Signature(
@@ -30,13 +30,11 @@ public:
 
     virtual ~Signature();
 
-    void downSample( Array<Sample_t> * output, const size_t newPeriod );
+    void downSample( Array<Sample_t> * output, const size_t newPeriod ) const;
 
-    const Array<Sample_t>& getRawReading() const;
+    const PowerStates_t getPowerStates( const size_t rollingAvLength) const;
 
-    const PowerStates_t& getPowerStates( const size_t rollingAvLength);
-
-    const size_t getSamplePeriod();
+    const size_t getSamplePeriod() const;
 
     void drawHistWithStateBars(
             const Array<Histogram_t>&,
@@ -49,12 +47,6 @@ private:
     /************************
      *  Member functions    *
      ************************/
-    void editRawReading();
-
-    const size_t findNumLeadingZeros( const Array<Sample_t>& data );
-
-    const size_t findNumTrailingZeros( const Array<Sample_t>& data );
-
     void findPowerStates( const size_t rollingAvLength );
 
     void fillGapsInPowerStates( const Array<Histogram_t>& hist );
@@ -62,8 +54,6 @@ private:
     /************************
      *  Member variables    *
      ************************/
-
-    Array<Sample_t> rawReading;
     size_t samplePeriod;
     PowerStates_t powerStates; /**< @todo saving powerStates is a bit pointless; just process it on demand */
     const size_t sigID; /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. */

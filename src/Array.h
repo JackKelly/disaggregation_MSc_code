@@ -19,6 +19,9 @@
 #include <cassert>
 #include <list>
 
+/**
+ * @todo break RollingAverage out into a new file
+ */
 template <class T>
 class RollingAverage {
 public:
@@ -62,7 +65,8 @@ private:
 };
 
 /**
- * Very simple, light weight Array struct.
+ * Array class.  At it's core it's just a wrapper around a C-style array.
+ * With lots of added functionality useful for signal processing.
  */
 template <class T>
 class Array {
@@ -123,7 +127,7 @@ public:
         }
     }
 
-    ~Array()
+    virtual ~Array()
     {
         if ( data != 0 ) {
             delete [] data;
@@ -625,6 +629,27 @@ public:
             fs.ignore( 255, '\n' );  // skip to next line
         }
         LOG(INFO) << "Entered " << count << " ints into data array.";
+    }
+
+
+    const size_t getNumLeadingZeros()
+    {
+        assert (data != 0);
+        size_t count = 0;
+        while ( data[count]==0 && count<size ) {
+            count++;
+        }
+        return count;
+    }
+
+    const size_t getNumTrailingZeros()
+    {
+        assert (data != 0);
+        size_t count = size-1;
+        while ( data[count]==0 && count>0 ) {
+            count--;
+        }
+        return (size-count)-1;
     }
 
 

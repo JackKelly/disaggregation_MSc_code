@@ -62,6 +62,10 @@ private:
 
     std::list<PowerStateSequenceItem> powerStateSequence;
 
+    /**
+     * @todo currentCostReading shouldn't be in Device. It should probably be
+     * Array -> AggregateReading -> CurrentCost
+     */
     struct currentCostReading {
         size_t timestamp;
         size_t reading;

@@ -65,7 +65,7 @@ void Device::updatePowerStates( const size_t rollingAvLength )
 }
 
 /**
- * Take 'signatures.end()' and run through the 'rawReading', finding where
+ * Run through 'signatures.end()->data' , finding where
  * each 'powerState' starts and ends.
  *
  * This must be called after 'powerStates' has been populated
@@ -76,10 +76,7 @@ void Device::updatePowerStateSequence( const size_t rollingAvLength )
     assert( ! powerStates.empty() );
 
     Array<Sample_t> reading;
-    signatures.back()->getRawReading().rollingAv( &reading, rollingAvLength);
-
-//    reading = signatures.back()->getRawReading();
-
+    signatures.back()->rollingAv( &reading, rollingAvLength);
 
     const size_t samplePeriod    = signatures.back()->getSamplePeriod();
 
@@ -229,7 +226,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
     aggregateDataFile.close();
 
     // Get a handy reference to the last 'rawReading' stored in 'signatures'
-    const Array<Sample_t>& sigArray = signatures.back()->getRawReading();
+    const Array<Sample_t>& sigArray = *(signatures.back());
 
     double min = 100000000000000000;
 

@@ -40,23 +40,15 @@ Signature::Signature(
     dataFile.close();
 
     if ( cropFront == 0 ) {
-        rawReading.copyCrop( data, findNumLeadingZeros( data ), findNumTrailingZeros( data ) );
+        copyCrop( data, data.getNumLeadingZeros(), data.getNumTrailingZeros() );
     } else {
-        rawReading.copyCrop( data, cropFront, cropBack );
+        copyCrop( data, cropFront, cropBack );
     }
 }
 
 Signature::~Signature()
 {}
 
-const PowerStates_t& Signature::getPowerStates( const size_t rollingAvLength )
-{
-    if ( powerStates.empty() ) {
-        findPowerStates( rollingAvLength );
-    }
-
-    return powerStates;
-}
 
 /**
  * @todo this needs to be changed.  Firstly, Sig will be a child of Array,  The function should
@@ -97,19 +89,21 @@ void Signature::drawHistWithStateBars(
  * Runs through 'rawReading' to find power states.  'rawReading' must be
  * populated before this function is called.
  */
-void Signature::findPowerStates( const size_t rollingAvLength )
+const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) const
 {
-    LOG(INFO) << "Finding power states...rollingAvLength = " << rollingAvLength;
-    assert ( rawReading.getSize() ); // make sure rawReading is populated
+    PowerStates_t powerStates;
 
-    rawReading.drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
+    LOG(INFO) << "Finding power states...rollingAvLength = " << rollingAvLength;
+    assert ( size ); // make sure Signature is populated
+
+//    drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
 
     // Create a histogram
 
-    Array<Sample_t> rollingAv;
-    rawReading.rollingAv( &rollingAv, rollingAvLength );
-    rollingAv.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
-    Histogram hist ( rollingAv );
+    Array<Sample_t> RA;
+    rollingAv( &RA, rollingAvLength );
+    RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
+    Histogram hist ( RA );
 
 //    hist.drawGraph( description, "power (Watts)", "frequency", "[0:2500] [0:100]" );
 
@@ -137,6 +131,8 @@ void Signature::findPowerStates( const size_t rollingAvLength )
     }
     dataFile.close();
 //    drawHistWithStateBars( hist, rollingAvLength );
+
+    return powerStates;
 }
 
 /**
@@ -180,31 +176,11 @@ void Signature::fillGapsInPowerStates( const Array<Histogram_t>& hist )
 
 }
 
-const Array<Sample_t>& Signature::getRawReading() const
-{
-    return rawReading;
-}
-
-const size_t Signature::findNumLeadingZeros( const Array<Sample_t>& data )
-{
-    size_t count = 0;
-    while ( data[count]==0 && count<data.getSize() ) {
-        count++;
-    }
-    return count;
-}
-
-const size_t Signature::findNumTrailingZeros( const Array<Sample_t>& data )
-{
-    size_t count = data.getSize()-1;
-    while ( data[count]==0 && count>0 ) {
-        count--;
-    }
-    return (data.getSize()-count)-1;
-}
-
 /**
- * Convert from the rawReading to a different sample rate
+ * Convert from the Signature data to a different sample period.
+ * If the original sample period is 1 second and newPeriod = 6, then the returned
+ * array will have 1/6th the number of entries and each entry in the downsampled
+ * array will be an average of 6 samples from the original array.
  *
  * @deprecated Usually use rollingAv()
  *
@@ -212,14 +188,14 @@ const size_t Signature::findNumTrailingZeros( const Array<Sample_t>& data )
  *
  * @return output
  */
-void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
+void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod ) const
 {
     size_t inner, inputIndex, outputIndex, outerLimit;
     Sample_t accumulator;
 
     LOG(INFO) << "Resampling...";
 
-    const size_t newSize = (int)ceil(rawReading.getSize() / ( (double)newPeriod / (double)samplePeriod ));
+    const size_t newSize = (int)ceil(size / ( (double)newPeriod / (double)samplePeriod ));
     output->setSize( newSize );
 
 
@@ -227,7 +203,7 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
     if (mod==0) {
         // newPeriod % samplePeriod == 0; so then just take an average of each step
         const size_t stepSize = newPeriod/samplePeriod;
-        const size_t delta = (newSize*newPeriod) - (rawReading.getSize()*samplePeriod);
+        const size_t delta = (newSize*newPeriod) - (size*samplePeriod);
 
         if (delta==0) {
             outerLimit = newSize;
@@ -235,7 +211,7 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
             outerLimit = newSize-1;
         }
 
-        LOG(INFO) << "old size=" << rawReading.getSize() << ", old period=" << samplePeriod
+        LOG(INFO) << "old size=" << size << ", old period=" << samplePeriod
                   << ", new size=" << newSize << ", newPeriod=" << newPeriod
                   << ", stepSize=" << stepSize << ", mod=" << mod << ", delta=" << delta << ",outerLimit=" << outerLimit;
 
@@ -245,7 +221,7 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
             accumulator=0;
             for (inner=0; inner<stepSize; inner++) {
                 inputIndex = inner+(outputIndex*stepSize);
-                accumulator += rawReading[ inputIndex ];
+                accumulator += data[ inputIndex ];
             }
             (*output)[ outputIndex ] = accumulator/stepSize;
         }
@@ -254,9 +230,9 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
         if (delta != 0) {
             accumulator=0;
             size_t i;
-            for (i=inputIndex; i<rawReading.getSize(); i++) {
-                accumulator += rawReading[i];
-                LOG(INFO) << "i=" << i << ", rawReading[i]=" << rawReading[i];
+            for (i=inputIndex; i<size; i++) {
+                accumulator += data[i];
+                LOG(INFO) << "i=" << i << ", data[i]=" << data[i];
             }
             (*output)[ newSize-1 ] = accumulator/(delta-1);
             LOG(INFO) << "Filled remainder.  output[" << newSize-1 << "]=" << (*output)[newSize-1];
@@ -265,13 +241,10 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
     } else {
         // newPeriod%samplePeriod!=0 so interpolate
         LOG(ERROR) << "resample() doesn't yet deal with fractional sample rate conversions";
-
     }
-
-
 }
 
-const size_t Signature::getSamplePeriod()
+const size_t Signature::getSamplePeriod() const
 {
     return samplePeriod;
 }
