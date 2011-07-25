@@ -23,7 +23,7 @@ public:
     Signature(
             const char* filename,
             const size_t _samplePeriod,
-            const Device* _device,
+            const std::string _deviceName,
             const size_t _sigID = 0,
             const size_t cropFront = 0,
             const size_t cropBack = 0

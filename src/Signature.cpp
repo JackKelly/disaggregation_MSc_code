@@ -27,7 +27,7 @@ using namespace std;
 Signature::Signature(
         const char* filename,   /**< Filename, including path and suffix. */
         const size_t _samplePeriod, /**< Sample period. In seconds. @todo sample period should be read from data file. */
-        const Device* _device, /**< A reciprical link to the Device */
+        const string _deviceName, /**< A reciprical link to the Device */
         const size_t _sigID,    /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. Default=0. */
         const size_t cropFront, /**< Number of elements to crop from the front. Default=0. If 0 then will automatically crop 0s from the front such that there's only a single leading zero left. */
         const size_t cropBack   /**< Number of elements to crop from the back. Default=0. If 0 then will automatically crop 0s from the back such that there's only a single trailing zero left. */
@@ -46,6 +46,8 @@ Signature::Signature(
     } else {
         copyCrop( data, cropFront, cropBack );
     }
+
+    deviceName =_deviceName;
 }
 
 Signature::~Signature()
@@ -54,7 +56,7 @@ Signature::~Signature()
 void Signature::drawGraph() const
 {
     Array<Sample_t>::drawGraph(
-            device->getName(),
+            deviceName,
             "time (seconds)",
             "power (Watts)"
             );
@@ -67,14 +69,14 @@ void Signature::drawHistWithStateBars(
 {
 
     // Dump histogram data to a .dat file
-    const string histFilename = hist.getBaseFilename( device->getName() );
+    const string histFilename = DATA_OUTPUT_PATH + hist.getBaseFilename( deviceName ) + ".dat";
     hist.dumpToFile( histFilename );
 
     // Set plot variables
     GNUplot::PlotVars pv;
     pv.inFilename  = "histWithStateBars";
-    pv.outFilename = device->getName() + "-histWithStateBars";
-    pv.title       = device->getName() + " histogram with state bars.";
+    pv.outFilename = deviceName + "-histWithStateBars";
+    pv.title       = deviceName + " histogram with state bars.";
     pv.xlabel      = "power (Watts)";
     pv.ylabel      = "histogram frequency";
 
@@ -112,11 +114,12 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
     // Smooth raw data
     Array<Sample_t> RA;
     rollingAv( &RA, rollingAvLength );
-    RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
+    RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "" );
 
     // Create histogram from smoothed data
     Histogram hist ( RA );
-    hist.drawGraph( device->getName() );
+    hist.setDeviceName( deviceName );
+    hist.drawGraph( deviceName );
 
     // find the boundaries of the different power states in the histogram
     std::list<size_t> boundaries;
@@ -147,7 +150,7 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
 
 const string Signature::getStateBarsFilename() const
 {
-    return DATA_OUTPUT_PATH + device->getName() + "-stateBars.dat";
+    return DATA_OUTPUT_PATH + deviceName + "-stateBars.dat";
 }
 
 /**

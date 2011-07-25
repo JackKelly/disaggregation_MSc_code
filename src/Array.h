@@ -19,8 +19,6 @@
 #include <cassert>
 #include <list>
 
-class Device;
-
 /**
  * @todo break RollingAverage out into a new file
  */
@@ -80,7 +78,7 @@ protected:
     size_t size;         /**< Number of members. size_t is 8bytes wide on x86_64 */
     size_t smoothing;    /**< Does this array represent data which has been smoothed? */
     size_t upstreamSmoothing; /**< If this array has been produced by processing a previous array, and that array was smoothed then 'upstreamSmoothing' records the smoothing of the upstream array. Else=0. */
-    Device const * device;
+    std::string deviceName;
 
 public:
     /********************
@@ -90,13 +88,13 @@ public:
     /**************** CONSTRUCTORS **************/
 
     Array()
-    : data(0), size(0), smoothing(0), upstreamSmoothing(0), device(0)
+    : data(0), size(0), smoothing(0), upstreamSmoothing(0), deviceName("")
     {}
 
     explicit Array(
             const size_t _size /**< Size of array */
             )
-    : data(0), size(0), smoothing(0), upstreamSmoothing(0), device(0)
+    : data(0), size(0), smoothing(0), upstreamSmoothing(0), deviceName("")
     {
         setSize(_size);
     }
@@ -108,7 +106,7 @@ public:
             const size_t _size, /**< Size of array */
             const T * _data     /**< Pointer to C-style array */
             )
-    : data(0), size(0), smoothing(0), upstreamSmoothing(0), device(0)
+    : data(0), size(0), smoothing(0), upstreamSmoothing(0), deviceName("")
     {
         setSize(_size);
         for (size_t i=0; i<size; i++) {
@@ -120,7 +118,7 @@ public:
      * Copy constructor
      */
     Array( const Array<T>& other )
-    : data(0), size(0), smoothing(other.getSmoothing()), upstreamSmoothing(other.getUpstreamSmoothing()), device(other.getDevice())
+    : data(0), size(0), smoothing(other.getSmoothing()), upstreamSmoothing(other.getUpstreamSmoothing()), deviceName(other.deviceName)
     {
         setSize(other.size);
 
@@ -141,7 +139,7 @@ public:
         setSize(source.size);
         smoothing = source.getSmoothing();
         upstreamSmoothing = source.geUpstreamSmoothing();
-        device = source.getDevice();
+        deviceName = source.deviceName;
         for (size_t i=0; i<size; i++) {
             data[i] = source[i];
         }
@@ -201,14 +199,14 @@ public:
         return upstreamSmoothing;
     }
 
-    void setDevice( const Device* _device)
+    void setDeviceName( const std::string _deviceName)
     {
-        device=_device;
+        deviceName=_deviceName;
     }
 
-    const Device* getDevice() const
+    const std::string getDeviceName() const
     {
-        return device;
+        return deviceName;
     }
 
     /************* OTHER MEMBER FUNCTIONS ****************/
@@ -245,7 +243,7 @@ public:
         this->setSize( source.size - cropFront - cropBack );
         upstreamSmoothing = source.getUpstreamSmoothing();
         smoothing = source.getSmoothing();
-        device = source.getDevice();
+        deviceName = source.deviceName;
 
         for (size_t i = 0; i<size; i++ ) {
             data[i] = source[i+cropFront];
@@ -256,7 +254,7 @@ public:
     {
         upstreamSmoothing = 0;
         smoothing = 0;
-        device = 0;
+        deviceName = "";
         for (size_t i = 0; i<size; i++) {
             data[i] = initValue;
         }
@@ -291,7 +289,7 @@ public:
         // setup ra
         ra->smoothing = RAlength;
         ra->upstreamSmoothing = smoothing;
-        ra->device = device;
+        ra->deviceName = deviceName;
         ra->setSize(this->size);
 
         size_t i;
@@ -605,12 +603,12 @@ public:
 
     const std::string getHistRollingAvFilename( const size_t RAlength ) const
     {
-        return device->getName() + "-smoothedGradOfHist-" + Utils::size_t_to_s( RAlength ) + ".dat";
+        return DATA_OUTPUT_PATH + deviceName + "-smoothedGradOfHist-" + Utils::size_t_to_s( RAlength ) + ".dat";
     }
 
     virtual const std::string getBaseFilename( const std::string name ) const
     {
-        std::string baseFilename = name +
+        std::string baseFilename = deviceName +
                 (smoothing ? ("-Smoothing" + Utils::size_t_to_s(smoothing)) : "") +
                 (upstreamSmoothing ? ("-UpstreamSmoothing" + Utils::size_t_to_s(upstreamSmoothing)) : "");
         return baseFilename;
@@ -712,7 +710,7 @@ public:
     {
         upstreamSmoothing = source.getSmoothing();
         smoothing = 0;
-        device = source.getDevice();
+        deviceName = source.getDeviceName();
 
         setSize( MAX_WATTAGE ); // 1 Watt resolution
 
@@ -725,7 +723,7 @@ public:
 
     virtual const std::string getBaseFilename( const std::string name ) const
     {
-        std::string baseFilename = name + "-hist-" +
+        std::string baseFilename = name + "-hist" +
                 (smoothing ? ("-HistSmoothing" + Utils::size_t_to_s(smoothing)) : "") +
                 (upstreamSmoothing ? ("-UpstreamSmoothing" + Utils::size_t_to_s(upstreamSmoothing)) : "");
         return baseFilename;

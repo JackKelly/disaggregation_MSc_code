@@ -36,7 +36,7 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod,
     // Create a new signature
     Signature * sig = new Signature(
             filename, samplePeriod,
-            this,              // Reciprocal link
+            name,
             signatures.size(), // Provides the signature with its sigID.
             cropFront, cropBack
             );
