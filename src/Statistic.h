@@ -126,7 +126,7 @@ struct Statistic {
         return o;
     }
 
-    void xErrorBarOutputLine( std::ostream& o )
+    void outputStateBarsLine( std::ostream& o )
     {
         //   x              y            xlow          xhigh
         o << mean << " " << 0 << " " << min << " " << max << std::endl;

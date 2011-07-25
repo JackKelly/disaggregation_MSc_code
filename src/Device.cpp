@@ -26,11 +26,17 @@ Device::~Device() {
     }
 }
 
+const string Device::getName() const
+{
+    return name;
+}
+
 void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack)
 {
     // Create a new signature
     Signature * sig = new Signature(
             filename, samplePeriod,
+            this,              // Reciprocal link
             signatures.size(), // Provides the signature with its sigID.
             cropFront, cropBack
             );

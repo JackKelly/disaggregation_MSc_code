@@ -19,6 +19,8 @@
 #include <cassert>
 #include <list>
 
+class Device;
+
 /**
  * @todo break RollingAverage out into a new file
  */
@@ -77,7 +79,8 @@ protected:
     T * data;
     size_t size;         /**< Number of members. size_t is 8bytes wide on x86_64 */
     size_t smoothing;    /**< Does this array represent data which has been smoothed? */
-    Array<T> const * upstream; /**< If this array has been produced by processing a previous array then 'upstream' points to the upstream array. Else=0. */
+    size_t upstreamSmoothing; /**< If this array has been produced by processing a previous array, and that array was smoothed then 'upstreamSmoothing' records the smoothing of the upstream array. Else=0. */
+    Device const * device;
 
 public:
     /********************
@@ -87,13 +90,13 @@ public:
     /**************** CONSTRUCTORS **************/
 
     Array()
-    : data(0), size(0), smoothing(0), upstream(0)
+    : data(0), size(0), smoothing(0), upstreamSmoothing(0), device(0)
     {}
 
     explicit Array(
             const size_t _size /**< Size of array */
             )
-    : data(0), size(0), smoothing(0), upstream(0)
+    : data(0), size(0), smoothing(0), upstreamSmoothing(0), device(0)
     {
         setSize(_size);
     }
@@ -105,7 +108,7 @@ public:
             const size_t _size, /**< Size of array */
             const T * _data     /**< Pointer to C-style array */
             )
-    : data(0), size(0), smoothing(0), upstream(0)
+    : data(0), size(0), smoothing(0), upstreamSmoothing(0), device(0)
     {
         setSize(_size);
         for (size_t i=0; i<size; i++) {
@@ -117,10 +120,9 @@ public:
      * Copy constructor
      */
     Array( const Array<T>& other )
-    : data(0), size(0), smoothing(0), upstream(&other)
+    : data(0), size(0), smoothing(other.getSmoothing()), upstreamSmoothing(other.getUpstreamSmoothing()), device(other.getDevice())
     {
         setSize(other.size);
-
 
         for (size_t i=0; i<size; i++) {
             data[i] = other[i];
@@ -137,7 +139,9 @@ public:
     Array<T>& operator=(const Array<T>& source)
     {
         setSize(source.size);
-        upstream = &source;
+        smoothing = source.getSmoothing();
+        upstreamSmoothing = source.geUpstreamSmoothing();
+        device = source.getDevice();
         for (size_t i=0; i<size; i++) {
             data[i] = source[i];
         }
@@ -187,14 +191,24 @@ public:
         return size;
     }
 
-    const size_t getSmooting() const
+    const size_t getSmoothing() const
     {
         return smoothing;
     }
 
-    Array<T>* getUpstream() const
+    const size_t getUpstreamSmoothing() const
     {
-        return upstream;
+        return upstreamSmoothing;
+    }
+
+    void setDevice( const Device* _device)
+    {
+        device=_device;
+    }
+
+    const Device* getDevice() const
+    {
+        return device;
     }
 
     /************* OTHER MEMBER FUNCTIONS ****************/
@@ -229,7 +243,9 @@ public:
         }
 
         this->setSize( source.size - cropFront - cropBack );
-        upstream = &source;
+        upstreamSmoothing = source.getUpstreamSmoothing();
+        smoothing = source.getSmoothing();
+        device = source.getDevice();
 
         for (size_t i = 0; i<size; i++ ) {
             data[i] = source[i+cropFront];
@@ -238,7 +254,9 @@ public:
 
     void initAllEntriesTo(const T initValue)
     {
-        upstream = 0;
+        upstreamSmoothing = 0;
+        smoothing = 0;
+        device = 0;
         for (size_t i = 0; i<size; i++) {
             data[i] = initValue;
         }
@@ -264,21 +282,22 @@ public:
      * @param ra = Initally an empty Array<Sample_t>.  Returned with Rolling Averages.
      * @param length = number of items to use in the average.  Must be odd.
      */
-    void rollingAv(Array<Sample_t> * ra, const size_t length=5) const
+    void rollingAv(Array<Sample_t> * ra, const size_t RAlength=5) const
     {
-        assert( length%2 );  // length must be odd
-        assert( length>1 );
-        assert( length<size);
+        assert( RAlength%2 );  // length must be odd
+        assert( RAlength>1 );
+        assert( RAlength<size);
 
         // setup ra
-        ra->smoothing = length;
-        ra->upstream = this;
+        ra->smoothing = RAlength;
+        ra->upstreamSmoothing = smoothing;
+        ra->device = device;
         ra->setSize(this->size);
 
         size_t i;
         T accumulator, accumulatorDown;
 
-        size_t middleOfLength = ((length-1)/2)+1;
+        size_t middleOfLength = ((RAlength-1)/2)+1;
 
         // First do the first (length-1)/2 elements of the Array<Sample_t>
         // and the last (length-1)/2 elements
@@ -300,7 +319,7 @@ public:
             for (size_t inner=(i-middleOfLength+1); inner<(i+middleOfLength); inner++) {
                 accumulator += data[inner];
             }
-            (*ra)[i] = (double)accumulator/length;
+            (*ra)[i] = (double)accumulator/RAlength;
         }
 
         // Do the last element of the array
@@ -491,7 +510,7 @@ public:
         RollingAverage<int> gradientRA(RA_LENGTH);
         T kneeHeight=0, peakHeight=0, descent=0, ascent=0;
 
-        // Load the Rolling Average array
+        // Prime the Rolling Average array
         for (size_t i=(size-2); i>(size-RA_LENGTH); i--) {
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
         }
@@ -574,37 +593,55 @@ public:
             boundaries->push_front(0);
         }
 
-        // For debugging purposes, dump rolling average data to file
+        // For data visualisation purposes, dump rolling average data to file
         std::fstream ra_file;
-        ra_file.open( "data/processed/RA_hist.dat", std::fstream::out);
+        Utils::openFile(ra_file,  getHistRollingAvFilename( RA_LENGTH ), std::fstream::out);
         for (size_t i = 0; i<(size-RA_LENGTH); i++) {
             ra_file << RA[i] << std::endl;
         }
         ra_file.close();
         delete [] RA;
-
     }
 
+    const std::string getHistRollingAvFilename( const size_t RAlength ) const
+    {
+        return device->getName() + "-smoothedGradOfHist-" + Utils::size_t_to_s( RAlength ) + ".dat";
+    }
+
+    virtual const std::string getBaseFilename( const std::string name ) const
+    {
+        std::string baseFilename = name +
+                (smoothing ? ("-Smoothing" + Utils::size_t_to_s(smoothing)) : "") +
+                (upstreamSmoothing ? ("-UpstreamSmoothing" + Utils::size_t_to_s(upstreamSmoothing)) : "");
+        return baseFilename;
+    }
+
+
     virtual void drawGraph(
-            const std::string& name,
-            const std::string& xlabel = "",
-            const std::string& ylabel = "",
-            const std::string& args = ""
-            )
+            const std::string name,
+            const std::string xlabel = "",
+            const std::string ylabel = "",
+            const std::string args   = ""
+            ) const
     {
         // Dump data to a .dat file
-        const std::string dataFilename = DATA_OUTPUT_PATH + name + ".dat";
+
+        const std::string baseFilename = getBaseFilename( name );
+
+        const std::string dataFilename =
+                DATA_OUTPUT_PATH + baseFilename + ".dat";
+
         dumpToFile( dataFilename );
 
         // Set plot variables
         GNUplot::PlotVars pv;
         pv.inFilename  = "1line";
-        pv.outFilename = name;
-        pv.title       = name;
+        pv.outFilename = baseFilename;
+        pv.title       = baseFilename;
         pv.xlabel      = xlabel;
         pv.ylabel      = ylabel;
         pv.plotArgs    = args;
-        pv.data.push_back( GNUplot::Data( dataFilename, name ) );
+        pv.data.push_back( GNUplot::Data( dataFilename, baseFilename ) );
 
         // Plot
         GNUplot::plot( pv );
@@ -673,7 +710,9 @@ public:
     Histogram(const Array<Sample_t>& source)
     : Array<Histogram_t>()
     {
-        upstream = (Array<Histogram_t>*)&source; /**< @todo this may not work! */
+        upstreamSmoothing = source.getSmoothing();
+        smoothing = 0;
+        device = source.getDevice();
 
         setSize( MAX_WATTAGE ); // 1 Watt resolution
 
@@ -684,13 +723,41 @@ public:
         }
     }
 
-    /**
-     * Override because we need to convert 'upstream' back to the correct pointer type.
-     */
-    Array<Sample_t>* getUpstream()
+    virtual const std::string getBaseFilename( const std::string name ) const
     {
-        return (Array<Sample_t>*)upstream;
+        std::string baseFilename = name + "-hist-" +
+                (smoothing ? ("-HistSmoothing" + Utils::size_t_to_s(smoothing)) : "") +
+                (upstreamSmoothing ? ("-UpstreamSmoothing" + Utils::size_t_to_s(upstreamSmoothing)) : "");
+        return baseFilename;
     }
+
+    virtual void drawGraph(
+            const std::string name
+            )
+    {
+        // Dump data to a .dat file
+        const std::string baseFilename =
+                getBaseFilename( name );
+
+        const std::string dataFilename =
+                DATA_OUTPUT_PATH + baseFilename  + ".dat";
+
+        dumpToFile( dataFilename );
+
+        // Set plot variables
+        GNUplot::PlotVars pv;
+        pv.inFilename  = "histogram";
+        pv.outFilename = baseFilename;
+        pv.title       = baseFilename;
+        pv.xlabel      = "power (Watts)";
+        pv.ylabel      = "frequency";
+        pv.plotArgs    = "";
+        pv.data.push_back( GNUplot::Data( dataFilename, baseFilename ) );
+
+        // Plot
+        GNUplot::plot( pv );
+    }
+
 };
 
 #endif /* ARRAY_H_ */

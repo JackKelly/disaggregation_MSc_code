@@ -28,6 +28,8 @@ public:
 
     std::list<size_t> findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod );
 
+    const std::string getName() const;
+
 private:
     /************************
      *  Member functions    *

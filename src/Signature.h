@@ -23,6 +23,7 @@ public:
     Signature(
             const char* filename,
             const size_t _samplePeriod,
+            const Device* _device,
             const size_t _sigID = 0,
             const size_t cropFront = 0,
             const size_t cropBack = 0
@@ -37,10 +38,11 @@ public:
     const size_t getSamplePeriod() const;
 
     void drawHistWithStateBars(
-            const Array<Histogram_t>&,
-            const size_t rollingAvLength,
-            const std::string& deviceName
-            );
+            const Array<Histogram_t>& hist,
+            const size_t gradientRollingAvLength
+            ) const;
+
+    virtual void drawGraph() const;
 
 private:
 
@@ -49,13 +51,18 @@ private:
      ************************/
     void findPowerStates( const size_t rollingAvLength );
 
-    void fillGapsInPowerStates( const Array<Histogram_t>& hist );
+    void fillGapsInPowerStates(
+            const Array<Histogram_t>& hist,
+            PowerStates_t& powerStates
+            );
+
+    const std::string getStateBarsFilename() const;
 
     /************************
      *  Member variables    *
      ************************/
     size_t samplePeriod;
-    PowerStates_t powerStates; /**< @todo saving powerStates is a bit pointless; just process it on demand */
+
     const size_t sigID; /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. */
 
 };

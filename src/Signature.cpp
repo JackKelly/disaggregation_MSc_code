@@ -9,6 +9,7 @@
 #include "Common.h"
 #include "Utils.h"
 #include "Statistic.h"
+#include "Device.h"
 #include <glog/logging.h>
 #include <fstream>
 #include <cstdlib>
@@ -26,6 +27,7 @@ using namespace std;
 Signature::Signature(
         const char* filename,   /**< Filename, including path and suffix. */
         const size_t _samplePeriod, /**< Sample period. In seconds. @todo sample period should be read from data file. */
+        const Device* _device, /**< A reciprical link to the Device */
         const size_t _sigID,    /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. Default=0. */
         const size_t cropFront, /**< Number of elements to crop from the front. Default=0. If 0 then will automatically crop 0s from the front such that there's only a single leading zero left. */
         const size_t cropBack   /**< Number of elements to crop from the back. Default=0. If 0 then will automatically crop 0s from the back such that there's only a single trailing zero left. */
@@ -49,35 +51,43 @@ Signature::Signature(
 Signature::~Signature()
 {}
 
+void Signature::drawGraph() const
+{
+    Array<Sample_t>::drawGraph(
+            device->getName(),
+            "time (seconds)",
+            "power (Watts)"
+            );
+}
 
-/**
- * @todo this needs to be changed.  Firstly, Sig will be a child of Array,  The function should
- * automatically determine the history as much as possible by following the 'upstream' pointers.
- */
 void Signature::drawHistWithStateBars(
         const Array<Histogram_t>& hist, /**< Histogram array. */
-        const size_t raLength,          /**< Length of the rolling average used to smooth hist gradient. */
-        const string& deviceName        /**< The human-readable name of the device. */
-    )
+        const size_t gradientRollingAvLength
+    ) const
 {
 
-    // Dump data to a .dat file
-
-    const std::string histogramFilename = DATA_OUTPUT_PATH + deviceName + "-histogram-" + ".dat";
-    hist.dumpToFile( histogramFilename );
+    // Dump histogram data to a .dat file
+    const string histFilename = hist.getBaseFilename( device->getName() );
+    hist.dumpToFile( histFilename );
 
     // Set plot variables
     GNUplot::PlotVars pv;
     pv.inFilename  = "histWithStateBars";
-    pv.outFilename = deviceName + "-histWithStateBars-gradSmoothing-" + Utils::size_t_to_s(raLength); /**< @todo smoothing of original data */
-    pv.title       = deviceName + " histogram with state bars. Rolling average length=" + Utils::size_t_to_s(raLength);  /**< @todo smoothing of original data */
+    pv.outFilename = device->getName() + "-histWithStateBars";
+    pv.title       = device->getName() + " histogram with state bars.";
     pv.xlabel      = "power (Watts)";
     pv.ylabel      = "histogram frequency";
-    pv.data.push_back( GNUplot::Data( histogramFilename, "Histogram. Smoothing = " ) );
+
+    pv.data.push_back( GNUplot::Data( histFilename, "Histogram. "
+            "HistSmoothing = " + Utils::size_t_to_s( hist.getSmoothing() ) +
+            ". UpstreamSmoothing=" + Utils::size_t_to_s( hist.getUpstreamSmoothing() ) ) );
+
+    pv.data.push_back( GNUplot::Data( getStateBarsFilename(), "States" ) );
 
     // Plot
-/*    GNUplot::plot( pv );
+    GNUplot::plot( pv );
 
+/*
               "\"data/processed/hist.dat\" with l lw 1 title \"raw histogram\", "
               "\"data/processed/RA_hist.dat\" with l lw 1 title \""
             + Utils::size_t_to_s(raLength) + "-step rolling average of histogram gradient\", "
@@ -96,28 +106,28 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
     LOG(INFO) << "Finding power states...rollingAvLength = " << rollingAvLength;
     assert ( size ); // make sure Signature is populated
 
-//    drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
+    // Draw graph of raw data
+    drawGraph();
 
-    // Create a histogram
-
+    // Smooth raw data
     Array<Sample_t> RA;
     rollingAv( &RA, rollingAvLength );
     RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
-    Histogram hist ( RA );
 
-//    hist.drawGraph( description, "power (Watts)", "frequency", "[0:2500] [0:100]" );
+    // Create histogram from smoothed data
+    Histogram hist ( RA );
+    hist.drawGraph( device->getName() );
 
     // find the boundaries of the different power states in the histogram
     std::list<size_t> boundaries;
     hist.findPeaks( &boundaries );
 
     // calculate proper stats for power states...
-    assert( (boundaries.size() % 2)==0 ); // check there's an even number of entries
-
     // Go through each pair of boundaries, working out stats for each
+    assert( (boundaries.size() % 2)==0 ); // check there's an even number of entries
     size_t front, back;
     fstream dataFile;
-    Utils::openFile( dataFile, "data/processed/x_err_bars.dat", fstream::out );
+    Utils::openFile( dataFile, getStateBarsFilename(), fstream::out );
     for (std::list<size_t>::const_iterator it=boundaries.begin(); it!=boundaries.end(); it++) {
 
         front = *it;
@@ -127,18 +137,28 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
 
         std::cout << powerStates.back() << std::endl;
 
-        powerStates.back().xErrorBarOutputLine( dataFile );
+        powerStates.back().outputStateBarsLine( dataFile );
     }
     dataFile.close();
-//    drawHistWithStateBars( hist, rollingAvLength );
+    drawHistWithStateBars( hist, rollingAvLength );
 
     return powerStates;
 }
 
+const string Signature::getStateBarsFilename() const
+{
+    return DATA_OUTPUT_PATH + device->getName() + "-stateBars.dat";
+}
+
 /**
  * Fill in gaps in the powerStates so that each powerState in the list is nose-to-tail
+ *
+ * @deprecated not actually used.
  */
-void Signature::fillGapsInPowerStates( const Array<Histogram_t>& hist )
+void Signature::fillGapsInPowerStates(
+        const Array<Histogram_t>& hist,
+        PowerStates_t& powerStates
+        )
 {
     assert( ! powerStates.empty() );
 
