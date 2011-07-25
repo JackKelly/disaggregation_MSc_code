@@ -65,6 +65,13 @@ private:
     struct currentCostReading {
         size_t timestamp;
         size_t reading;
+
+        friend std::ostream& operator<<(std::ostream& o, const currentCostReading& ccr)
+        {
+            o << ccr.timestamp << "\t" << ccr.reading << std::endl;
+            return o;
+        }
+
     };
 
 

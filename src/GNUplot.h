@@ -31,8 +31,9 @@ struct PlotVars {
                 outFilename, /**< output filename (without suffix or path). Directory = DATA_OUTPUT_PATH config option. */
                 title,       /**< Graph title. */
                 xlabel,
-                ylabel;
-    std::list<Data> data; /**< List of data elements to be plotted. */
+                ylabel,
+                plotArgs;    /**< Plot arguments (e.g. range). Best not to use this but to use the template.gnu file instead. */
+    std::list<Data> data;    /**< List of data elements to be plotted. */
 };
 
 void plot(
@@ -43,6 +44,6 @@ void instantiateTemplate(
         const PlotVars& gnuPlotVars /**< Variables for insertion into the template. */
 );
 
-}
+} /* namespace GNUplot */
 
 #endif /* GNUPLOT_H_ */

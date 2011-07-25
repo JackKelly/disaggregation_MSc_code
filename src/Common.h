@@ -31,7 +31,7 @@ typedef uint32_t                Histogram_t;  /**< An individual histogram entry
 
 const int EXIT_ERROR = 1;
 const size_t MAX_WATTAGE = 3500;
-const std::string DIAGRAMS_DIR = "data/diagrams/";
+const std::string DATA_OUTPUT_PATH = "data/output/"; /**< @depreciated Will be replaced with config option */
 
 
 #endif /* COMMON_H_ */

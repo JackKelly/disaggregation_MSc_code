@@ -29,7 +29,11 @@ Device::~Device() {
 void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack)
 {
     // Create a new signature
-    Signature * sig = new Signature( filename, samplePeriod, cropFront, cropBack );
+    Signature * sig = new Signature(
+            filename, samplePeriod,
+            signatures.size(), // Provides the signature with its sigID.
+            cropFront, cropBack
+            );
     signatures.push_back( sig );
 
     const size_t rollingAvLength = 31;
@@ -86,7 +90,7 @@ void Device::updatePowerStateSequence( const size_t rollingAvLength )
     state = NO_MANS_LAND;
 
     // Go through raw reading finding occurences of each power state
-    for (size_t i=0; i<reading.size; i++ ) {
+    for (size_t i=0; i<reading.getSize(); i++ ) {
         currentPowerState = getPowerState( reading[i] );
 
         switch (state) {
@@ -125,7 +129,7 @@ void Device::updatePowerStateSequence( const size_t rollingAvLength )
 
     // Handle case where final state is left hanging after for loop
     if ( state == WITHIN_STATE ) {
-        powerStateSequenceItem.endTime = reading.size*samplePeriod;
+        powerStateSequenceItem.endTime = reading.getSize()*samplePeriod;
         powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
 //        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
 //                << "\tendTime=" << powerStateSequenceItem.endTime
@@ -145,7 +149,7 @@ void Device::updatePowerStateSequence( const size_t rollingAvLength )
 void Device::dumpPowerStateSequenceToFile( )
 {
     // open datafile
-    char * filename = (char*)DIAGRAMS_DIR.c_str() ;
+    char * filename = (char*)DATA_OUTPUT_PATH.c_str() ;
     strcat( filename, "powerStateSequence/powerStateSequence.dat" );
 
     fstream dataFile;
@@ -218,11 +222,11 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
     fstream aggregateDataFile;
     Utils::openFile( aggregateDataFile, aggregateDataFilename, fstream::in );
 
+    list<size_t> locations;
+
     Array<currentCostReading> aggregateData;
     loadCurrentCostData( aggregateDataFile, &aggregateData );
     aggregateDataFile.close();
-
-    list<size_t> locations;
 
     // Get a handy reference to the last 'rawReading' stored in 'signatures'
     const Array<Sample_t>& sigArray = signatures.back()->getRawReading();
@@ -233,7 +237,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
     size_t foundAt;
     size_t i;
     for (i = 0;
-            i < aggregateData.size - (sigArray.size / (aggDataSamplePeriod / signatures.back()->getSamplePeriod() ));
+            i < aggregateData.getSize() - (sigArray.getSize() / (aggDataSamplePeriod / signatures.back()->getSamplePeriod() ));
             i++) {
         lms = LMDiff(i, aggregateData, sigArray, aggDataSamplePeriod);
         if ( lms < THRESHOLD ) {
@@ -279,13 +283,13 @@ const double Device::LMDiff(
 // THIS COMMENTED-OUT CODE ASSUMES THERE ARE NO MISSING SAMPLES.  I'M KEEPING IT HERE FOR NOW
 // BECAUSE IT'S USEFUL FOR TESTING BY FINDING A CROPPED DEVICE SIGNATURE WITHIN ITSELF
 //
-//    for (i=0; i<((sigArray.size/aggDataSamplePeriod)-1); i++) {
+//    for (i=0; i<((sigArray.getSize()/aggDataSamplePeriod)-1); i++) {
 //        for (size_t fineTune=0; fineTune<aggDataSamplePeriod; fineTune++) {
 //            accumulator += abs( sigArray[(i*aggDataSamplePeriod)+fineTune] - aggData[i+agOffset] );
 //        }
 //        accumulator += pow( ( sigArray[(i*aggDataSamplePeriod)] - aggData[i+agOffset] ) ,2);
 //    }
-//    LOG(INFO) << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.size=" << sigArray.size;
+//    LOG(INFO) << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.getSize()=" << sigArray.getSize();
 
     size_t aggIndex=aggOffset, sigIndex=0, count=0;
 
@@ -293,7 +297,7 @@ const double Device::LMDiff(
 
 
 // COMPARE START OF AGG DATA WITH START OF SIG DATA
-    while (sigIndex < (sigArray.size-aggDataSamplePeriod) && aggIndex < (aggData.size-1) && count < 50) {
+    while (sigIndex < (sigArray.getSize()-aggDataSamplePeriod) && aggIndex < (aggData.getSize()-1) && count < 50) {
         accumulator += aggData[aggIndex].reading - sigArray[sigIndex]; // don't take the absolute
         count++;
         aggIndex++;
@@ -302,7 +306,7 @@ const double Device::LMDiff(
     }
 
     /*
-    while (sigIndex < (aggIndex < (aggData.size-1)) && count < 50) {
+    while (sigIndex < (aggIndex < (aggData.getSize()-1)) && count < 50) {
         accumulator += aggData[aggIndex].reading; // don't take the absolute
         count++;
         aggIndex++;
@@ -315,7 +319,7 @@ const double Device::LMDiff(
     aggIndex=aggOffset;
     sigIndex=0;
     count=0;
-    while (sigIndex < (sigArray.size-aggDataSamplePeriod) && aggIndex < (aggData.size-1)) {
+    while (sigIndex < (sigArray.getSize()-aggDataSamplePeriod) && aggIndex < (aggData.getSize()-1)) {
             for (size_t fineTune = 0; fineTune<aggDataSamplePeriod; fineTune++) {
                 accumulator += abs( (sigArray[sigIndex+fineTune]+levelDiff) - aggData[aggIndex].reading );
                 count++;
@@ -325,13 +329,13 @@ const double Device::LMDiff(
             sigIndex += (aggData[aggIndex].timestamp - aggData[aggIndex-1].timestamp);
     }
 
-//    LOG(INFO) << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.size/aggDataSamplePeriod);
+//    LOG(INFO) << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.getSize()/aggDataSamplePeriod);
 
     return accumulator / count; // average
 }
 
 /**
- *
+ * @todo why are we loading current cost data in Device?
  * @param fs
  * @param data = a pointer to a valid but empty Array<Sample_t>
  */

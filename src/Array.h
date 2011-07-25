@@ -65,25 +65,43 @@ private:
  * Very simple, light weight Array struct.
  */
 template <class T>
-struct Array {
+class Array {
+protected:
+    /********************
+     * Member variables *
+     ********************/
     T * data;
-    size_t size; // size_t is 8bytes wide on x86_64
+    size_t size;         /**< Number of members. size_t is 8bytes wide on x86_64 */
+    size_t smoothing;    /**< Does this array represent data which has been smoothed? */
+    Array<T> const * upstream; /**< If this array has been produced by processing a previous array then 'upstream' points to the upstream array. Else=0. */
 
-    Array() : data(0), size(0)
+public:
+    /********************
+     * Member functions *
+     ********************/
+
+    /**************** CONSTRUCTORS **************/
+
+    Array()
+    : data(0), size(0), smoothing(0), upstream(0)
     {}
 
-    explicit Array(const size_t _size) : data(0), size(0)
+    explicit Array(
+            const size_t _size /**< Size of array */
+            )
+    : data(0), size(0), smoothing(0), upstream(0)
     {
         setSize(_size);
     }
 
     /**
      * Constructor for building an Array from an existing C-array
-     *
-     * @param _size
-     * @param _data
      */
-    explicit Array(const size_t _size, const T * _data) : data(0), size(0)
+    explicit Array(
+            const size_t _size, /**< Size of array */
+            const T * _data     /**< Pointer to C-style array */
+            )
+    : data(0), size(0), smoothing(0), upstream(0)
     {
         setSize(_size);
         for (size_t i=0; i<size; i++) {
@@ -94,36 +112,15 @@ struct Array {
     /**
      * Copy constructor
      */
-    Array(const Array<T>& other) : data(0), size(0)
+    Array( const Array<T>& other )
+    : data(0), size(0), smoothing(0), upstream(&other)
     {
         setSize(other.size);
+
 
         for (size_t i=0; i<size; i++) {
             data[i] = other[i];
         }
-    }
-
-    Array<T>& operator=(const Array<T>& source)
-    {
-        setSize(source.size);
-        for (size_t i=0; i<size; i++) {
-            data[i] = source[i];
-        }
-
-        return *this;
-    }
-
-    bool operator==(const Array<T>& other)
-    {
-        if (size != other.size)
-            return false;
-
-        for (size_t i=0; i<size; i++) {
-            if (data[i] != other[i])
-                return false;
-        }
-
-        return true;
     }
 
     ~Array()
@@ -132,6 +129,19 @@ struct Array {
             delete [] data;
         }
     }
+
+    Array<T>& operator=(const Array<T>& source)
+    {
+        setSize(source.size);
+        upstream = &source;
+        for (size_t i=0; i<size; i++) {
+            data[i] = source[i];
+        }
+
+        return *this;
+    }
+
+    /************* GETTERS AND SETTERS **************/
 
     /**
      * Mutable subscript operator.  Fast.  No range checking
@@ -168,6 +178,37 @@ struct Array {
         }
     }
 
+    const size_t getSize() const
+    {
+        return size;
+    }
+
+    const size_t getSmooting() const
+    {
+        return smoothing;
+    }
+
+    Array<T>* getUpstream() const
+    {
+        return upstream;
+    }
+
+    /************* OTHER MEMBER FUNCTIONS ****************/
+
+    bool operator==(const Array<T>& other)
+    {
+        if (size != other.size)
+            return false;
+
+        for (size_t i=0; i<size; i++) {
+            if (data[i] != other[i])
+                return false;
+        }
+
+        return true;
+    }
+
+
     /**
      * Copy from source to this object, starting at cropFront index and
      * ignoring the last cropBack items from the source.
@@ -184,6 +225,7 @@ struct Array {
         }
 
         this->setSize( source.size - cropFront - cropBack );
+        upstream = &source;
 
         for (size_t i = 0; i<size; i++ ) {
             data[i] = source[i+cropFront];
@@ -192,34 +234,17 @@ struct Array {
 
     void initAllEntriesTo(const T initValue)
     {
+        upstream = 0;
         for (size_t i = 0; i<size; i++) {
             data[i] = initValue;
         }
     }
 
-    /**
-     * Create a histogram.
-     *
-     * @param hist = an empty Array<uint32_t> object
-     */
-    void histogram(Array<Histogram_t> * hist) const
-    {
-        if (hist->size == 0) {
-            hist->setSize( MAX_WATTAGE ); // 1 Watt resolution; max current on a 13Amp 230Volt circuit = 2990W.  Plus some headroom
-        }
-        hist->initAllEntriesTo(0);
-
-        for (size_t i=0; i<size; i++) {
-            (*hist)[ Utils::roundToNearestInt( data[i] ) ]++;
-        }
-
-    }
-
-    void dumpToFile(const char* filename) const
+    void dumpToFile(const std::string& filename) const
     {
         LOG(INFO) << "Dumping Array to filename " << filename;
         std::fstream fs;
-        fs.open( filename, std::ifstream::out );
+        fs.open( filename.c_str(), std::ifstream::out );
         if ( ! fs.good() ) {
             LOG(FATAL) << "Can't open " << filename;
         }
@@ -229,6 +254,8 @@ struct Array {
 
     /**
      * Returns a rolling average of same length as the original array.
+     *
+     * @todo this code should probably be removed and the functionality implemented useing the RollingAverage class.
      *
      * @param ra = Initally an empty Array<Sample_t>.  Returned with Rolling Averages.
      * @param length = number of items to use in the average.  Must be odd.
@@ -240,6 +267,8 @@ struct Array {
         assert( length<size);
 
         // setup ra
+        ra->smoothing = length;
+        ra->upstream = this;
         ra->setSize(this->size);
 
         size_t i;
@@ -275,12 +304,10 @@ struct Array {
     }
 
     /**
-     * Return the index of and the value of the largest element of the Array
+     * Return the index of and the value of the largest element of the Array,
+     * ignoring the members between 'start' and 'end'.
      *
-     * @param maxValue = return value
-     * @param start
-     * @param end
-     * @return
+     * @return maxValue
      */
     const size_t max(T* maxValue, const size_t start=0, size_t end=0) const
     {
@@ -314,15 +341,16 @@ struct Array {
     /**
      * Find the max value outside of the mask.
      *
-     * @param maxValue = return max value
-     *
-     * @param mask - a list of (mask start index, mask end index) pairs describing the mask.
-     * The masks must not overlap.  The mask includes the start and end index.
-     *
      * @return an index to the max value.  If there are two equal values
      * then we only return the first we come to.
      */
-    const size_t max(T* maxValue, std::list<size_t>& mask) const
+    const size_t max(
+            T* maxValue, /**< Return the max value value */
+            std::list<size_t>& mask ///< a list of (mask start index, mask end index)
+                                    ///< pairs describing the mask.
+                                    ///< The masks must not overlap.
+                                    ///< The mask includes the start and end index.
+            ) const
     {
         if ( mask.empty() ) {
             LOG(INFO) << "Mask is empty.";
@@ -383,14 +411,18 @@ struct Array {
 
     /**
      * Find where the peak plateaus or starts climbing again.
-     * This doesn't work anywhere near as well as 'findPeaks()'.
      *
-     * @param peak - the index of the highest value in the peak
-     * @param start - return index of the start of the hill
-     * @param end - return index of the end of the hill
-     * @param retries - the "tolerance"
+     * @deprecated This doesn't work anywhere near as well as findPeaks().
+     * But leaving this function in the code in case it comes in handy.
+     *
+     * @return 'start' and 'end' parameters are return parameters
      */
-    void descendPeak(const size_t peak, size_t* start, size_t* end, size_t retries = 1)
+    void descendPeak(
+            const size_t peak, /**< the index of the highest value in the peak */
+            size_t* start, /**< return parameter = index of the start of the hill */
+            size_t* end,  /**< return parameter = index of the end of the hill */
+            size_t retries = 1  /**< the "tolerance" */
+            )
     {
         size_t i = peak;
         size_t retriesRight = retries, retriesLeft = retries;
@@ -440,10 +472,10 @@ struct Array {
      * Starts from end of array and works backwards.  At each step, calculates a rolling
      * average of the gradient.  If the value of this rolling average is above KNEE_GRAD_THRESHOLD
      * then it enters the 'ASCENDING' state... etc...
-     *
-     * @param boundaries - output parameter
      */
-    void findPeaks( std::list<size_t> * boundaries )
+    void findPeaks(
+            std::list<size_t> * boundaries /**< output parameter */
+            )
     {
         LOG(INFO) << "findPeaks...";
         const double KNEE_GRAD_THRESHOLD = 0.6;
@@ -549,33 +581,37 @@ struct Array {
 
     }
 
-    void drawGraph(const std::string& name,
-                   const std::string& xlabel = "",
-                   const std::string& ylabel = "",
-                   const std::string& args = "")
+    virtual void drawGraph(
+            const std::string& name,
+            const std::string& xlabel = "",
+            const std::string& ylabel = "",
+            const std::string& args = ""
+            )
     {
-        // Dump data to a temporary file
-        dumpToFile( "data/processed/arrayData.dat" );
+        // Dump data to a .dat file
+        const std::string dataFilename = DATA_OUTPUT_PATH + name + ".dat";
+        dumpToFile( dataFilename );
+
+        // Set plot variables
+        GNUplot::PlotVars pv;
+        pv.inFilename  = "1line";
+        pv.outFilename = name;
+        pv.title       = name;
+        pv.xlabel      = xlabel;
+        pv.ylabel      = ylabel;
+        pv.plotArgs    = args;
+        pv.data.push_back( GNUplot::Data( dataFilename, name ) );
 
         // Plot
-        GNUplot gnu_plot;
-        gnu_plot( "set title \"" + name + "\"" );
-        gnu_plot( "set terminal svg size 1500 700" );
-        gnu_plot( "set samples 1001" ); // high quality
-        gnu_plot( "set nokey" );
-        gnu_plot( "set output \"data/diagrams/" + name + ".svg\"" );
-        gnu_plot( "set xlabel \"" + xlabel + "\"" );
-        gnu_plot( "set ylabel \"" + ylabel + "\"" );
-        gnu_plot( "plot " + args + " \"data/processed/arrayData.dat\" with l lw 1" );
-
+        GNUplot::plot( pv );
     }
 
     /**
-     *
-     * @param fs
-     * @param data = a pointer to a valid but empty Array<Sample_t>
+     * Load data from a CSV file with a single column.
      */
-    void loadData(std::fstream& fs)
+    void loadData(
+            std::fstream& fs /**< An opened and valid file stream containing a CSV datafile. */
+            )
     {
         setSize( Utils::countDataPoints( fs ) );
 
@@ -598,6 +634,37 @@ struct Array {
             o << a[i] << std::endl;
         }
         return o;
+    }
+};
+
+class Histogram : public Array<Histogram_t>
+{
+public:
+    /**
+     * Create a histogram from a sample array.
+     *
+     * @param hist = an empty Array<uint32_t> object
+     */
+    Histogram(const Array<Sample_t>& source)
+    : Array<Histogram_t>()
+    {
+        upstream = (Array<Histogram_t>*)&source; /**< @todo this may not work! */
+
+        setSize( MAX_WATTAGE ); // 1 Watt resolution
+
+        initAllEntriesTo(0);
+
+        for (size_t i=0; i<size; i++) {
+            data[ Utils::roundToNearestInt( data[i] ) ]++;
+        }
+    }
+
+    /**
+     * Override because we need to convert 'upstream' back to the correct pointer type.
+     */
+    Array<Sample_t>* getUpstream()
+    {
+        return (Array<Sample_t>*)upstream;
     }
 };
 

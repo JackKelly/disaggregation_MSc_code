@@ -30,6 +30,12 @@ CMakeFiles
 cmake_install.cmake
 install_manifest.txt
 *.d
+doc/html
+doc/latex
+
+# Generated data files #
+########################
+data/output
 
 # Packages #
 ############

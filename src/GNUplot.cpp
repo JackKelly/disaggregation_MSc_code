@@ -66,7 +66,8 @@ void GNUplot::instantiateTemplate(
             ";s/XLABEL/" + plotVars.xlabel + "/g"
             ";s/YLABEL/" + plotVars.ylabel + "/g"
             ";s/SETTERMINAL/set terminal svg size 1200 800; set samples 1001/g"
-            ";s/SETOUTPUT/set output \"" + plotVars.outFilename + ".svg\"/g";
+            ";s/SETOUTPUT/set output \"" + plotVars.outFilename + ".svg\"/g"
+            ";s/PLOTARGS/" + plotVars.plotArgs + "/g";
 
     /* Loop through each gnuPlotData list item...
      *     (would be nice to use C++0x's 'foreach' syntax, but that's only been

@@ -23,8 +23,14 @@ using namespace std;
  * Constructor for opening a CSV file
  *
  */
-Signature::Signature(const char* filename, const size_t _samplePeriod, const size_t cropFront, const size_t cropBack )
-: samplePeriod(_samplePeriod)
+Signature::Signature(
+        const char* filename,   /**< Filename, including path and suffix. */
+        const size_t _samplePeriod, /**< Sample period. In seconds. @todo sample period should be read from data file. */
+        const size_t _sigID,    /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. Default=0. */
+        const size_t cropFront, /**< Number of elements to crop from the front. Default=0. If 0 then will automatically crop 0s from the front such that there's only a single leading zero left. */
+        const size_t cropBack   /**< Number of elements to crop from the back. Default=0. If 0 then will automatically crop 0s from the back such that there's only a single trailing zero left. */
+        )
+: samplePeriod(_samplePeriod), sigID(_sigID)
 {
     fstream dataFile;
     Utils::openFile( dataFile, filename, fstream::in );
@@ -52,37 +58,39 @@ const PowerStates_t& Signature::getPowerStates( const size_t rollingAvLength )
     return powerStates;
 }
 
-void Signature::drawGraphWithStateBars( const Array<Histogram_t>& hist, const size_t raLength )
+/**
+ * @todo this needs to be changed.  Firstly, Sig will be a child of Array,  The function should
+ * automatically determine the history as much as possible by following the 'upstream' pointers.
+ */
+void Signature::drawHistWithStateBars(
+        const Array<Histogram_t>& hist, /**< Histogram array. */
+        const size_t raLength,          /**< Length of the rolling average used to smooth hist gradient. */
+        const string& deviceName        /**< The human-readable name of the device. */
+    )
 {
-    // dump data to temp file
-    hist.dumpToFile( "data/processed/hist.dat" );
 
-    const std::string name("histWithStateBars");
+    // Dump data to a .dat file
 
-    GNUplot gnu_plot;
+    const std::string histogramFilename = DATA_OUTPUT_PATH + deviceName + "-histogram-" + ".dat";
+    hist.dumpToFile( histogramFilename );
 
-    gnu_plot( "set title \"" + name + "\"" );
-    gnu_plot( "set terminal svg size 1200 800" );
-    gnu_plot( "set samples 1001" ); // high quality
-    gnu_plot( "set output \"data/diagrams/" + name + ".svg\"" );
-    gnu_plot( "set xlabel \"power (Watts)\"" );
-    gnu_plot( "set ylabel \"frequency\"" );
-    gnu_plot( "plot [0:2500]  "
+    // Set plot variables
+    GNUplot::PlotVars pv;
+    pv.inFilename  = "histWithStateBars";
+    pv.outFilename = deviceName + "-histWithStateBars-gradSmoothing-" + Utils::size_t_to_s(raLength); /**< @todo smoothing of original data */
+    pv.title       = deviceName + " histogram with state bars. Rolling average length=" + Utils::size_t_to_s(raLength);  /**< @todo smoothing of original data */
+    pv.xlabel      = "power (Watts)";
+    pv.ylabel      = "histogram frequency";
+    pv.data.push_back( GNUplot::Data( histogramFilename, "Histogram. Smoothing = " ) );
+
+    // Plot
+/*    GNUplot::plot( pv );
+
               "\"data/processed/hist.dat\" with l lw 1 title \"raw histogram\", "
               "\"data/processed/RA_hist.dat\" with l lw 1 title \""
             + Utils::size_t_to_s(raLength) + "-step rolling average of histogram gradient\", "
               "\"data/processed/x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
-
-    // output for LaTeX
-    gnu_plot( "set format \"$%g$\"" );
-    gnu_plot( "set terminal epslatex colour solid size 15cm, 10cm" );
-    gnu_plot( "set output \"data/diagrams/" + name + ".tex\"" );
-    gnu_plot( "plot [0:2400] "
-              "\"data/processed/hist.dat\" with l lw 1 title \"raw histogram\", "
-              "\"data/processed/RA_hist.dat\" with l lw 1 title \""
-              + Utils::size_t_to_s(raLength) + "-step rolling average of histogram gradient\", ""-step rolling average of histogram gradient\", "
-              "\"data/processed/x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
-
+*/
 }
 
 /**
@@ -92,30 +100,18 @@ void Signature::drawGraphWithStateBars( const Array<Histogram_t>& hist, const si
 void Signature::findPowerStates( const size_t rollingAvLength )
 {
     LOG(INFO) << "Finding power states...rollingAvLength = " << rollingAvLength;
-    assert ( rawReading.size ); // make sure rawReading is populated
+    assert ( rawReading.getSize() ); // make sure rawReading is populated
 
     rawReading.drawGraph( "rawReading", "time (seconds)", "power (Watts)", "[] []" );
 
     // Create a histogram
-    Array<Histogram_t> hist;
-    string description;
 
-    if (rollingAvLength > 1) {
-        Array<Sample_t> rollingAv;
-        rawReading.rollingAv( &rollingAv, rollingAvLength );
-        rollingAv.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
-        rollingAv.histogram( &hist );
-        description = "Hist_from_" + Utils::size_t_to_s(rollingAvLength) + "-step_rollingAv";
-    } else {
-        rawReading.histogram( &hist );
-        description = "Hist_from_raw";
-    }
+    Array<Sample_t> rollingAv;
+    rawReading.rollingAv( &rollingAv, rollingAvLength );
+    rollingAv.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "[] []" );
+    Histogram hist ( rollingAv );
 
-    hist.drawGraph( description, "power (Watts)", "frequency", "[0:2500] [0:100]" );
-
-//    Array<Sample_t> RAhist;
-//    hist.rollingAv( &RAhist, 21 );
-//    RAhist.drawGraph( "RA10_of_Hist_from_raw", "power (Watts)", "frequency", "[0:2500] [0:100]" );
+//    hist.drawGraph( description, "power (Watts)", "frequency", "[0:2500] [0:100]" );
 
     // find the boundaries of the different power states in the histogram
     std::list<size_t> boundaries;
@@ -140,9 +136,7 @@ void Signature::findPowerStates( const size_t rollingAvLength )
         powerStates.back().xErrorBarOutputLine( dataFile );
     }
     dataFile.close();
-    drawGraphWithStateBars( hist, rollingAvLength );
-
-//    fillGapsInPowerStates( hist );
+//    drawHistWithStateBars( hist, rollingAvLength );
 }
 
 /**
@@ -194,7 +188,7 @@ const Array<Sample_t>& Signature::getRawReading() const
 const size_t Signature::findNumLeadingZeros( const Array<Sample_t>& data )
 {
     size_t count = 0;
-    while ( data[count]==0 && count<data.size ) {
+    while ( data[count]==0 && count<data.getSize() ) {
         count++;
     }
     return count;
@@ -202,18 +196,21 @@ const size_t Signature::findNumLeadingZeros( const Array<Sample_t>& data )
 
 const size_t Signature::findNumTrailingZeros( const Array<Sample_t>& data )
 {
-    size_t count = data.size-1;
+    size_t count = data.getSize()-1;
     while ( data[count]==0 && count>0 ) {
         count--;
     }
-    return (data.size-count)-1;
+    return (data.getSize()-count)-1;
 }
 
 /**
  * Convert from the rawReading to a different sample rate
  *
- * @param output
- * @param newPeriod
+ * @deprecated Usually use rollingAv()
+ *
+ * @todo this should be in Array shouldn't it?
+ *
+ * @return output
  */
 void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
 {
@@ -222,7 +219,7 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
 
     LOG(INFO) << "Resampling...";
 
-    const size_t newSize = (int)ceil(rawReading.size / ( (double)newPeriod / (double)samplePeriod ));
+    const size_t newSize = (int)ceil(rawReading.getSize() / ( (double)newPeriod / (double)samplePeriod ));
     output->setSize( newSize );
 
 
@@ -230,7 +227,7 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
     if (mod==0) {
         // newPeriod % samplePeriod == 0; so then just take an average of each step
         const size_t stepSize = newPeriod/samplePeriod;
-        const size_t delta = (newSize*newPeriod) - (rawReading.size*samplePeriod);
+        const size_t delta = (newSize*newPeriod) - (rawReading.getSize()*samplePeriod);
 
         if (delta==0) {
             outerLimit = newSize;
@@ -238,7 +235,7 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
             outerLimit = newSize-1;
         }
 
-        LOG(INFO) << "old size=" << rawReading.size << ", old period=" << samplePeriod
+        LOG(INFO) << "old size=" << rawReading.getSize() << ", old period=" << samplePeriod
                   << ", new size=" << newSize << ", newPeriod=" << newPeriod
                   << ", stepSize=" << stepSize << ", mod=" << mod << ", delta=" << delta << ",outerLimit=" << outerLimit;
 
@@ -257,7 +254,7 @@ void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod )
         if (delta != 0) {
             accumulator=0;
             size_t i;
-            for (i=inputIndex; i<rawReading.size; i++) {
+            for (i=inputIndex; i<rawReading.getSize(); i++) {
                 accumulator += rawReading[i];
                 LOG(INFO) << "i=" << i << ", rawReading[i]=" << rawReading[i];
             }

@@ -46,11 +46,11 @@ struct Statistic {
         register T currentVal;
 
         if (end==0) { // default value used
-            end = data.size;
+            end = data.getSize();
         }
 
         assert(end >  beginning);
-        assert(end <= data.size);
+        assert(end <= data.getSize());
 
         min = beginning;
         max = end;
