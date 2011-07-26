@@ -56,7 +56,7 @@ private:
             PowerStates_t& powerStates
             );
 
-    const std::string getStateBarsFilename() const;
+    const std::string getStateBarsBaseFilename() const;
 
     /************************
      *  Member variables    *

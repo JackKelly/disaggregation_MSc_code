@@ -39,18 +39,19 @@ int main(int argc, char * argv[])
     std::cout << stat << std::endl;
 */
 
-    Device toaster("Toaster");
+/*    Device toaster("Toaster");
     toaster.getReadingFromCSV( "data/input/watts_up/toaster.csv", 1 ,0 ,0 );
-//    toaster.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
+    toaster.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
+*/
 
 /*    Device kettle("Kettle");
     kettle.getReadingFromCSV( "data/input/watts_up/kettle.csv", 1 ,1 ,1);
     kettle.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 */
 
-//    Device washer("Washer1");
+      Device washer("Washer1");
 //    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 8000 );
-//    washer.getReadingFromCSV( "data/input/watts_up/washer.csv", 1, 50, 2200 );
+      washer.getReadingFromCSV( "data/input/watts_up/washer.csv", 1, 50, 2200 );
 //    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
 //    washer.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 

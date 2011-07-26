@@ -13,15 +13,20 @@
 #include <iostream>
 #include <boost/algorithm/string/replace.hpp>
 #include <list>
+#include <glog/logging.h>
 
 using namespace std;
 
 /**
- * @brief Plot a graph using GNUplot.  See GNUplot::PlotVars for details of what variables
- * are expected to be instantiated in plotVars.  First checks to see if
+ * @brief Plot a graph using GNUplot.
+ *
+ * First checks to see if
  * config/'plotVars.outFilename'.template.gnu exists.  If it does, it uses that as the template
  * (so individual devices can have their own specific templates). If it doesn't exist,
  * the code uses config/'plotVars.inFilename'.template.gnu as the template.
+ *
+ * @see GNUplot::PlotVars for details of what variables
+ * are expected to be instantiated in plotVars.
  *
  * @todo add path from config option DATA_OUTPUT_PATH.
  */
@@ -43,9 +48,10 @@ void GNUplot::plot(
     instantiateTemplate( plotVars );
 
     string plotCommand =
-            "gnuplot data/output/" + plotVars.outFilename + ".gnu";
+            "gnuplot " + DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu";
 
-    cout << plotCommand << endl;
+    cout << "Plotting " << DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu" << endl;
+    LOG(INFO) << plotCommand;
     system( plotCommand.c_str() );
 }
 
@@ -97,22 +103,21 @@ void GNUplot::sanitise(
  * Boost.Regex::regex_replace()</a> or Boost's String Algorithms.
  *
  * @todo add path from config option DATA_OUTPUT_PATH.
- * @todo replace SETTERMINAL and SETOUTPUT
  */
 void GNUplot::instantiateTemplate(
         const PlotVars& plotVars /**< Variables for insertion into the template. */
     )
 {
-    string outputPath = DATA_OUTPUT_PATH;
-    sanitise( &outputPath );
+    string sanitisedOutputPath = DATA_OUTPUT_PATH;
+    sanitise( &sanitisedOutputPath );
 
     string sedCommand =
             "sed -e '"
              "s/TITLE/" + plotVars.title + "/g"
             ";s/XLABEL/" + plotVars.xlabel + "/g"
             ";s/YLABEL/" + plotVars.ylabel + "/g"
-            ";s/SETTERMINAL/set terminal svg size 1200 800; set samples 1001/g"
-            ";s/SETOUTPUT/set output \"" + outputPath + plotVars.outFilename + ".svg\"/g"
+            ";s/SETTERMINAL/set terminal svg size 1200 800; set samples 1001/g" /**< @todo should be configurable */
+            ";s/SETOUTPUT/set output \"" + sanitisedOutputPath + plotVars.outFilename + ".svg\"/g" /**< @todo graph output suffix should be configuarble */
             ";s/PLOTARGS/" + plotVars.plotArgs + "/g";
 
     /* Loop through each gnuPlotData list item...
@@ -126,14 +131,16 @@ void GNUplot::instantiateTemplate(
 
         digit = '1' + count; // convert size_t "count" to a single-digit string
         sedCommand +=
-                ";s/DATAFILE" + digit + "/" + data->dataFile + "/g"
-                ";s/DATAKEY"+ digit + "/" + data->title + "/g";
+                ";s/" + data->tokenBase + "FILE/" + sanitisedOutputPath + data->dataFile + ".dat/g"
+                ";s/" + data->tokenBase + "KEY/" + data->title + "/g";
     }
 
     sedCommand +=
             "' config/" + plotVars.inFilename + ".template.gnu" // input to sed
-            " > data/output/" + plotVars.outFilename + ".gnu";  // output from sed
+            " > " + DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu";  // output from sed
 
-    cout << sedCommand << endl;
+    cout << "Instantiating GNUplot template \"config/" + plotVars.inFilename + ".template.gnu\""
+            " and outputting instantiated template to " << DATA_OUTPUT_PATH << plotVars.outFilename << ".gnu" << endl;
+    LOG(INFO) << sedCommand;
     system( sedCommand.c_str() ) ;
 }

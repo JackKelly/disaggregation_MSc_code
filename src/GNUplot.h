@@ -17,10 +17,17 @@ namespace GNUplot {
  * Structure for storing details about data elements to be plotted.
  */
 struct Data {
-    std::string dataFile, /**< Data filename (including suffix but without path). Directory = DATA_OUTPUT_PATH config option. */
-                title;    /**< Title of this data element (for displaying in the graph's key). */
-    Data( const std::string& _dataFile, const std::string& _title )
-    : dataFile(_dataFile), title(_title) {}
+    std::string dataFile, /**< Base data filename (without path or suffix). Directory = DATA_OUTPUT_PATH config option. */
+                title,    /**< Title of this data element (for displaying in the graph's key). */
+                tokenBase;    /**< Base of token to look for in the template. FILE and KEY will be appended to this tokenBase. */
+    /**
+     * Constructor
+     */
+    Data(
+            const std::string& _dataFile,
+            const std::string& _title,
+            const std::string& _tokenBase = "DATA")
+    : dataFile(_dataFile), title(_title), tokenBase(_tokenBase) {}
 };
 
 /**
@@ -33,7 +40,7 @@ struct PlotVars {
                 xlabel,
                 ylabel,
                 plotArgs;    /**< Plot arguments (e.g. range). Best not to use this but to use the template.gnu file instead. */
-    std::list<Data> data;    /**< List of data elements to be plotted. */
+    std::list<Data> data;    /**< List of data elements to be plotted. @see GNUplot::Data for details. */
 };
 
 void plot(

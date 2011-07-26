@@ -67,10 +67,8 @@ void Signature::drawHistWithStateBars(
         const size_t gradientRollingAvLength
     ) const
 {
-
     // Dump histogram data to a .dat file
-    const string histFilename = DATA_OUTPUT_PATH + hist.getBaseFilename( deviceName ) + ".dat";
-    hist.dumpToFile( histFilename );
+    hist.dumpToFile( hist.getBaseFilename() );
 
     // Set plot variables
     GNUplot::PlotVars pv;
@@ -80,21 +78,28 @@ void Signature::drawHistWithStateBars(
     pv.xlabel      = "power (Watts)";
     pv.ylabel      = "histogram frequency";
 
-    pv.data.push_back( GNUplot::Data( histFilename, "Histogram. "
-            "HistSmoothing = " + Utils::size_t_to_s( hist.getSmoothing() ) +
-            ". UpstreamSmoothing=" + Utils::size_t_to_s( hist.getUpstreamSmoothing() ) ) );
+    // Set data for plotting
+    pv.data.push_back( GNUplot::Data(
+            hist.getBaseFilename(),
+            "Histogram. HistSmoothing = " + Utils::size_t_to_s( hist.getSmoothing() ) +
+                 ". UpstreamSmoothing=" + Utils::size_t_to_s( hist.getUpstreamSmoothing() ),
+            "HIST" )
+    );
 
-    pv.data.push_back( GNUplot::Data( getStateBarsFilename(), "States" ) );
+    pv.data.push_back( GNUplot::Data (
+            hist.getSmoothedGradOfHistFilename(),
+            "Gradient of histogram. Gradient smoothing=" + Utils::size_t_to_s( hist.HIST_GRADIENT_RA_LENGTH ),
+            "HISTGRAD" )
+    );
+
+    pv.data.push_back( GNUplot::Data(
+            getStateBarsBaseFilename(),
+            "Automatically determined power states (min, mean, max)",
+            "STATES" )
+    );
 
     // Plot
     GNUplot::plot( pv );
-
-/*
-              "\"data/processed/hist.dat\" with l lw 1 title \"raw histogram\", "
-              "\"data/processed/RA_hist.dat\" with l lw 1 title \""
-            + Utils::size_t_to_s(raLength) + "-step rolling average of histogram gradient\", "
-              "\"data/processed/x_err_bars.dat\" with xerrorbars title \"automatically determined state boundaries (min, mean, max)\" " );
-*/
 }
 
 /**
@@ -129,7 +134,7 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
     assert( (boundaries.size() % 2)==0 ); // check there's an even number of entries
     size_t front, back;
     fstream dataFile;
-    Utils::openFile( dataFile, getStateBarsFilename(), fstream::out );
+    Utils::openFile( dataFile, DATA_OUTPUT_PATH + getStateBarsBaseFilename() + ".dat", fstream::out );
     for (std::list<size_t>::const_iterator it=boundaries.begin(); it!=boundaries.end(); it++) {
 
         front = *it;
@@ -147,9 +152,9 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
     return powerStates;
 }
 
-const string Signature::getStateBarsFilename() const
+const string Signature::getStateBarsBaseFilename() const
 {
-    return DATA_OUTPUT_PATH + deviceName + "-stateBars.dat";
+    return deviceName + "-stateBars";
 }
 
 /**

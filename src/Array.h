@@ -261,13 +261,19 @@ public:
         }
     }
 
-    void dumpToFile(const std::string& filename) const
+    /**
+     *
+     */
+    void dumpToFile(
+            const std::string& filename /**< Excluding path and suffiex.  DATA_OUTPUT_PATH and .dat will be added. */
+            ) const
     {
-        LOG(INFO) << "Dumping Array to filename " << filename;
+        std::string fullFilename = DATA_OUTPUT_PATH + filename + ".dat";
+        LOG(INFO) << "Dumping Array to filename " << fullFilename;
         std::fstream fs;
-        fs.open( filename.c_str(), std::ifstream::out );
+        fs.open( fullFilename.c_str(), std::ifstream::out );
         if ( ! fs.good() ) {
-            LOG(FATAL) << "Can't open " << filename;
+            LOG(FATAL) << "Can't open " << fullFilename;
         }
         fs << *this;
         fs.close();
@@ -489,6 +495,7 @@ public:
         }
     }
 
+    static const size_t HIST_GRADIENT_RA_LENGTH = 19; /* Length of rolling average. Best if odd. */
     /**
      * Attempts to automatically find the peaks.
      *
@@ -503,28 +510,27 @@ public:
         LOG(INFO) << "findPeaks...";
         const double KNEE_GRAD_THRESHOLD = 0.6;
         const double SHOULDER_GRAD_THRESHOLD = 0.6;
-        const size_t RA_LENGTH = 19; /* Length of rolling average. Best if odd. */
         size_t middleOfRA;
         enum { NO_MANS_LAND, ASCENDING, PEAK, DESCENDING, UNSURE } state;
         state = NO_MANS_LAND;
-        RollingAverage<int> gradientRA(RA_LENGTH);
+        RollingAverage<int> gradientRA(HIST_GRADIENT_RA_LENGTH);
         T kneeHeight=0, peakHeight=0, descent=0, ascent=0;
 
         // Prime the Rolling Average array
-        for (size_t i=(size-2); i>(size-RA_LENGTH); i--) {
+        for (size_t i=(size-2); i>(size-HIST_GRADIENT_RA_LENGTH); i--) {
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
         }
 
-        double * RA = new double[(size-RA_LENGTH)+1]; // Just used for data visualisation purposes
+        Array<Sample_t> RA((size-HIST_GRADIENT_RA_LENGTH)+1); // Just used for data visualisation purposes);
 
         // start at the end of the array, working backwards.
-        for (size_t i=(size-RA_LENGTH); i>0; i--) {
+        for (size_t i=(size-HIST_GRADIENT_RA_LENGTH); i>0; i--) {
             // keep a rolling average of the gradient
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
 
             RA[i] = gradientRA.value();
 
-            middleOfRA = i+((RA_LENGTH/2)+1);
+            middleOfRA = i+((HIST_GRADIENT_RA_LENGTH/2)+1);
 
             switch (state) {
             case NO_MANS_LAND:
@@ -594,21 +600,15 @@ public:
         }
 
         // For data visualisation purposes, dump rolling average data to file
-        std::fstream ra_file;
-        Utils::openFile(ra_file,  getHistRollingAvFilename( RA_LENGTH ), std::fstream::out);
-        for (size_t i = 0; i<(size-RA_LENGTH); i++) {
-            ra_file << RA[i] << std::endl;
-        }
-        ra_file.close();
-        delete [] RA;
+        RA.dumpToFile( getSmoothedGradOfHistFilename() );
     }
 
-    const std::string getHistRollingAvFilename( const size_t RAlength ) const
+    const std::string getSmoothedGradOfHistFilename() const
     {
-        return DATA_OUTPUT_PATH + deviceName + "-smoothedGradOfHist-" + Utils::size_t_to_s( RAlength ) + ".dat";
+        return deviceName + "-smoothedGradOfHist-" + Utils::size_t_to_s( HIST_GRADIENT_RA_LENGTH );
     }
 
-    virtual const std::string getBaseFilename( const std::string name ) const
+    virtual const std::string getBaseFilename() const
     {
         std::string baseFilename = deviceName +
                 (smoothing ? ("-Smoothing" + Utils::size_t_to_s(smoothing)) : "") +
@@ -626,12 +626,9 @@ public:
     {
         // Dump data to a .dat file
 
-        const std::string baseFilename = getBaseFilename( name );
+        const std::string baseFilename = getBaseFilename();
 
-        const std::string dataFilename =
-                DATA_OUTPUT_PATH + baseFilename + ".dat";
-
-        dumpToFile( dataFilename );
+        dumpToFile( baseFilename );
 
         // Set plot variables
         GNUplot::PlotVars pv;
@@ -641,7 +638,7 @@ public:
         pv.xlabel      = xlabel;
         pv.ylabel      = ylabel;
         pv.plotArgs    = args;
-        pv.data.push_back( GNUplot::Data( dataFilename, baseFilename ) );
+        pv.data.push_back( GNUplot::Data( baseFilename, baseFilename ) );
 
         // Plot
         GNUplot::plot( pv );
@@ -667,7 +664,6 @@ public:
         }
         LOG(INFO) << "Entered " << count << " ints into data array.";
     }
-
 
     const size_t getNumLeadingZeros()
     {
@@ -719,13 +715,13 @@ public:
         setAllEntriesTo(0);
 
         for (size_t i=0; i<size; i++) {
-            data[ Utils::roundToNearestInt( data[i] ) ]++;
+            data[ Utils::roundToNearestInt( source[i] ) ]++;
         }
     }
 
-    virtual const std::string getBaseFilename( const std::string name ) const
+    virtual const std::string getBaseFilename() const
     {
-        std::string baseFilename = name + "-hist" +
+        std::string baseFilename = deviceName + "-hist" +
                 (smoothing ? ("-HistSmoothing" + Utils::size_t_to_s(smoothing)) : "") +
                 (upstreamSmoothing ? ("-UpstreamSmoothing" + Utils::size_t_to_s(upstreamSmoothing)) : "");
         return baseFilename;
@@ -737,12 +733,9 @@ public:
     {
         // Dump data to a .dat file
         const std::string baseFilename =
-                getBaseFilename( name );
+                getBaseFilename();
 
-        const std::string dataFilename =
-                DATA_OUTPUT_PATH + baseFilename  + ".dat";
-
-        dumpToFile( dataFilename );
+        dumpToFile( baseFilename );
 
         // Set plot variables
         GNUplot::PlotVars pv;
@@ -752,7 +745,7 @@ public:
         pv.xlabel      = "power (Watts)";
         pv.ylabel      = "frequency";
         pv.plotArgs    = "";
-        pv.data.push_back( GNUplot::Data( dataFilename, baseFilename ) );
+        pv.data.push_back( GNUplot::Data( baseFilename, baseFilename ) );
 
         // Plot
         GNUplot::plot( pv );
