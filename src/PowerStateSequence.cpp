@@ -28,13 +28,15 @@ PowerStateSequence::~PowerStateSequence() {
  *
  */
 void PowerStateSequence::dumpToFile(
-        const string& details /**< Details to be appended onto filename.  e.g. device name and signature ID. */
+        const string details /**< Details to be appended onto filename.  e.g. device name and signature ID. */
         ) const
 {
     // open datafile
-    string filename = DATA_OUTPUT_PATH + "-powerStateSequence.dat";
+    string filename = DATA_OUTPUT_PATH +
+            (details=="" ? "" : details + "-" )
+            + "powerStateSequence.dat";
 
-    cout << "Dumping power state sequence to " << filename;
+    cout << "Dumping power state sequence to " << filename << endl;
 
     fstream dataFile;
     Utils::openFile( dataFile, filename.c_str(), fstream::out );

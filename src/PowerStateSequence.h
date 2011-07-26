@@ -23,7 +23,7 @@ struct PowerStateSequenceItem {
 
 class PowerStateSequence : public std::list<PowerStateSequenceItem> {
 public:
-    void dumpToFile(const std::string& details) const;
+    void dumpToFile(const std::string details = "") const;
 
 };
 

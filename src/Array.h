@@ -524,16 +524,16 @@ public:
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
         }
 
-        Array<Sample_t> RA((size-HIST_GRADIENT_RA_LENGTH)+1); // Just used for data visualisation purposes);
+        Array<Sample_t> RA(size); // Just used for data visualisation purposes);
 
         // start at the end of the array, working backwards.
         for (size_t i=(size-HIST_GRADIENT_RA_LENGTH); i>0; i--) {
             // keep a rolling average of the gradient
             gradientRA.newValue( (int)(data[i] - data[i+1]) );
 
-            RA[i] = gradientRA.value();
-
             middleOfRA = i+((HIST_GRADIENT_RA_LENGTH/2)+1);
+
+            RA[middleOfRA] = gradientRA.value();
 
             switch (state) {
             case NO_MANS_LAND:
