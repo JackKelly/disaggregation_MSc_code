@@ -1,0 +1,11 @@
+DEPENDENCIES:
+
+COMPILING:
+
+Boost
+  boost::algorithm
+  
+  
+  
+TESTING:
+Boost Unit Test Framework

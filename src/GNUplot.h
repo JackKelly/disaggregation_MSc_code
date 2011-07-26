@@ -37,11 +37,23 @@ struct PlotVars {
 };
 
 void plot(
-        PlotVars& gnuPlotVars /**< Variables for insertion into the template. */
+        PlotVars& gnuPlotVars
+);
+
+void sanitise(
+        PlotVars& pv
+);
+
+void sanitise(
+        std::string& str
+);
+
+void sanitise(
+        std::list<Data>& data
 );
 
 void instantiateTemplate(
-        const PlotVars& gnuPlotVars /**< Variables for insertion into the template. */
+        const PlotVars& gnuPlotVars
 );
 
 } /* namespace GNUplot */

@@ -250,11 +250,12 @@ public:
         }
     }
 
-    void initAllEntriesTo(const T initValue)
+    /**
+     * @brief Initialise all array entries to a single value.
+     * Does not reset 'deviceName' or 'smoothing' or 'upstreamSmoothing'.
+     */
+    void setAllEntriesTo(const T initValue)
     {
-        upstreamSmoothing = 0;
-        smoothing = 0;
-        deviceName = "";
         for (size_t i = 0; i<size; i++) {
             data[i] = initValue;
         }

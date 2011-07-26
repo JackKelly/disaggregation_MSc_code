@@ -118,7 +118,6 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
 
     // Create histogram from smoothed data
     Histogram hist ( RA );
-    hist.setDeviceName( deviceName );
     hist.drawGraph( deviceName );
 
     // find the boundaries of the different power states in the histogram
