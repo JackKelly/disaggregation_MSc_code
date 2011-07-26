@@ -114,7 +114,7 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
     // Smooth raw data
     Array<Sample_t> RA;
     rollingAv( &RA, rollingAvLength );
-    RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "" );
+    RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "" ); /**< @todo drawGraph shouldn't need all these params, surely? */
 
     // Create histogram from smoothed data
     Histogram hist ( RA );

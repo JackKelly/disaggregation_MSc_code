@@ -277,6 +277,7 @@ public:
      * Returns a rolling average of same length as the original array.
      *
      * @todo this code should probably be removed and the functionality implemented useing the RollingAverage class.
+     * @todo this code produces a slightly odd result for Toaster-Smoothing31; almost certainly a bug.
      *
      * @param ra = Initally an empty Array<Sample_t>.  Returned with Rolling Averages.
      * @param length = number of items to use in the average.  Must be odd.
@@ -715,7 +716,7 @@ public:
 
         setSize( MAX_WATTAGE ); // 1 Watt resolution
 
-        initAllEntriesTo(0);
+        setAllEntriesTo(0);
 
         for (size_t i=0; i<size; i++) {
             data[ Utils::roundToNearestInt( data[i] ) ]++;

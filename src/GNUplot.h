@@ -41,15 +41,15 @@ void plot(
 );
 
 void sanitise(
-        PlotVars& pv
+        PlotVars * pv_p
 );
 
 void sanitise(
-        std::string& str
+        std::string * str_p
 );
 
 void sanitise(
-        std::list<Data>& data
+        std::list<Data> * data_p
 );
 
 void instantiateTemplate(

@@ -7,6 +7,7 @@
 
 #include "GNUplot.h"
 #include "Utils.h"
+#include "Common.h"
 #include <string>
 #include <stdio.h>
 #include <iostream>
@@ -37,13 +38,14 @@ void GNUplot::plot(
         plotVars.inFilename = plotVars.outFilename;
     }
 
-    sanitise( plotVars ); // remove troublesome characters
+    sanitise( &plotVars ); // remove troublesome characters
 
     instantiateTemplate( plotVars );
 
     string plotCommand =
             "gnuplot data/output/" + plotVars.outFilename + ".gnu";
 
+    cout << plotCommand << endl;
     system( plotCommand.c_str() );
 }
 
@@ -54,32 +56,32 @@ void GNUplot::plot(
  *   '/'  ->   '\\/'
  */
 void GNUplot::sanitise(
-        PlotVars& pv /**< Input and output */
+        PlotVars * pv_p /**< Input and output */
     )
 {
-    sanitise( pv.inFilename  );
-    sanitise( pv.outFilename );
-    sanitise( pv.title );
-    sanitise( pv.xlabel );
-    sanitise( pv.ylabel );
-    sanitise( pv.data );
+    sanitise( &(pv_p->inFilename) );
+    sanitise( &(pv_p->outFilename) );
+    sanitise( &(pv_p->title) );
+    sanitise( &(pv_p->xlabel) );
+    sanitise( &(pv_p->ylabel) );
+    sanitise( &(pv_p->data) );
 }
 
 void GNUplot::sanitise(
-        list<Data>& data  /**< Input and output */
+        list<Data> * data_p  /**< Input and output */
         )
 {
-    for (list<Data>::iterator item=data.begin(); item!=data.end(); item++) {
-        sanitise( item->dataFile );
-        sanitise( item->title    );
+    for (list<Data>::iterator item=data_p->begin(); item!=data_p->end(); item++) {
+        sanitise( &(item->dataFile) );
+        sanitise( &(item->title)    );
     }
 }
 
 void GNUplot::sanitise(
-        string& str  /**< Input and output */
+        string * str_p  /**< Input and output */
         )
 {
-    boost::algorithm::replace_all( str, "/", "\\/" );
+    boost::algorithm::replace_all( *str_p, "/", "\\/" );
 }
 
 /**
@@ -101,13 +103,16 @@ void GNUplot::instantiateTemplate(
         const PlotVars& plotVars /**< Variables for insertion into the template. */
     )
 {
+    string outputPath = DATA_OUTPUT_PATH;
+    sanitise( &outputPath );
+
     string sedCommand =
             "sed -e '"
              "s/TITLE/" + plotVars.title + "/g"
             ";s/XLABEL/" + plotVars.xlabel + "/g"
             ";s/YLABEL/" + plotVars.ylabel + "/g"
             ";s/SETTERMINAL/set terminal svg size 1200 800; set samples 1001/g"
-            ";s/SETOUTPUT/set output \"" + plotVars.outFilename + ".svg\"/g"
+            ";s/SETOUTPUT/set output \"" + outputPath + plotVars.outFilename + ".svg\"/g"
             ";s/PLOTARGS/" + plotVars.plotArgs + "/g";
 
     /* Loop through each gnuPlotData list item...
