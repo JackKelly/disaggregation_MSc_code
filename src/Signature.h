@@ -52,7 +52,7 @@ public:
     /*****************
      * STATIC CONSTS *
      *****************/
-    static const size_t PREPROCESSING_DATA_SMOOTHING = 31;
+    static const size_t PREPROCESSING_DATA_SMOOTHING = 1;
 
 private:
 

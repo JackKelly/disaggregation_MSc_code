@@ -144,18 +144,21 @@ void Signature::updatePowerStates()
     size_t front, back;
     fstream dataFile;
     Utils::openFile( dataFile, DATA_OUTPUT_PATH + getStateBarsBaseFilename() + ".dat", fstream::out );
+
     for (std::list<size_t>::const_iterator it=boundaries.begin(); it!=boundaries.end(); it++) {
 
         front = *it;
         back  = *(++it);
 
-        powerStates.push_back( PowerState_t( hist, front, back ) );
-
-        std::cout << powerStates.back() << std::endl;
-
-        powerStates.back().outputStateBarsLine( dataFile );
+        PowerState_t thisPowerState( hist, front, back );
+        if (thisPowerState.numDataPoints > 5) {  // if numDataPoints is really low then we don't care about this powerState
+            powerStates.push_back( thisPowerState );
+            std::cout << powerStates.back() << std::endl;
+            powerStates.back().outputStateBarsLine( dataFile );
+        }
     }
     dataFile.close();
+
     drawHistWithStateBars( hist );
 }
 

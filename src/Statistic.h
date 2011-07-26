@@ -57,12 +57,16 @@ struct Statistic {
 
         // Find the mean, min and max
         for (size_t i=beginning; i<end; i++) {
-            currentVal = data[i];
+            currentVal = Utils::roundToNearestInt(data[i]*data.getSizeOfSource()); // need to multiply to un-normalise
 
             numDataPoints += currentVal;
             accumulator   += ( currentVal * i );
         }
-        mean = (double)accumulator / numDataPoints;
+        if (numDataPoints==0) {
+            mean = (min + max) / 2;
+        } else {
+            mean = (double)accumulator / numDataPoints;
+        }
 
         // Find the population standard deviation
         accumulator = 0;
@@ -114,7 +118,6 @@ struct Statistic {
         }
         stdev = sqrt(accumulator / length);
     }
-
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {

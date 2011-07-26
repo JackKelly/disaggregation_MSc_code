@@ -19,50 +19,6 @@
 #include <cassert>
 #include <list>
 
-/**
- * @todo break RollingAverage out into a new file
- */
-template <class T>
-class RollingAverage {
-public:
-    RollingAverage(const size_t _size) : size(_size), index(0), filled(0), full(0)
-    {
-        data = new T[size];
-        for (size_t i=0; i<size; i++) {
-            data[i] = 0;
-        }
-    }
-
-    ~RollingAverage()
-    {
-        delete [] data;
-    }
-
-    void newValue(const T newVal)
-    {
-        data[index++] = newVal;
-        if (index >= size)
-            index = 0;
-        if (!full) {
-            if (filled++ > size)
-                full = true;
-        }
-    }
-
-    const double value() {
-        T accumulator=0;
-        for (size_t i=0; i<size; i++) {
-            accumulator+=data[i];
-        }
-        return (double)accumulator/ (full ? size : filled);
-    }
-private:
-    T * data;
-    size_t size;
-    size_t index;
-    size_t filled;
-    bool   full;
-};
 
 /**
  * Array class.  At it's core it's just a wrapper around a C-style array.
@@ -140,7 +96,7 @@ public:
     {
         setSize(source.size);
         smoothing = source.getSmoothing();
-        upstreamSmoothing = source.geUpstreamSmoothing();
+        upstreamSmoothing = source.getUpstreamSmoothing();
         deviceName = source.deviceName;
         for (size_t i=0; i<size; i++) {
             data[i] = source[i];
@@ -196,9 +152,19 @@ public:
         return smoothing;
     }
 
+    void setSmoothing (const size_t _smoothing)
+    {
+        smoothing = _smoothing;
+    }
+
     const size_t getUpstreamSmoothing() const
     {
         return upstreamSmoothing;
+    }
+
+    void setUpstreamSmoothing( const size_t _upstreamSmoothing)
+    {
+        upstreamSmoothing = _upstreamSmoothing;
     }
 
     void setDeviceName( const std::string _deviceName)
@@ -284,54 +250,53 @@ public:
     /**
      * Returns a rolling average of same length as the original array.
      *
-     * @todo this code should probably be removed and the functionality implemented useing the RollingAverage class.
      * @todo this code produces a slightly odd result for Toaster-Smoothing31; almost certainly a bug.
      *
-     * @param ra = Initally an empty Array<Sample_t>.  Returned with Rolling Averages.
-     * @param length = number of items to use in the average.  Must be odd.
      */
-    void rollingAv(Array<Sample_t> * ra, const size_t RAlength=5) const
+    void rollingAv(
+            Array<Sample_t> * ra,   /**< Initially an empty Array<Sample_t>.  Returned with Rolling Averages. */
+            const size_t RAlength=5 /**< number of items to use in the average.  Must be odd. */
+            ) const
     {
-        assert( RAlength%2 );  // length must be odd
-        assert( RAlength>1 );
-        assert( RAlength<size);
-
         // setup ra
-        ra->smoothing = RAlength;
-        ra->upstreamSmoothing = smoothing;
-        ra->deviceName = deviceName;
+        ra->setSmoothing( RAlength );
+        ra->setUpstreamSmoothing( smoothing );
+        ra->setDeviceName( deviceName );
         ra->setSize(this->size);
 
-        size_t i;
-        T accumulator, accumulatorDown;
+        for (size_t i=0; i<size; i++) {
+            (*ra)[i] = rollingAv(i, RAlength);
+        }
+    }
 
-        size_t middleOfLength = ((RAlength-1)/2)+1;
+    /**
+     * @return an average of the RAlength items nearest to i
+     */
+    T rollingAv(
+            const size_t i,  /**< Index of the smoothed rolling average. */
+            size_t RAlength  /**< Length of rolling average. Must be odd. Can be 1. */
+            ) const
+    {
+        assert( (RAlength%2)!=0 );
+        assert( RAlength < size );
 
-        // First do the first (length-1)/2 elements of the Array<Sample_t>
-        // and the last (length-1)/2 elements
-        (*ra)[0] = data[0];
-        for (i=1; i<(middleOfLength-1); i++) {
-            accumulator = 0;
-            accumulatorDown = 0;
-            for (size_t inner=0; inner<=(i*2); inner++) {
-                accumulator += data[inner];
-                accumulatorDown += data[size-1-inner];
-            }
-            (*ra)[i] = (double)accumulator / ( (i*2) + 1 );
-            (*ra)[size-1-i] = (double)accumulatorDown / ( (i*2) + 1 );
+        if (i==0 || i==(size-1))
+            return data[i];
+
+        const size_t eitherSide = RAlength/2;
+
+        if ( i < eitherSide )
+            RAlength = (i*2)+1;
+
+        if ( i > (size - eitherSide - 1) )
+            RAlength = ((size-i)*2)-1;
+
+        T accumulator = 0;
+        for (size_t j=(i-(RAlength/2)); j<(i+(RAlength/2)+1); j++) {
+            accumulator += data[j];
         }
 
-        // Now do the main chunk of the array
-        for (; i<=(size-middleOfLength); i++) {
-            accumulator = 0;
-            for (size_t inner=(i-middleOfLength+1); inner<(i+middleOfLength); inner++) {
-                accumulator += data[inner];
-            }
-            (*ra)[i] = (double)accumulator/RAlength;
-        }
-
-        // Do the last element of the array
-        (*ra)[size-1] = data[size-1];
+        return accumulator/RAlength;
     }
 
     /**
@@ -497,101 +462,116 @@ public:
         }
     }
 
-    static const size_t HIST_GRADIENT_RA_LENGTH = 19; /* Length of rolling average. Best if odd. */
+    static const size_t HIST_GRADIENT_RA_LENGTH = 25; /**> Length of rolling average of histogram gradient.
+                                                          Best if odd. */
     /**
-     * Attempts to automatically find the peaks.
+     * @brief Attempts to automatically find the peaks.
      *
      * Starts from end of array and works backwards.  At each step, calculates a rolling
      * average of the gradient.  If the value of this rolling average is above KNEE_GRAD_THRESHOLD
      * then it enters the 'ASCENDING' state... etc...
+     *
+     * @todo needs to work with relative histogram values (maybe this should be done in the Histogram class?)
      */
     void findPeaks(
             std::list<size_t> * boundaries /**< output parameter */
             )
     {
         LOG(INFO) << "findPeaks...";
-        const bool STUPIDLY_VERBOSE_LOGGING = false;
-        const double KNEE_GRAD_THRESHOLD = 0.6;
-        const double SHOULDER_GRAD_THRESHOLD = 0.6;
-        size_t middleOfRA;
+        const bool STUPIDLY_VERBOSE_LOGGING = true;
+        const double KNEE_GRAD_THRESHOLD = 0.00014;
+        const double SHOULDER_GRAD_THRESHOLD = 0.00014;
         enum { NO_MANS_LAND, ASCENDING, PEAK, DESCENDING, UNSURE } state;
         state = NO_MANS_LAND;
-        RollingAverage<int> gradientRA(HIST_GRADIENT_RA_LENGTH);
         T kneeHeight=0, peakHeight=0, descent=0, ascent=0;
 
-        // Prime the Rolling Average array
-        for (size_t i=(size-2); i>(size-HIST_GRADIENT_RA_LENGTH); i--) {
-            gradientRA.newValue( (int)(data[i] - data[i+1]) );
+        Array<Sample_t> gradient(size);
+        gradient[size-1] = 0;
+        gradient[0] = 0;
+        gradient[1] = 0;
+        for (size_t i=2; i<(size-1); i++) {
+            gradient[i] = data[i] - data[i+1];
         }
 
-        Array<Sample_t> RA(size); // Just used for data visualisation purposes);
+        // Construct an array of smoothed gradients
+        Array<Sample_t> smoothedGrad;
+        gradient.rollingAv( &smoothedGrad, HIST_GRADIENT_RA_LENGTH);
 
         // start at the end of the array, working backwards.
         for (size_t i=(size-HIST_GRADIENT_RA_LENGTH); i>0; i--) {
-            // keep a rolling average of the gradient
-            gradientRA.newValue( (int)(data[i] - data[i+1]) );
-
-            middleOfRA = i+((HIST_GRADIENT_RA_LENGTH/2)+1);
-
-            RA[middleOfRA] = gradientRA.value();
 
             switch (state) {
             case NO_MANS_LAND:
-                if (gradientRA.value() > KNEE_GRAD_THRESHOLD) {
+                if (smoothedGrad[i] > KNEE_GRAD_THRESHOLD) {
                     // when the gradient goes over a certain threshold, mark that as ASCENDING,
                     //    and record index in 'boundaries' and kneeHeight
                     state=ASCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << middleOfRA;
-                    boundaries->push_front( middleOfRA );
-                    kneeHeight = data[ middleOfRA ];
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << i;
+                    boundaries->push_front( i );
+                    kneeHeight = data[ i ];
                 }
                 // TODO deal with descent from NO_MANS_LAND
                 break;
             case ASCENDING:
                 // when gradient drops to 0, state = PEAK, record peakHeight
-                if (gradientRA.value() < SHOULDER_GRAD_THRESHOLD) {
+                if (smoothedGrad[i] < SHOULDER_GRAD_THRESHOLD) {
                     state=PEAK;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "PEAK " << middleOfRA;
-                    peakHeight = data[ middleOfRA ];
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "PEAK " << i;
+                    peakHeight = data[ i ];
                     ascent = peakHeight - kneeHeight;
                 }
                 break;
             case PEAK:
                 // when gradient goes below a certain threshold, state = DESCENDING
-                if (gradientRA.value() < -SHOULDER_GRAD_THRESHOLD) {
+                if (smoothedGrad[i] < -SHOULDER_GRAD_THRESHOLD) {
                     state=DESCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << i;
                 }
+                if (data[i] == 0) {
+                    state=NO_MANS_LAND;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << i;
+                    boundaries->push_front( i );
+                }
+
                 break;
             case DESCENDING:
                 // when gradient goes to 0, check height.  If we've descended less than 30% our ascent height then don't mark
                 //   in 'boundaries', instead re-mark as ASCENDING
                 // else mark in 'boundaries' and state=NO_MANS_LAND
-                if (gradientRA.value() > -KNEE_GRAD_THRESHOLD) {
+                if (smoothedGrad[i] > -KNEE_GRAD_THRESHOLD  || data[i]==0) {
                     // check how far we've descended from the shoulder
-                    descent = peakHeight - data[ middleOfRA ];
+                    descent = peakHeight - data[ i ];
 
                     if (descent < (0.3 * ascent)) {
                         state=UNSURE;
-                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "UNSURE " << middleOfRA;
+                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "UNSURE " << i;
                     } else {
                         state=NO_MANS_LAND;
-                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << middleOfRA;
-                        boundaries->push_front( middleOfRA );
+                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << i;
+                        boundaries->push_front( i );
                     }
                 }
                 break;
             case UNSURE:
                 // We were descending but hit a plateau prematurely.
                 // Find out if we're descending or ascending
-                if (gradientRA.value() < -SHOULDER_GRAD_THRESHOLD) {
+                if (smoothedGrad[i] < -SHOULDER_GRAD_THRESHOLD) {
                     state = DESCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << i;
+                    break;
                 }
 
-                if (gradientRA.value() > KNEE_GRAD_THRESHOLD) {
+                if (smoothedGrad[i] > KNEE_GRAD_THRESHOLD) {
                     state = ASCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << i;
+                    break;
+                }
+
+                if (data[i]==0) {
+                    state=NO_MANS_LAND;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << i;
+                    boundaries->push_front( i );
+                    break;
                 }
 
                 break;
@@ -603,7 +583,7 @@ public:
         }
 
         // For data visualisation purposes, dump rolling average data to file
-        RA.dumpToFile( getSmoothedGradOfHistFilename() );
+        smoothedGrad.dumpToFile( getSmoothedGradOfHistFilename() );
     }
 
     const std::string getSmoothedGradOfHistFilename() const
@@ -705,23 +685,26 @@ class Histogram : public Array<Histogram_t>
 {
 public:
     /**
-     * Create a histogram from a sample array.
-     *
-     * @param hist = an empty Array<uint32_t> object
+     * @brief Create a (relative) histogram from a sample array.
      */
-    Histogram(const Array<Sample_t>& source)
-    : Array<Histogram_t>()
+    Histogram(
+            const Array<Sample_t>& source,
+            const size_t xaxis = MAX_WATTAGE /**< Number of elements on the xaxis of the histogram */
+            )
+    : Array<Histogram_t>(), sizeOfSource( source.getSize() )
     {
         upstreamSmoothing = source.getSmoothing();
         smoothing = 0;
         deviceName = source.getDeviceName();
 
-        setSize( MAX_WATTAGE ); // 1 Watt resolution
+        setSize( xaxis ); // 1 Watt resolution
 
         setAllEntriesTo(0);
 
-        for (size_t i=0; i<size; i++) {
-            data[ Utils::roundToNearestInt( source[i] ) ]++;
+        const Histogram_t quantum = (Histogram_t)1/sizeOfSource ;
+
+        for (size_t i=0; i<sizeOfSource; i++) {
+            data[ Utils::roundToNearestInt( source[i] ) ] += quantum;
         }
     }
 
@@ -754,6 +737,14 @@ public:
         // Plot
         GNUplot::plot( pv );
     }
+
+    const size_t getSizeOfSource() const
+    {
+        return sizeOfSource;
+    }
+
+protected:
+    size_t sizeOfSource;
 
 };
 

@@ -44,13 +44,13 @@ TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework -DGOOGLE_STRIP_LO
 testAll: ArrayTest GNUplotTest
 
 ArrayTest: $(TEST)ArrayTest.cpp $(SRC)Array.h $(SRC)Utils.o
-	g++ $(TESTCXXFLAGS) -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(SRC)Utils.o && $(TEST)ArrayTest 
+	g++ $(TESTCXXFLAGS) -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(SRC)Utils.cpp $(SRC)GNUplot.cpp && $(TEST)ArrayTest 
 
 GNUplotTest: $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o $(SRC)Utils.o
 	g++ $(TESTCXXFLAGS) -o $(TEST)GNUplotTest $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o $(SRC)Utils.cpp && $(TEST)GNUplotTest
 
 UtilsTest: $(TEST)UtilsTest.cpp $(SRC)Utils.o
-	g++ $(TESTCXXFLAGS) -o $(TEST)UtilsTest $(TEST)UtilsTest.cpp $(SRC)Utils.o && $(TEST)UtilsTest
+	g++ $(TESTCXXFLAGS) -o $(TEST)UtilsTest $(TEST)UtilsTest.cpp $(SRC)Utils.cpp && $(TEST)UtilsTest
 
 # AUTOMATIC DEPENDENCY DETECTION
 # http://www.wlug.org.nz/MakefileHowto

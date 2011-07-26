@@ -59,7 +59,7 @@ int main(int argc, char * argv[])
 //    washer.findAlignment( "data/input/watts_up/washer2.csv", 1);
 
 /*    Device tumble("tumble");
-    tumble.getReadingFromCSV( "data/input/watts_up/tumble.csv", 1, 0, 0 );
+    tumble.getReadingFromCSV( "data/input/watts_up/tumble.csv", 1, 1, 6500 );
     tumble.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 */
     /*

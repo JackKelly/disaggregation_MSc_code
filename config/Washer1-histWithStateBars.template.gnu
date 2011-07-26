@@ -14,8 +14,9 @@ lm = 0.12
 rm = 0.89
 gap = 0.02
 size = 0.75
-y1 = -30.0; y2 = 90; y3 = 591; y4 = 609
-x1 =  0.0; x2 = 299; x3 = 2155; x4 = 2350 
+y1 = -0.01; y2 = 0.05; y3 = 0.11; y4 = 0.13
+x1 =  0.0; x2 = 299; x3 = 2155; x4 = 2350
+y2mult = 4
 
 plotHist = "\"HISTFILE\" with l lw 1 title \"HISTKEY\""
 plotRAhist = "\"HISTGRADFILE\" with l lt 2 lw 1 title \"HISTGRADKEY\""
@@ -37,7 +38,7 @@ set tmargin at screen bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) )
 
 set yrange [y1:y2]
 set xrange [x1:x2]
-set y2range [y1/10:y2/10]
+set y2range [y1/y2mult:y2/y2mult]
 
 plot @plotHist, @plotRAhist axis x1y2, @plotXerrbars
 
@@ -45,7 +46,7 @@ plot @plotHist, @plotRAhist axis x1y2, @plotXerrbars
 # Top left panel
 unset key
 unset xtics
-set ytics 10
+set ytics 0.02
 unset xlabel
 unset ylabel
 set border 2+4
@@ -90,7 +91,7 @@ set lmargin at screen lm + size * (abs(x2-x1) / (abs(x2-x1) + abs(x4-x3) ) ) + g
 set yrange [y1:y2]
 set xrange [x3:x4]
 
-set y2range [y1/10:y2/10]
+set y2range [y1/y2mult:y2/y2mult]
 set y2label "Gradient of histogram"
 set y2tics
 
