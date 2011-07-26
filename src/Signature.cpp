@@ -48,23 +48,27 @@ Signature::Signature(
     }
 
     deviceName =_deviceName;
+
+    // Draw graph of raw data after cropping
+    drawGraph( "-afterCropping" );
 }
 
 Signature::~Signature()
 {}
 
-void Signature::drawGraph() const
+void Signature::drawGraph(
+        const string& details /**< Details to be appended on after device name. */
+        ) const
 {
     Array<Sample_t>::drawGraph(
-            deviceName,
+            deviceName + details,
             "time (seconds)",
             "power (Watts)"
             );
 }
 
 void Signature::drawHistWithStateBars(
-        const Array<Histogram_t>& hist, /**< Histogram array. */
-        const size_t gradientRollingAvLength
+        const Array<Histogram_t>& hist /**< Histogram array. */
     ) const
 {
     // Dump histogram data to a .dat file
@@ -102,28 +106,33 @@ void Signature::drawHistWithStateBars(
     GNUplot::plot( pv );
 }
 
-/**
- * Runs through 'rawReading' to find power states.  'rawReading' must be
- * populated before this function is called.
- */
-const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) const
+const PowerStates_t& Signature::getPowerStates()
 {
-    PowerStates_t powerStates;
+    if ( powerStates.empty() )
+        updatePowerStates();
 
-    LOG(INFO) << "Finding power states...rollingAvLength = " << rollingAvLength;
+    return powerStates;
+}
+
+/**
+ * Runs through signature data to find power states and stores the resulting power states in powerStates
+ *
+ * Prerequisites:
+ *    signature data must be populated before this function is called.
+ */
+void Signature::updatePowerStates()
+{
+    LOG(INFO) << "Finding power states...DATA_SMOOTHING_BEFORE_HIST = " << PREPROCESSING_DATA_SMOOTHING;
     assert ( size ); // make sure Signature is populated
 
-    // Draw graph of raw data
-    drawGraph();
-
     // Smooth raw data
-    Array<Sample_t> RA;
-    rollingAv( &RA, rollingAvLength );
+    Array<Sample_t> RA; // array to hold rolling average
+    rollingAv( &RA, PREPROCESSING_DATA_SMOOTHING );
     RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "" ); /**< @todo drawGraph shouldn't need all these params, surely? */
 
     // Create histogram from smoothed data
     Histogram hist ( RA );
-    hist.drawGraph( deviceName );
+    hist.drawGraph();
 
     // find the boundaries of the different power states in the histogram
     std::list<size_t> boundaries;
@@ -147,9 +156,7 @@ const PowerStates_t Signature::getPowerStates( const size_t rollingAvLength ) co
         powerStates.back().outputStateBarsLine( dataFile );
     }
     dataFile.close();
-    drawHistWithStateBars( hist, rollingAvLength );
-
-    return powerStates;
+    drawHistWithStateBars( hist );
 }
 
 const string Signature::getStateBarsBaseFilename() const
@@ -163,8 +170,7 @@ const string Signature::getStateBarsBaseFilename() const
  * @deprecated not actually used.
  */
 void Signature::fillGapsInPowerStates(
-        const Array<Histogram_t>& hist,
-        PowerStates_t& powerStates
+        const Array<Histogram_t>& hist
         )
 {
     assert( ! powerStates.empty() );
@@ -202,6 +208,152 @@ void Signature::fillGapsInPowerStates(
     }
 
 }
+
+const list<PowerStateSequenceItem>& Signature::getPowerStateSequence()
+{
+    if ( powerStateSequence.empty() )
+        updatePowerStateSequence();
+
+    return powerStateSequence;
+}
+
+/**
+ * Finding out where each 'powerState' starts and ends.
+ *
+ * This must be called after 'powerStates' has been populated
+ */
+void Signature::updatePowerStateSequence()
+{
+    cout << "Getting power state sequence for " << deviceName << endl;
+
+    // sanity check
+    assert( ! powerStates.empty() );
+
+    // Smooth data
+    Array<Sample_t> RA; // array to hold rolling average
+    rollingAv( &RA, PREPROCESSING_DATA_SMOOTHING );
+
+    PowerStateSequenceItem powerStateSequenceItem;
+    PowerStates_t::const_iterator currentPowerState;
+
+    enum { WITHIN_STATE, NO_MANS_LAND } state;
+    state = NO_MANS_LAND;
+
+    // Go through raw reading finding occurrences of each power state
+    for (size_t i=0; i<RA.getSize(); i++ ) {
+        currentPowerState = getPowerState( RA[i] );
+
+        switch (state) {
+        case WITHIN_STATE:
+            if (currentPowerState != powerStateSequenceItem.powerState) {
+                        // then we've hit a powerState transition
+                        // so store the details of the powerState we've just left
+                        powerStateSequenceItem.endTime   = i*samplePeriod;
+                        powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
+
+/*                        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
+                                << "\tendTime=" << powerStateSequenceItem.endTime
+                                << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
+                                << "\t" << *powerStateSequenceItem.powerState; */
+
+                        if ( currentPowerState == powerStates.end() ) {
+                            // We've entered an unrecognised state
+                            state = NO_MANS_LAND;
+                        } else {
+                            // We've transitioned directly from one recognised state to another
+                            powerStateSequenceItem.powerState = currentPowerState;
+                            powerStateSequenceItem.startTime  = i*samplePeriod;
+                        }
+            }
+            break;
+        case NO_MANS_LAND:
+            if ( currentPowerState != powerStates.end() ) {
+                // We've entered a recognised state
+                state = WITHIN_STATE;
+                powerStateSequenceItem.powerState = currentPowerState;
+                powerStateSequenceItem.startTime  = i*samplePeriod;
+            }
+            break;
+        };
+    }
+
+    // Handle case where final state is left hanging after for loop
+    if ( state == WITHIN_STATE ) {
+        powerStateSequenceItem.endTime = RA.getSize()*samplePeriod;
+        powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
+//        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
+//                << "\tendTime=" << powerStateSequenceItem.endTime
+//                << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
+//                << "\t" << *powerStateSequenceItem.powerState;
+    }
+
+    /** @todo Detect repeats */
+}
+
+/**
+ * Dump the contents of powerStateSequence to a data file ready for
+ * gnuplot to plot using the 'boxxyerrorbars' style (see p42 of the gnuplot 4.4 documentation PDF).
+ *
+ * @param filename
+ */
+void Signature::dumpPowerStateSequenceToFile() const
+{
+    // open datafile
+    string filename = DATA_OUTPUT_PATH + deviceName + "-sigID" + Utils::size_t_to_s(sigID) + "-powerStateSequence.dat";
+
+    fstream dataFile;
+    Utils::openFile( dataFile, filename.c_str(), fstream::out );
+
+    // Output header information for data file
+    dataFile << "# automatically produced by dumpPowerStateSequenceToFile function" << endl
+             << "# " << Utils::todaysDateAndTime() << endl
+             << "# x\ty\txlow\txhigh\tylow\tyhigh" << endl;
+
+    // loop through the 'poewStateSequence' list
+    for (list<PowerStateSequenceItem>::const_iterator powerState=powerStateSequence.begin();
+            powerState!=powerStateSequence.end();
+            powerState++ ) {
+
+        /* The columns required by gnoplot's Xyerrorbars style are:
+         * x  y  xlow  xhigh  ylow  yhigh
+        */
+
+        dataFile << (powerState->startTime + powerState->endTime)/2 << "\t"  // x
+                 << (powerState->powerState->min + powerState->powerState->max)/2 << "\t"  // y
+                 << powerState->startTime << "\t"         // xlow  (== start time)
+                 << powerState->endTime   << "\t"         // xhigh (== end time)
+                 << powerState->powerState->min << "\t"   // ylow  (== min value)
+                 << powerState->powerState->max <<  endl; // yhigh (== max value)
+
+    }
+
+    dataFile.close();
+}
+
+/**
+ * @return pointer to a 'powerState' within 'powerStates' corresponding to 'sample'.
+ * Returns 'powerStates.end()' if 'sample' does not correspond to any 'powerState'.
+ */
+PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) const
+{
+    // sanity check
+    assert( ! powerStates.empty() );
+
+    // Doing the inelegant, brute-force approach
+    for (PowerStates_t::const_iterator powerState = powerStates.begin();
+         powerState != powerStates.end();
+         powerState++) {
+
+        if ( Utils::roundToNearestInt(sample) <= powerState->max &&
+             Utils::roundToNearestInt(sample) >= powerState->min ) {
+            return powerState;
+        }
+    }
+
+    // If we get to here then 'sample' does not fall within any powerState boundary
+    return powerStates.end();
+}
+
 
 /**
  * Convert from the Signature data to a different sample period.

@@ -508,6 +508,7 @@ public:
             )
     {
         LOG(INFO) << "findPeaks...";
+        const bool STUPIDLY_VERBOSE_LOGGING = false;
         const double KNEE_GRAD_THRESHOLD = 0.6;
         const double SHOULDER_GRAD_THRESHOLD = 0.6;
         size_t middleOfRA;
@@ -538,7 +539,7 @@ public:
                     // when the gradient goes over a certain threshold, mark that as ASCENDING,
                     //    and record index in 'boundaries' and kneeHeight
                     state=ASCENDING;
-                    LOG(INFO) << "ASCENDING " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << middleOfRA;
                     boundaries->push_front( middleOfRA );
                     kneeHeight = data[ middleOfRA ];
                 }
@@ -548,7 +549,7 @@ public:
                 // when gradient drops to 0, state = PEAK, record peakHeight
                 if (gradientRA.value() < SHOULDER_GRAD_THRESHOLD) {
                     state=PEAK;
-                    LOG(INFO) << "PEAK " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "PEAK " << middleOfRA;
                     peakHeight = data[ middleOfRA ];
                     ascent = peakHeight - kneeHeight;
                 }
@@ -557,7 +558,7 @@ public:
                 // when gradient goes below a certain threshold, state = DESCENDING
                 if (gradientRA.value() < -SHOULDER_GRAD_THRESHOLD) {
                     state=DESCENDING;
-                    LOG(INFO) << "DESCENDING " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << middleOfRA;
                 }
                 break;
             case DESCENDING:
@@ -570,10 +571,10 @@ public:
 
                     if (descent < (0.3 * ascent)) {
                         state=UNSURE;
-                        LOG(INFO) << "UNSURE " << middleOfRA;
+                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "UNSURE " << middleOfRA;
                     } else {
                         state=NO_MANS_LAND;
-                        LOG(INFO) << "NO_MANS_LAND " << middleOfRA;
+                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << middleOfRA;
                         boundaries->push_front( middleOfRA );
                     }
                 }
@@ -583,12 +584,12 @@ public:
                 // Find out if we're descending or ascending
                 if (gradientRA.value() < -SHOULDER_GRAD_THRESHOLD) {
                     state = DESCENDING;
-                    LOG(INFO) << "DESCENDING " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << middleOfRA;
                 }
 
                 if (gradientRA.value() > KNEE_GRAD_THRESHOLD) {
                     state = ASCENDING;
-                    LOG(INFO) << "ASCENDING " << middleOfRA;
+                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << middleOfRA;
                 }
 
                 break;
@@ -727,9 +728,7 @@ public:
         return baseFilename;
     }
 
-    virtual void drawGraph(
-            const std::string name
-            )
+    virtual void drawGraph()
     {
         // Dump data to a .dat file
         const std::string baseFilename =

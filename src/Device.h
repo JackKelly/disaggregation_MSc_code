@@ -24,8 +24,6 @@ public:
 
     void getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack);
 
-    void dumpPowerStateSequenceToFile();
-
     std::list<size_t> findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod );
 
     const std::string getName() const;
@@ -34,11 +32,9 @@ private:
     /************************
      *  Member functions    *
      ************************/
-    void updatePowerStates( const size_t rollingAvLength );
+    void updatePowerStates();
+    void updatePowerStateSequence();
 
-    void updatePowerStateSequence( const size_t rollingAvLength );
-
-    PowerStates_t::const_iterator getPowerState( const Sample_t sample );
 
     struct currentCostReading; // forward declaration
     void loadCurrentCostData(std::fstream& fs, Array<currentCostReading> * aggData);
@@ -55,13 +51,6 @@ private:
     std::string name;
     PowerStates_t powerStates;
     std::vector<Signature*> signatures;
-
-    struct PowerStateSequenceItem {
-        PowerStates_t::const_iterator powerState; /*!< TODO: Does the same iterator point to the same element, no matter if an item is subsequently entered before the item?  */
-        size_t startTime;          /*!< in seconds  */
-        size_t endTime;          /*!< in seconds  */
-    };
-
     std::list<PowerStateSequenceItem> powerStateSequence;
 
     /**

@@ -24,7 +24,6 @@
 typedef double                  Sample_t;     /**< An individual sample (as recorded by a CurrentCost or WattsUp) */
 typedef uint32_t                Histogram_t;  /**< An individual histogram entry */
 
-
 /*****************************
  *         CONSTS            *
  *****************************/

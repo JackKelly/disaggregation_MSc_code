@@ -134,8 +134,15 @@ struct Statistic {
 
 };
 
+/** @todo there must be a better file for these typedefs... */
 typedef Statistic<Sample_t>     PowerState_t;
 typedef std::list<PowerState_t> PowerStates_t;
+struct PowerStateSequenceItem {
+    PowerStates_t::const_iterator powerState; /**< @todo Does the same iterator point to the same element, no matter if an item is subsequently entered before the item?  And does the iterator point to the correct item even after copying?  */
+    size_t startTime;          /**< in seconds  */
+    size_t endTime;          /**< in seconds  */
+};
+
 
 
 #endif /* STATISTIC_H_ */
