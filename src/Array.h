@@ -67,6 +67,8 @@ private:
 /**
  * Array class.  At it's core it's just a wrapper around a C-style array.
  * With lots of added functionality useful for signal processing.
+ *
+ * @todo should Array inherit from <a href="http://www.cplusplus.com/reference/std/valarray/">valarray</a>. ?
  */
 template <class T>
 class Array {
@@ -696,6 +698,9 @@ public:
     }
 };
 
+/**
+ * @todo break this out into a separate couple of files
+ */
 class Histogram : public Array<Histogram_t>
 {
 public:

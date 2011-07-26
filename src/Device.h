@@ -13,6 +13,7 @@
 #include <string>
 #include "Signature.h"
 #include "Statistic.h"
+#include "PowerStateSequence.h"
 
 /**
  * @brief Class for representing "devices" (ie appliances like "dish washer", "lamp" etc)
@@ -35,7 +36,6 @@ private:
     void updatePowerStates();
     void updatePowerStateSequence();
 
-
     struct currentCostReading; // forward declaration
     void loadCurrentCostData(std::fstream& fs, Array<currentCostReading> * aggData);
 
@@ -51,7 +51,7 @@ private:
     std::string name;
     PowerStates_t powerStates;
     std::vector<Signature*> signatures;
-    std::list<PowerStateSequenceItem> powerStateSequence;
+    PowerStateSequence powerStateSequence;
 
     /**
      * @todo currentCostReading shouldn't be in Device. It should probably be

@@ -68,7 +68,7 @@ void Signature::drawGraph(
 }
 
 void Signature::drawHistWithStateBars(
-        const Array<Histogram_t>& hist /**< Histogram array. */
+        const Histogram& hist /**< Histogram array. */
     ) const
 {
     // Dump histogram data to a .dat file
@@ -170,7 +170,7 @@ const string Signature::getStateBarsBaseFilename() const
  * @deprecated not actually used.
  */
 void Signature::fillGapsInPowerStates(
-        const Array<Histogram_t>& hist
+        const Histogram& hist
         )
 {
     assert( ! powerStates.empty() );
@@ -209,7 +209,7 @@ void Signature::fillGapsInPowerStates(
 
 }
 
-const list<PowerStateSequenceItem>& Signature::getPowerStateSequence()
+const PowerStateSequence& Signature::getPowerStateSequence()
 {
     if ( powerStateSequence.empty() )
         updatePowerStateSequence();
@@ -224,7 +224,7 @@ const list<PowerStateSequenceItem>& Signature::getPowerStateSequence()
  */
 void Signature::updatePowerStateSequence()
 {
-    cout << "Getting power state sequence for " << deviceName << endl;
+    cout << "Getting power state sequence for " << deviceName << "..." << endl;
 
     // sanity check
     assert( ! powerStates.empty() );
@@ -287,48 +287,11 @@ void Signature::updatePowerStateSequence()
 //                << "\t" << *powerStateSequenceItem.powerState;
     }
 
+    cout << "...done getting power state sequence for " << deviceName << "." << endl;
+
     /** @todo Detect repeats */
 }
 
-/**
- * Dump the contents of powerStateSequence to a data file ready for
- * gnuplot to plot using the 'boxxyerrorbars' style (see p42 of the gnuplot 4.4 documentation PDF).
- *
- * @param filename
- */
-void Signature::dumpPowerStateSequenceToFile() const
-{
-    // open datafile
-    string filename = DATA_OUTPUT_PATH + deviceName + "-sigID" + Utils::size_t_to_s(sigID) + "-powerStateSequence.dat";
-
-    fstream dataFile;
-    Utils::openFile( dataFile, filename.c_str(), fstream::out );
-
-    // Output header information for data file
-    dataFile << "# automatically produced by dumpPowerStateSequenceToFile function" << endl
-             << "# " << Utils::todaysDateAndTime() << endl
-             << "# x\ty\txlow\txhigh\tylow\tyhigh" << endl;
-
-    // loop through the 'poewStateSequence' list
-    for (list<PowerStateSequenceItem>::const_iterator powerState=powerStateSequence.begin();
-            powerState!=powerStateSequence.end();
-            powerState++ ) {
-
-        /* The columns required by gnoplot's Xyerrorbars style are:
-         * x  y  xlow  xhigh  ylow  yhigh
-        */
-
-        dataFile << (powerState->startTime + powerState->endTime)/2 << "\t"  // x
-                 << (powerState->powerState->min + powerState->powerState->max)/2 << "\t"  // y
-                 << powerState->startTime << "\t"         // xlow  (== start time)
-                 << powerState->endTime   << "\t"         // xhigh (== end time)
-                 << powerState->powerState->min << "\t"   // ylow  (== min value)
-                 << powerState->powerState->max <<  endl; // yhigh (== max value)
-
-    }
-
-    dataFile.close();
-}
 
 /**
  * @return pointer to a 'powerState' within 'powerStates' corresponding to 'sample'.

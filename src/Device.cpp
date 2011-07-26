@@ -79,6 +79,8 @@ void Device::updatePowerStateSequence()
     // get power states from last signatures
     powerStateSequence = signatures.back()->getPowerStateSequence();
 
+    powerStateSequence.dumpToFile( name );
+
     /**
      * @todo deal with the case where we already have a powerStateSequence stored
      * and we want to merge the new power state sequence from the new signature with

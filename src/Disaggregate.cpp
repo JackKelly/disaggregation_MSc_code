@@ -21,7 +21,7 @@ int main(int argc, char * argv[])
 
     /*
     Signature sig( "washer.csv", 1 );
-    Array<Histogram_t> ha;
+    Histogram ha;
     sig.getRawReading().histogram( &ha );
     ha.dumpToFile( "data/input/processed/histogram.csv" );
 

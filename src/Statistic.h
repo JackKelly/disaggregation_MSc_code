@@ -33,13 +33,13 @@ struct Statistic {
      ************************/
 
     /**
-     * Constructor from histogram data
-     *
-     * @param data
-     * @param beginning (gets included in stats)
-     * @param end (excluded from stats)
+     * Constructor from histogram data.
      */
-    Statistic(const Array<Histogram_t>& data, const size_t beginning=0, size_t end=0)
+    Statistic(
+            const Histogram& data, /**< data */
+            const size_t beginning=0,  /**< beginning (gets included in stats) */
+            size_t end=0               /**< end (excluded from stats) */
+            )
     : mean(0), stdev(0), numDataPoints(0)
     {
         register T accumulator = 0;
@@ -73,13 +73,9 @@ struct Statistic {
     }
 
     /**
-     * Default constructor.
-     *
-     * @param data
-     * @param beginning
-     * @param end
+     * Constructor from array data (NOT histograms)
      */
-/*    Statistic(const Array<T>& data, const size_t beginning=0, size_t end=0)
+    Statistic(const Array<T>& data, const size_t beginning=0, size_t end=0)
     : mean(0), stdev(0)
     {
         register T accumulator = 0;
@@ -118,7 +114,7 @@ struct Statistic {
         }
         stdev = sqrt(accumulator / length);
     }
- */
+
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {
@@ -133,16 +129,6 @@ struct Statistic {
     }
 
 };
-
-/** @todo there must be a better file for these typedefs... */
-typedef Statistic<Sample_t>     PowerState_t;
-typedef std::list<PowerState_t> PowerStates_t;
-struct PowerStateSequenceItem {
-    PowerStates_t::const_iterator powerState; /**< @todo Does the same iterator point to the same element, no matter if an item is subsequently entered before the item?  And does the iterator point to the correct item even after copying?  */
-    size_t startTime;          /**< in seconds  */
-    size_t endTime;          /**< in seconds  */
-};
-
 
 
 #endif /* STATISTIC_H_ */

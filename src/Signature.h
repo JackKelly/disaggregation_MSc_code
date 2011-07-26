@@ -11,6 +11,7 @@
 #include "Array.h"
 #include "Common.h"
 #include "Statistic.h"
+#include "PowerStateSequence.h"
 #include <list>
 #include <fstream>
 
@@ -37,7 +38,7 @@ public:
     const size_t getSamplePeriod() const;
 
     void drawHistWithStateBars(
-            const Array<Histogram_t>& hist
+            const Histogram& hist
             ) const;
 
     virtual void drawGraph( const std::string& details ) const;
@@ -46,7 +47,7 @@ public:
 
     const PowerStates_t& getPowerStates();
 
-    const std::list<PowerStateSequenceItem>& getPowerStateSequence();
+    const PowerStateSequence& getPowerStateSequence();
 
     /*****************
      * STATIC CONSTS *
@@ -61,7 +62,7 @@ private:
     void updatePowerStates();
 
     void fillGapsInPowerStates(
-            const Array<Histogram_t>& hist
+            const Histogram& hist
             );
 
     void updatePowerStateSequence();
@@ -76,7 +77,7 @@ private:
     size_t samplePeriod;
     const size_t sigID; /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. */
     PowerStates_t powerStates;
-    std::list<PowerStateSequenceItem> powerStateSequence;
+    PowerStateSequence powerStateSequence;
 
 };
 
