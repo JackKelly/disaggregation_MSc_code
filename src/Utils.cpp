@@ -93,4 +93,15 @@ const bool Utils::fileExists( const std::string& filename )
     return (bool)ifile;
 }
 
+/**
+ * Compares 2 doubles.  Are they within (a * tolerance) of each other?
+ */
+const bool Utils::roughlyEqual(
+        const double a,
+        const double b,
+        const double tolerance /**< usually a fraction between 0 and 1. */
+        )
+{
+    return fabs(a-b) <= fabs(tolerance*a);
+}
 

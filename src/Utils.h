@@ -28,6 +28,12 @@ const size_t countDataPoints( std::fstream& fs );
 
 const bool fileExists( const std::string& filename );
 
+const bool roughlyEqual(
+        const double a,
+        const double b,
+        const double tolerance
+        );
+
 } /* namespace Utils */
 
 #endif /* UTILS_H_ */

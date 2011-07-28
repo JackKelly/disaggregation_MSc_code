@@ -56,6 +56,8 @@ Signature::Signature(
     Array<Sample_t> gradient;
     getGradient( &gradient );
     gradient.drawGraph( "-gradient" );
+
+    getGradientSpikesInOrder();
 }
 
 Signature::~Signature()
@@ -326,6 +328,62 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
     return powerStates.end();
 }
 
+/**
+ * Takes the gradient of this object, then looks for 'spikes' in the gradient values, then sorts by value.
+ *
+ * In particular, this function discards spikes which don't fulfil the following criteria:
+ *     1) has a magnitude above a certain threshold
+ *     2) isn't fleetingly transient
+ *
+ * @return a list of gradient Spikes, sorted in descending order of absolute 'value'.
+ */
+const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
+{
+    // CONSTANTS
+    const double GRAD_THRESHOLD = 10;         // in Watts.
+    const size_t LOOK_AHEAD     = 16;         // check there isn't an opposite-sign spike within this number of samples.
+    const double LOOK_AHEAD_TOLLERANCE = 0.1; // what qualifies as a "similar sized" spike? 0==exactly equal.  0.1==within 10% of first spike's value.
+
+    // LOCAL VARIABLES
+    list<Spike> spikes;
+    Spike spike;
+    double gradient;
+
+    /* Populate 'spikes' with every single spike that fulfils
+     * the following criteria:
+     *     1) has a magnitude above a certain threshold
+     *     2) isn't fleetingly transient
+     */
+    for (size_t i=0; i<(size-1); i++) {
+        gradient = getGradient(i);
+
+        // Check the grad is above a certain threshold
+        if ( fabs(gradient) < GRAD_THRESHOLD )
+            continue; // don't store this spike
+
+        // Check it isn't fleetingly transient
+        for (size_t lookAhead=1; lookAhead<LOOK_AHEAD && (lookAhead+i)<(size-1); lookAhead++ ) {
+            if ( Utils::roughlyEqual( gradient, -getGradient(lookAhead+i), LOOK_AHEAD_TOLLERANCE ) )
+                continue; // don't store this spike
+        }
+
+        // if we get to here then the current spike is worth storing
+        spike.index = i;
+        spike.value = gradient;
+        spikes.push_back( spike );
+    }
+
+    // Sort by spike.value
+    spikes.sort( Spike::compareValue );
+
+    /** For debugging: dump spikes to file.
+     *  @todo dump spikes to a 3D graph.    */
+    for (list<Spike>::const_iterator spike=spikes.begin(); spike!=spikes.end(); spike++) {
+        cout << spike->index << "\t" << spike->value << endl;
+    }
+
+    return spikes;
+}
 
 /**
  * Convert from the Signature data to a different sample period.

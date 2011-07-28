@@ -467,20 +467,28 @@ public:
                                  Comes in as an instantiated but empty array.
                                  Leaves containing gradient. */
             const double multiplier=1 /**< Useful for negating the gradient, for example (by setting multiplier=-1) */
-            )
+            ) const
     {
         grad->setSize( size );
         grad->setDeviceName ( deviceName );
         grad->setUpstreamSmoothing( smoothing );
         grad->setSmoothing( 0 );
 
-        (*grad)[size-1] = 0;
-        (*grad)[0] = 0;
-        (*grad)[1] = 0;
-
-        for (size_t i=2; i<(size-1); i++) {
-            (*grad)[i] = (data[i+1] - data[i]) * multiplier;
+        for (size_t i=0; i<(size-1); i++) {
+            (*grad)[i] = getGradient(i) * multiplier;
         }
+
+        (*grad)[size-1] = 0;
+    }
+
+    const T getGradient(
+            const size_t i
+            ) const
+    {
+        if ( i>(size-2) )
+            return 0;
+
+        return (data[i+1] - data[i]);
     }
 
     static const size_t HIST_GRADIENT_RA_LENGTH = 17; /**> Length of rolling average of histogram gradient.

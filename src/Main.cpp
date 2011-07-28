@@ -1,11 +1,12 @@
 /*
- * Disaggregate.cpp
+ * Main.cpp
+ *
+ * Main file for disaggregate program.
  *
  *  Created on: 5 Jul 2011
  *      Author: jack
  */
 
-#include "Disaggregate.h"
 #include "Array.h"
 #include "Signature.h"
 #include "Statistic.h"

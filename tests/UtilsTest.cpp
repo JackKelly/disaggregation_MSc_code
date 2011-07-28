@@ -21,3 +21,12 @@ BOOST_AUTO_TEST_CASE( size_t_to_sTest )
     BOOST_CHECK_EQUAL( size_t_to_s(1234), "1234" );
     BOOST_CHECK_EQUAL( size_t_to_s(0)   ,    "0" );
 }
+
+BOOST_AUTO_TEST_CASE( roughlyEqualTest )
+{
+    BOOST_CHECK( roughlyEqual( 1  , 1  , 0  ) );
+    BOOST_CHECK( roughlyEqual( 1.1, 1  , 0.1) );
+    BOOST_CHECK(!roughlyEqual(-1.1, 1  , 0.1) );
+    BOOST_CHECK( roughlyEqual(-1.1,-1  , 0.1) );
+    BOOST_CHECK(!roughlyEqual( 1.2, 1  , 0.1) );
+}

@@ -25,7 +25,7 @@ endif
 #################################################
 
 # COMMON OBJECT FILES
-COMMONOBJS = $(SRC)Disaggregate.o $(SRC)Signature.o $(SRC)Utils.o $(SRC)Device.o $(SRC)GNUplot.o $(SRC)PowerStateSequence.o
+COMMONOBJS = $(SRC)Main.o $(SRC)Signature.o $(SRC)Utils.o $(SRC)Device.o $(SRC)GNUplot.o $(SRC)PowerStateSequence.o
 
 #####################
 # COMPILATION RULES #
