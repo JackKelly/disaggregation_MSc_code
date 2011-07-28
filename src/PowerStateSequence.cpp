@@ -9,22 +9,65 @@
 #include "Utils.h"
 #include <string>
 #include <iostream>
+#include <string>
 
 using namespace std;
 
+
+void PowerStateSequence::setDeviceName(
+        const std::string& _deviceName  /**< e.g. "Washer" or "Washer sigID1" */
+        )
+{
+    deviceName = _deviceName;
+}
+
+void PowerStateSequence::plotGraph() const
+{
+    assert( ! deviceName.empty() );
+
+    // Dump data to a .dat file
+    const std::string baseFilename =
+            getBaseFilename();
+
+    cout << "Plotting graph for " << baseFilename << endl;
+
+    dumpToFile( baseFilename );
+
+    // Set plot variables
+    GNUplot::PlotVars pv;
+    pv.inFilename  = "powerStateSequence";
+    pv.outFilename = baseFilename;
+    pv.title       = baseFilename;
+    pv.xlabel      = "time (Seconds)";
+    pv.ylabel      = "power (Watts)";
+    pv.plotArgs    = "";
+
+    pv.data.push_back( GNUplot::Data( baseFilename, deviceName + " power state sequence", "POWERSTATESEQUENCE" ) );
+
+    pv.data.push_back( GNUplot::Data( deviceName + "-afterCropping", deviceName + " raw signature (unsmoothed)", "SIG" ) );
+
+    // Plot
+    GNUplot::plot( pv );
+}
+
+const string PowerStateSequence::getBaseFilename() const
+{
+    assert( ! deviceName.empty() );
+    return deviceName + "-powerStateSequence";
+}
+
 /**
  * Dump the contents of powerStateSequence to a data file ready for
- * gnuplot to plot using the 'boxxyerrorbars' style (see p42 of the gnuplot 4.4 documentation PDF).
- *
+ * gnuplot to plot using the 'boxxyerrorbars' style
+ * (see p42 of the gnuplot 4.4 documentation PDF).
  */
 void PowerStateSequence::dumpToFile(
-        const string details /**< Details to be appended onto filename.  e.g. device name and signature ID. */
+        const string baseFilename /**< Base filename.  Excluding path and suffix. */
         ) const
 {
     // open datafile
-    string filename = DATA_OUTPUT_PATH +
-            (details=="" ? "" : details + "-" )
-            + "powerStateSequence.dat";
+    string filename =
+            DATA_OUTPUT_PATH + baseFilename + ".dat";
 
     cout << "Dumping power state sequence to " << filename << endl;
 

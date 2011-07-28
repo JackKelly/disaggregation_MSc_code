@@ -36,7 +36,7 @@ protected:
     size_t size;         /**< Number of members. size_t is 8bytes wide on x86_64 */
     size_t smoothing;    /**< Does this array represent data which has been smoothed? */
     size_t upstreamSmoothing; /**< If this array has been produced by processing a previous array, and that array was smoothed then 'upstreamSmoothing' records the smoothing of the upstream array. Else=0. */
-    std::string deviceName;
+    std::string deviceName; /**< Most arrays are associated with a device.  If not, just leave blank. */
 
 public:
     /********************
@@ -462,7 +462,28 @@ public:
         }
     }
 
-    static const size_t HIST_GRADIENT_RA_LENGTH = 25; /**> Length of rolling average of histogram gradient.
+    void getGradient(
+            Array<T> * grad, /**< Return parameter.
+                                 Comes in as an instantiated but empty array.
+                                 Leaves containing gradient. */
+            const double multiplier=1 /**< Useful for negating the gradient, for example (by setting multiplier=-1) */
+            )
+    {
+        grad->setSize( size );
+        grad->setDeviceName ( deviceName );
+        grad->setUpstreamSmoothing( smoothing );
+        grad->setSmoothing( 0 );
+
+        (*grad)[size-1] = 0;
+        (*grad)[0] = 0;
+        (*grad)[1] = 0;
+
+        for (size_t i=2; i<(size-1); i++) {
+            (*grad)[i] = (data[i+1] - data[i]) * multiplier;
+        }
+    }
+
+    static const size_t HIST_GRADIENT_RA_LENGTH = 17; /**> Length of rolling average of histogram gradient.
                                                           Best if odd. */
     /**
      * @brief Attempts to automatically find the peaks.
@@ -485,13 +506,8 @@ public:
         state = NO_MANS_LAND;
         T kneeHeight=0, peakHeight=0, descent=0, ascent=0;
 
-        Array<Sample_t> gradient(size);
-        gradient[size-1] = 0;
-        gradient[0] = 0;
-        gradient[1] = 0;
-        for (size_t i=2; i<(size-1); i++) {
-            gradient[i] = data[i] - data[i+1];
-        }
+        Array<Sample_t> gradient;
+        getGradient( &gradient, -1 );
 
         // Construct an array of smoothed gradients
         Array<Sample_t> smoothedGrad;
@@ -601,7 +617,7 @@ public:
 
 
     virtual void drawGraph(
-            const std::string name,
+            const std::string details,  /**< Type of graph e.g. "gradient".  NOT device name, which gets added automatically. */
             const std::string xlabel = "",
             const std::string ylabel = "",
             const std::string args   = ""
@@ -609,7 +625,7 @@ public:
     {
         // Dump data to a .dat file
 
-        const std::string baseFilename = getBaseFilename();
+        const std::string baseFilename = getBaseFilename() + details;
 
         dumpToFile( baseFilename );
 

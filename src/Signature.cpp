@@ -48,20 +48,25 @@ Signature::Signature(
     }
 
     deviceName =_deviceName;
+    powerStateSequence.setDeviceName( deviceName );
 
     // Draw graph of raw data after cropping
     drawGraph( "-afterCropping" );
+
+    Array<Sample_t> gradient;
+    getGradient( &gradient );
+    gradient.drawGraph( "-gradient" );
 }
 
 Signature::~Signature()
 {}
 
 void Signature::drawGraph(
-        const string& details /**< Details to be appended on after device name. */
+        const string details /**< Type of graph e.g. "gradient".  NOT device name, which gets added automatically. */
         ) const
 {
     Array<Sample_t>::drawGraph(
-            deviceName + details,
+            details,
             "time (seconds)",
             "power (Watts)"
             );
@@ -128,7 +133,7 @@ void Signature::updatePowerStates()
     // Smooth raw data
     Array<Sample_t> RA; // array to hold rolling average
     rollingAv( &RA, PREPROCESSING_DATA_SMOOTHING );
-    RA.drawGraph( "rollingAv", "time (seconds)", "power (Watts)", "" ); /**< @todo drawGraph shouldn't need all these params, surely? */
+    RA.drawGraph( "", "time (seconds)", "power (Watts)", "" ); /**< @todo drawGraph shouldn't need all these params, surely? */
 
     // Create histogram from smoothed data
     Histogram hist ( RA );
@@ -291,6 +296,7 @@ void Signature::updatePowerStateSequence()
     }
 
     cout << "...done getting power state sequence for " << deviceName << "." << endl;
+    powerStateSequence.plotGraph();
 
     /** @todo Detect repeats */
 }

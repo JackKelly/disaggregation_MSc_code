@@ -24,7 +24,11 @@ struct PowerStateSequenceItem {
 class PowerStateSequence : public std::list<PowerStateSequenceItem> {
 public:
     void dumpToFile(const std::string details = "") const;
-
+    void setDeviceName( const std::string& _deviceName );
+    void plotGraph() const;
+    const std::string getBaseFilename() const;
+private:
+    std::string deviceName;
 };
 
 #endif /* POWERSTATESEQUENCE_H_ */

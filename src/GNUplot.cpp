@@ -45,12 +45,12 @@ void GNUplot::plot(
 
     sanitise( &plotVars ); // remove troublesome characters
 
-    instantiateTemplate( plotVars );
+    instantiateTemplate( plotVars ); // replace tokens in template with values from plotVars
 
-    string plotCommand =
-            "gnuplot " + DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu";
+    const string gnuPlotScriptFilename = DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu";
+    const string plotCommand = "gnuplot " + gnuPlotScriptFilename;
 
-    cout << "Plotting " << DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu" << endl;
+    cout << "Plotting gnuplot script " << gnuPlotScriptFilename << endl;
     LOG(INFO) << plotCommand;
     system( plotCommand.c_str() );
 }
@@ -94,6 +94,18 @@ void GNUplot::sanitise(
  * @brief Replaces all the tokens in the template file 'config/plotVars.inFilename' with
  * variables from 'plotVars' and outputs the instantiated template as 'plotVars.outFilename'
  * in the directory defined by DATA_OUTPUT_PATH.
+ *
+ * Tokens replaced in template =
+ *    TITLE
+ *    XLABEL
+ *    YLABEL
+ *    SETTERMINAL
+ *    SETOUTPUT
+ *    PLOTARGS
+ *
+ *    for each datafile:
+ *    <tokenbase>FILE
+ *    <tokenbase>KEY
  *
  * The find-and-replace functionality is currently implemented using a 'system()' call
  * to 'sed'.  This is a bit of a hack but it was quick to implement, works perfectly

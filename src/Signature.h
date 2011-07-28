@@ -41,7 +41,7 @@ public:
             const Histogram& hist
             ) const;
 
-    virtual void drawGraph( const std::string& details ) const;
+    virtual void drawGraph( const std::string details = "" ) const;
 
     void dumpPowerStateSequenceToFile() const;
 
