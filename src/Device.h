@@ -29,6 +29,8 @@ public:
 
     const std::string getName() const;
 
+    const std::list<Signature::Spike> getSalientSpikes();
+
 private:
     /************************
      *  Member functions    *

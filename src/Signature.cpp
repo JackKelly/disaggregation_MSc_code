@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cmath>
 #include <list>
+#include <algorithm> // find
 
 using namespace std;
 
@@ -335,37 +336,59 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
  *     1) has a magnitude above a certain threshold
  *     2) isn't fleetingly transient
  *
+ * (If this is used as the core strategy then remember that this will fail to detect
+ *  devices which turn on/off gently.  i.e. this assumes state changes are abrupt, 1-second events.)
+ *
  * @return a list of gradient Spikes, sorted in descending order of absolute 'value'.
  */
 const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
 {
     // CONSTANTS
     const double GRAD_THRESHOLD = 10;         // in Watts.
-    const size_t LOOK_AHEAD     = 16;         // check there isn't an opposite-sign spike within this number of samples.
-    const double LOOK_AHEAD_TOLLERANCE = 0.1; // what qualifies as a "similar sized" spike? 0==exactly equal.  0.1==within 10% of first spike's value.
+    const size_t LOOK_AHEAD     = 20;         // check there isn't an opposite-sign spike within this number of samples.
+    const double LOOK_AHEAD_TOLLERANCE = 0.2; // what qualifies as a "similar sized" spike? 0==exactly equal.  0.1==within 10% of first spike's value.
 
     // LOCAL VARIABLES
     list<Spike> spikes;
+    list<size_t> blacklist;
+    list<size_t>::iterator it;
     Spike spike;
-    double gradient;
+    double currentGradient, lastGradient;
+    bool breakOut;
 
     /* Populate 'spikes' with every single spike that fulfils
      * the following criteria:
      *     1) has a magnitude above a certain threshold
      *     2) isn't fleetingly transient
      */
-    for (size_t i=0; i<(size-1); i++) {
-        gradient = getGradient(i);
+    lastGradient = getGradient(0);
+    for (size_t i=1; i<(size-1); i++) {
+
+        // Check that i isn't in the blacklist
+        it = find( blacklist.begin(), blacklist.end(), i );
+        if ( it != blacklist.end() ) {
+            // i was found in blacklist
+            blacklist.erase( it );
+            continue;  // don't store this spike
+        }
+
+        currentGradient = getGradient(i);
 
         // Check the grad is above a certain threshold
         if ( fabs(gradient) < GRAD_THRESHOLD )
             continue; // don't store this spike
 
         // Check it isn't fleetingly transient
+        breakOut = false;
         for (size_t lookAhead=1; lookAhead<LOOK_AHEAD && (lookAhead+i)<(size-1); lookAhead++ ) {
-            if ( Utils::roughlyEqual( gradient, -getGradient(lookAhead+i), LOOK_AHEAD_TOLLERANCE ) )
-                continue; // don't store this spike
+            if ( Utils::roughlyEqual( gradient, -getGradient(lookAhead+i), LOOK_AHEAD_TOLLERANCE ) ) {
+                breakOut = true;
+                blacklist.push_back( lookAhead+i );
+                break; // don't store this spike
+            }
         }
+        if (breakOut)
+            continue;
 
         // if we get to here then the current spike is worth storing
         spike.index = i;
@@ -374,7 +397,7 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
     }
 
     // Sort by spike.value
-    spikes.sort( Spike::compareValue );
+    spikes.sort( Spike::compareAbsValueDesc );
 
     /** For debugging: dump spikes to file.
      *  @todo dump spikes to a 3D graph.    */

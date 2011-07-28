@@ -45,6 +45,8 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod,
     updatePowerStates();
 
     updatePowerStateSequence();
+
+    getSalientSpikes();
 }
 
 /**
@@ -87,6 +89,45 @@ void Device::updatePowerStateSequence()
      * the existing power states.  */
 }
 
+/**
+ * @return a list of the most salient spikes to look for,
+ *         taking into consideration all Signatures,
+ *         in ascending temporal order.
+ */
+const list<Signature::Spike> Device::getSalientSpikes()
+{
+    // get the gradient spikes for the first signature
+    list<Signature::Spike> spikes = signatures.front()->getGradientSpikesInOrder();
+
+    // take just the top ten (by absolute value)
+    if (spikes.size() > 10) {
+        list<Signature::Spike>::iterator it = spikes.begin();
+        advance( it, 10 );
+        spikes.erase( it, spikes.end() );
+    }
+
+    // re-order by index (i.e. by time)
+    spikes.sort( Signature::Spike::compareIndexAsc );
+
+    /**
+     * @todo if there are multiple signatures then do this:
+     *       1) getGradientSpikesInOrder() for sig1. Don't throw any away.
+     *       2) attempt to find these spikes subsequent sigs.  If a spike can't be find in a subsequent sig then remove it.
+     *       3) order the new set and return.
+     */
+
+    // just for diagnostics:
+    cout << "Salient spikes: \n"
+            "index\tvalue" << endl;
+    for(list<Signature::Spike>::const_iterator it=spikes.begin(); it!=spikes.end(); it++)
+        cout << it->index << "\t" << it->value << endl;
+
+    return spikes;
+}
+
+/**
+ * @todo this doesn't belong in Device
+ */
 list<size_t> Device::findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod )
 {
     const double THRESHOLD = 250;
@@ -143,6 +184,8 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
  * Know limitations:
  *   assumes SigArray has a sample period of 1
  *   doesn't try different alignments of sigArray against aggData
+ *
+ *   @todo this doesn't belong in Device
  *
  * @return
  */
