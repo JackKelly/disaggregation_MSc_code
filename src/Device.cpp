@@ -118,9 +118,9 @@ const list<Signature::Spike> Device::getSalientSpikes()
 
     // just for diagnostics:
     cout << "Salient spikes: \n"
-            "index\tvalue" << endl;
+            "index\tvalue\tduration" << endl;
     for(list<Signature::Spike>::const_iterator it=spikes.begin(); it!=spikes.end(); it++)
-        cout << it->index << "\t" << it->value << endl;
+        cout << it->index << "\t" << it->value << "\t" << it->duration << endl;
 
     return spikes;
 }
