@@ -21,7 +21,7 @@ Device::Device(const string _name) : name(_name) {
 }
 
 Device::~Device() {
-    for (vector<Signature*>::iterator it; it!=signatures.end(); it++) {
+    for (vector<Signature*>::iterator it=signatures.begin(); it!=signatures.end(); it++) {
         delete *it;
     }
 }

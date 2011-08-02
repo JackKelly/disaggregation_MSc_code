@@ -355,85 +355,71 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
     const double LOOK_AHEAD_TOLLERANCE = 0.2; // what qualifies as a "similar sized" spike? 0==exactly equal.  0.1==within 10% of first spike's value.
 
     // LOCAL VARIABLES
-    list<Spike> spikes, mergedSpikes;
-    list<Spike>::iterator  lookAhead;
-    list<size_t> blacklist;
+    list<Spike> mergedSpikes;
     list<size_t>::iterator it;
-    size_t duration, lastIndex, startIndex;
     Spike spikeToStore;
-    double currentGradient, lastGradient, mergedGradient;
+    double currentGradient, lastGradient;
 
-    /* Populate 'spikes' with every single spike that fulfils
-     * the following criteria:
-     *     1) has a magnitude above a certain threshold
-     *     2) isn't fleetingly transient
+    /* Merge consecutive spikes of the same sign.
+     * The merged spikes go into the list mergedSpikes.
      */
-    for (size_t i=0; i<(size-1); i++) {
+    spikeToStore.duration = spikeToStore.index = 0;
+    spikeToStore.value = lastGradient = getGradient((size_t)0);
+
+    cout << "All gradients:" << endl;
+    for (size_t i=1; i<(size-1); i++) {
+
         currentGradient = getGradient(i);
+        cout << i << "\t" << currentGradient << endl;
 
-        // if we get to here then the current spike is worth storing
-        spikeToStore.index = i;
-        spikeToStore.value = currentGradient;
-        spikeToStore.duration = 1;
-        spikes.push_back( spikeToStore );
-    }
-
-    cout << "Done pushing every spike into spikes" << endl;
-
-    /** For debugging: dump spikes to screen. */
-/*    cout << "UNMERGED, UNSORTED SPIKES:" << endl;
-    for (list<Spike>::const_iterator spike=spikes.begin(); spike!=spikes.end(); spike++) {
-        cout << spike->index << "\t" << spike->value << "\t" << spike->duration << endl;
-    }
-*/
-
-    // Now merge consecutive spikes of the same sign. The merged spikes go into the list mergedSpikes.
-    duration        = 0;
-    lastIndex = startIndex = spikes.front().index;
-    mergedGradient = lastGradient = spikes.front().value;
-
-    cout << "L387" << endl;
-
-    list<Spike>::iterator spike=spikes.begin();
-    advance(spike, 1);
-    for (; spike!=spikes.end(); spike++) {
-
-        currentGradient = spike->value;
-
-        // Check to see if this gradient is a continuation of
-        // a larger spike.  i.e. does this gradient have the
-        // same sign as the last gradient.
-        duration++;
-        if ( spike->index == (lastIndex+1)                 && // check this spike is immediated after last spike
-            (((lastGradient > 0) && (currentGradient > 0)) || // check both this and last spike have same sign
-             ((lastGradient < 0) && (currentGradient < 0)))    ) {
+        /* Check to see if this gradient is a continuation of
+         * a larger spike.  i.e. does this gradient have the
+         * same sign as the last gradient. */
+        spikeToStore.duration++;
+        if ( ((lastGradient > 0.0) && (currentGradient > 0.0)) || // check both this and last spike have same sign and are non-zero
+             ((lastGradient < 0.0) && (currentGradient < 0.0))    ) {
             // the current spike and the last spike are immediately
             // adjacent, and both spikes are the same sign.  So these
             // spikes need to be merged and not stored in mergedGradient yet.
-            // so do nothing.
-            mergedGradient += currentGradient;
-        } else {
+            spikeToStore.value += currentGradient;
+        }
+        else if ((lastGradient == 0.0) && (currentGradient != 0.0)) { // are we starting a new spike after having been at zero?
+            spikeToStore.index = i;
+            spikeToStore.duration = 0;
+            spikeToStore.value = currentGradient; // reset mergedGradient
+        }
+        else if ((lastGradient == 0.0) && (currentGradient == 0.0)) { // we're in no man's land
+            // do nothing
+        }
+        else {
             // store
-            spikeToStore.index = startIndex;
-            spikeToStore.value = mergedGradient;
-            spikeToStore.duration = duration;
             mergedSpikes.push_back( spikeToStore );
 
             // reset
-            duration = 0;
-            mergedGradient = currentGradient;
-            startIndex = spike->index;
+            spikeToStore.value = currentGradient;
+            spikeToStore.duration = 0;
+            spikeToStore.index = i;
         }
 
-        lastIndex    = spike->index;
         lastGradient = currentGradient;
     }
 
-    cout << "L424" << endl;
 
-    // Remove fleetingly transient spikes
-    spike=mergedSpikes.begin();
-    while (spike!=mergedSpikes.end() ) {
+    /** For debugging: dump spikes to screen. */
+    cout << "MERGED SPIKES BEFORE SORTING, BEFORE TRANSIENTS REMOVED:" << endl;
+    for (list<Spike>::iterator spike=mergedSpikes.begin(); spike!=mergedSpikes.end(); spike++) {
+        cout << spike->index << "\t" << spike->value << "\t" << spike->duration << endl;
+    }
+
+
+    /* Now remove fleetingly transient spikes */
+
+    list<Spike>::iterator  spike, lookAhead;
+    list<size_t> blacklist; /* Store index of spikes which have been found to be fleetingly transient  */
+
+    spike = mergedSpikes.begin();
+    while ( spike != mergedSpikes.end() ) {
+
         // Check that spike->index isn't in the blacklist
         it = find( blacklist.begin(), blacklist.end(), spike->index );
         if ( it != blacklist.end() ) {
@@ -441,9 +427,12 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
             blacklist.erase( it );
             mergedSpikes.erase( spike++ );  // remove this spike
         } else {
+
             // Check spike isn't fleetingly transient
-            lookAhead=spike;
-            advance(lookAhead, 1);
+            lookAhead = spike;
+            advance( lookAhead, 1 );
+            /* Look ahead to see if there's a spike of opposite sign and similar magnitude
+             * within LOOK_AHEAD samples.     */
             while ( (lookAhead->index - spike->index)<LOOK_AHEAD && lookAhead!=mergedSpikes.end() ) {
                 if ( Utils::roughlyEqual( spike->value, -lookAhead->value, LOOK_AHEAD_TOLLERANCE ) ) {
                     blacklist.push_back( lookAhead->index );
@@ -457,10 +446,9 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
         }
     }
 
-    cout << "L448" << endl;
 
     /** For debugging: dump spikes to screen. */
-    cout << "MERGED SPIKES BEFORE SORTING:" << endl;
+    cout << "MERGED SPIKES AFTER TRANSIENTS REMOVED, BEFORE SORTING:" << endl;
     for (spike=mergedSpikes.begin(); spike!=mergedSpikes.end(); spike++) {
         cout << spike->index << "\t" << spike->value << "\t" << spike->duration << endl;
     }

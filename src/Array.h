@@ -233,7 +233,7 @@ public:
      *
      */
     void dumpToFile(
-            const std::string& filename /**< Excluding path and suffiex.  DATA_OUTPUT_PATH and .dat will be added. */
+            const std::string& filename /**< Excluding path and suffix.  DATA_OUTPUT_PATH and .dat will be added. */
             ) const
     {
         std::string fullFilename = DATA_OUTPUT_PATH + filename + ".dat";
@@ -481,14 +481,18 @@ public:
         (*grad)[size-1] = 0;
     }
 
+    /**
+     *
+     * @return data[i+1] - data[i]
+     */
     const T getGradient(
             const size_t i
             ) const
     {
         if ( i>(size-2) )
             return 0;
-
-        return (data[i+1] - data[i]);
+        else
+            return (data[i+1] - data[i]);
     }
 
     static const size_t HIST_GRADIENT_RA_LENGTH = 17; /**> Length of rolling average of histogram gradient.
