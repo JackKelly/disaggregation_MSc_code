@@ -50,6 +50,10 @@ public:
      * FUNCTIONS       *
      *******************/
 
+    /***************************************/
+    /** @name Constructors and destructors */
+    ///@{
+
     Signature(
             const char* filename,
             const size_t _samplePeriod,
@@ -61,29 +65,37 @@ public:
 
     virtual ~Signature();
 
-    void downSample( Array<Sample_t> * output, const size_t newPeriod ) const;
+    ///@}
 
-    const PowerStates_t getPowerStates( const size_t rollingAvLength) const;
-
+    /******************************/
+    /** @name Getters and setters */
+    ///@{
     const size_t getSamplePeriod() const;
-
-    void drawHistWithStateBars(
-            const Histogram& hist
-            ) const;
-
-    virtual void drawGraph( const std::string details = "" ) const;
-
-    void dumpPowerStateSequenceToFile() const;
 
     const PowerStates_t& getPowerStates();
 
     const PowerStateSequence& getPowerStateSequence();
 
-
-
     const std::list<Spike> getGradientSpikesInOrder() const;
+    ///@}
 
+    /************************/
+    /** @name Graph drawing */
+    ///@{
+    void drawHistWithStateBars(
+            const Histogram& hist
+            ) const;
 
+    virtual void drawGraph( const std::string details = "" ) const;
+    ///@}
+
+    /********************/
+    /** @name Smoothing */
+    ///@{
+
+    void downSample( Array<Sample_t> * output, const size_t newPeriod ) const;
+
+    ///@}
 
     /*****************
      * STATIC CONSTS *
@@ -95,17 +107,30 @@ private:
     /************************
      *  Member functions    *
      ************************/
+
+    /*********************************/
+    /** @name Power state processing */
+    ///@{
+
     void updatePowerStates();
+
+    PowerStates_t::const_iterator getPowerState( const Sample_t sample ) const;
+
+    const std::string getStateBarsBaseFilename() const;
 
     void fillGapsInPowerStates(
             const Histogram& hist
             );
 
+    ///@}
+
+    /******************************************/
+    /** @name Power state sequence processing */
+    ///@{
+
     void updatePowerStateSequence();
 
-    PowerStates_t::const_iterator getPowerState( const Sample_t sample ) const;
-
-    const std::string getStateBarsBaseFilename() const;
+    ///@}
 
     /************************
      *  Member variables    *

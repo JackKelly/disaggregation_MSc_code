@@ -64,6 +64,7 @@ Signature::Signature(
 Signature::~Signature()
 {}
 
+
 void Signature::drawGraph(
         const string details /**< Type of graph e.g. "gradient".  NOT device name, which gets added automatically. */
         ) const
@@ -113,6 +114,7 @@ void Signature::drawHistWithStateBars(
     // Plot
     GNUplot::plot( pv );
 }
+
 
 const PowerStates_t& Signature::getPowerStates()
 {
@@ -219,6 +221,7 @@ void Signature::fillGapsInPowerStates(
     }
 
 }
+
 
 const PowerStateSequence& Signature::getPowerStateSequence()
 {
@@ -329,8 +332,10 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
     return powerStates.end();
 }
 
+
 /**
- * Takes the gradient of this object, then looks for 'spikes' in the gradient values, then sorts by value.
+ * Takes the gradient of this Signature,
+ * then looks for 'spikes' in the gradient values, then sorts by value.
  *
  * In particular, this function discards spikes which don't fulfil the following criteria:
  *     *) isn't fleetingly transient
