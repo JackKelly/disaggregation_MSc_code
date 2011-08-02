@@ -130,6 +130,8 @@ private:
 
     void updatePowerStateSequence();
 
+    const std::list<Spike> getMergedSpikes() const;
+
     ///@}
 
     /************************

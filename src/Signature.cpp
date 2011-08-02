@@ -355,14 +355,55 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
     const double LOOK_AHEAD_TOLLERANCE = 0.2; // what qualifies as a "similar sized" spike? 0==exactly equal.  0.1==within 10% of first spike's value.
 
     // LOCAL VARIABLES
+    list<Spike>::iterator  spike, lookAhead;
+    list<Spike> mergedSpikes = getMergedSpikes();
+    bool found;
+
+    /* Remove fleetingly transient spikes */
+    spike = mergedSpikes.begin();
+    while ( spike != mergedSpikes.end() ) {
+        // Check spike isn't fleetingly transient
+        lookAhead = spike;
+        advance( lookAhead, 1 );
+        /* Look ahead to see if there's a spike of opposite sign and similar magnitude
+         * within LOOK_AHEAD samples.     */
+        found = false;
+        while ( lookAhead!=mergedSpikes.end() && (lookAhead->index - spike->index)<LOOK_AHEAD ) {
+            if ( Utils::roughlyEqual( spike->value, -lookAhead->value, LOOK_AHEAD_TOLLERANCE ) ) {
+                mergedSpikes.erase( lookAhead++ );
+                mergedSpikes.erase( spike++ );
+                found = true;
+                break;
+            }
+            lookAhead++;
+        }
+        if ( ! found )
+            spike++;
+    }
+
+    // Sort by spike.value
+    mergedSpikes.sort( Spike::compareAbsValueDesc );
+
+    return mergedSpikes;
+}
+
+/**
+ * Merge consecutive spikes of the same sign.
+ *
+ * @return a list of merged spikes
+ *
+ * NOTE: returning a std::list should not be costly because
+ * both GCC and MSVC implement Return Value Optimisation,
+ * even when optimisation is turned off.
+ * http://stackoverflow.com/questions/1092561/is-returning-a-stdlist-costly
+ */
+const list<Signature::Spike> Signature::getMergedSpikes() const
+{
+    // LOCAL VARIABLES
     list<Spike> mergedSpikes;
-    list<size_t>::iterator it;
     Spike spikeToStore;
     double currentGradient, lastGradient;
 
-    /* Merge consecutive spikes of the same sign.
-     * The merged spikes go into the list mergedSpikes.
-     */
     spikeToStore.duration = spikeToStore.index = 0;
     spikeToStore.value = lastGradient = getGradient((size_t)0);
 
@@ -377,7 +418,7 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
          * same sign as the last gradient. */
         spikeToStore.duration++;
         if ( ((lastGradient > 0.0) && (currentGradient > 0.0)) || // check both this and last spike have same sign and are non-zero
-             ((lastGradient < 0.0) && (currentGradient < 0.0))    ) {
+                ((lastGradient < 0.0) && (currentGradient < 0.0))    ) {
             // the current spike and the last spike are immediately
             // adjacent, and both spikes are the same sign.  So these
             // spikes need to be merged and not stored in mergedGradient yet.
@@ -404,68 +445,9 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
         lastGradient = currentGradient;
     }
 
-
-    /** For debugging: dump spikes to screen. */
-    cout << "MERGED SPIKES BEFORE SORTING, BEFORE TRANSIENTS REMOVED:" << endl;
-    for (list<Spike>::iterator spike=mergedSpikes.begin(); spike!=mergedSpikes.end(); spike++) {
-        cout << spike->index << "\t" << spike->value << "\t" << spike->duration << endl;
-    }
-
-
-    /* Now remove fleetingly transient spikes */
-
-    list<Spike>::iterator  spike, lookAhead;
-    list<size_t> blacklist; /* Store index of spikes which have been found to be fleetingly transient  */
-
-    spike = mergedSpikes.begin();
-    while ( spike != mergedSpikes.end() ) {
-
-        // Check that spike->index isn't in the blacklist
-        it = find( blacklist.begin(), blacklist.end(), spike->index );
-        if ( it != blacklist.end() ) {
-            // spike->index was found in blacklist
-            blacklist.erase( it );
-            mergedSpikes.erase( spike++ );  // remove this spike
-        } else {
-
-            // Check spike isn't fleetingly transient
-            lookAhead = spike;
-            advance( lookAhead, 1 );
-            /* Look ahead to see if there's a spike of opposite sign and similar magnitude
-             * within LOOK_AHEAD samples.     */
-            while ( (lookAhead->index - spike->index)<LOOK_AHEAD && lookAhead!=mergedSpikes.end() ) {
-                if ( Utils::roughlyEqual( spike->value, -lookAhead->value, LOOK_AHEAD_TOLLERANCE ) ) {
-                    blacklist.push_back( lookAhead->index );
-                    mergedSpikes.erase( lookAhead++ ); // remove
-                    break;
-                } else {
-                    ++lookAhead;
-                }
-            }
-            ++spike;
-        }
-    }
-
-
-    /** For debugging: dump spikes to screen. */
-    cout << "MERGED SPIKES AFTER TRANSIENTS REMOVED, BEFORE SORTING:" << endl;
-    for (spike=mergedSpikes.begin(); spike!=mergedSpikes.end(); spike++) {
-        cout << spike->index << "\t" << spike->value << "\t" << spike->duration << endl;
-    }
-
-
-    // Sort by spike.value
-    mergedSpikes.sort( Spike::compareAbsValueDesc );
-
-    /** For debugging: dump spikes to screen.
-     *  @todo dump spikes to a 3D graph.    */
-    cout << "MERGED SPIKES AFTER SORTING:" << endl;
-    for (spike=mergedSpikes.begin(); spike!=mergedSpikes.end(); spike++) {
-        cout << spike->index << "\t" << spike->value << "\t" << spike->duration << endl;
-    }
-
     return mergedSpikes;
 }
+
 
 /**
  * Convert from the Signature data to a different sample period.
