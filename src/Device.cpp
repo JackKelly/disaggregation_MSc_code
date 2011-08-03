@@ -127,8 +127,12 @@ const list<Signature::Spike> Device::getSalientSpikes() const
     return spikes;
 }
 
+/**
+ *
+ * @return a list of UNIX times when the device starts
+ */
 const list<size_t> Device::getStartTimes(
-        const AggregateData& aggregateData
+        const AggregateData& aggregateData /**< A populated array of AggregateData */
         ) const
 {
     cout << "Getting start times for " << name << endl;

@@ -64,11 +64,12 @@ const size_t AggregateData::aggDelta(
 }
 
 /**
- * Find 'delta'.  Start searching 'expectedDistance' away from 'candidateIndex'
+ * @brief Find 'delta'.  Start searching 'expectedDistance' away from 'candidateIndex'.
+ *
  * @return AggregateData index where best delta match was found
  */
 const size_t AggregateData::findNear(
-        const size_t candidateIndex, /**< index of the aggregateData */
+        const size_t candidateIndex, /**< index into aggregateData */
         const size_t expectedDistance, /**< in seconds away from candidateIndex */
         const size_t delta /**< the delta we're looking for */
 ) const

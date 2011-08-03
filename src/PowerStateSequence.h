@@ -13,12 +13,13 @@
 #include "Statistic.h"
 
 typedef Statistic<Sample_t>     PowerState_t;  /**< @todo should PowerState inherit from Statistic? */
-typedef std::list<PowerState_t> PowerStates_t; /**< @todo should PowerStates_t be its own class, inheriting from std::list?  Then we could have a drawGraph function for PowerStates. */
+typedef std::list<PowerState_t> PowerStates_t;
 
 struct PowerStateSequenceItem {
     PowerStates_t::const_iterator powerState; /**< @todo Does the same iterator point to the same element, no matter if an item is subsequently entered before the item?  And does the iterator point to the correct item even after copying?  */
     size_t startTime; /**< in seconds  */
     size_t endTime;   /**< in seconds  */
+    Sample_t delta;   /**< the delta corresponding to this power state sequence item  */
 };
 
 class PowerStateSequence : public std::list<PowerStateSequenceItem> {

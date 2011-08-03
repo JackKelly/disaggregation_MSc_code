@@ -16,7 +16,7 @@ ifeq ($(origin LDFLAGS), undefined)
 endif
 
 ifeq ($(origin CXXFLAGS), undefined)
-	CXXFLAGS = $(LDFLAGS) -DDEBUG=1 -MD # MD is required for auto dependency
+	CXXFLAGS = $(LDFLAGS) -DDEBUG=1 -MD -O2 # MD is required for auto dependency, O2 is required for Boost Graph Library
 endif
 
 
