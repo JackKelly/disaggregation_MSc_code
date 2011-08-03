@@ -42,7 +42,7 @@ disaggregate: $(COMMONOBJS)
 # TESTING
 TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework -DGOOGLE_STRIP_LOG=4
 
-testAll: ArrayTest GNUplotTest
+testAll: ArrayTest GNUplotTest UtilsTest StatisticTest
 
 ArrayTest: $(TEST)ArrayTest.cpp $(SRC)Array.h $(SRC)Utils.o
 	g++ $(TESTCXXFLAGS) -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(SRC)Utils.cpp $(SRC)GNUplot.cpp && $(TEST)ArrayTest 
@@ -52,6 +52,9 @@ GNUplotTest: $(TEST)GNUplotTest.cpp $(SRC)GNUplot.o $(SRC)Utils.o
 
 UtilsTest: $(TEST)UtilsTest.cpp $(SRC)Utils.o
 	g++ $(TESTCXXFLAGS) -o $(TEST)UtilsTest $(TEST)UtilsTest.cpp $(SRC)Utils.cpp && $(TEST)UtilsTest
+
+StatisticTest: $(TEST)StatisticTest.cpp $(SRC)Statistic.h $(SRC)Array.h
+	g++ $(TESTCXXFLAGS) -o $(TEST)StatisticTest $(TEST)StatisticTest.cpp $(SRC)Utils.cpp $(SRC)GNUplot.cpp && $(TEST)StatisticTest
 
 # AUTOMATIC DEPENDENCY DETECTION
 # http://www.wlug.org.nz/MakefileHowto
