@@ -13,6 +13,7 @@
 #include <cassert>
 #include <cstring>
 #include <cstdlib> // abs
+#include <limits> // std::numeric_limits<std::size_t>::max
 
 using namespace std;
 
@@ -94,7 +95,7 @@ void Device::updatePowerStateSequence()
  *         taking into consideration all Signatures,
  *         in ascending temporal order.
  */
-const list<Signature::Spike> Device::getSalientSpikes()
+const list<Signature::Spike> Device::getSalientSpikes() const
 {
     // get the gradient spikes for the first signature
     list<Signature::Spike> spikes = signatures.front()->getGradientSpikesInOrder();
@@ -117,12 +118,68 @@ const list<Signature::Spike> Device::getSalientSpikes()
      */
 
     // just for diagnostics:
-    cout << "Salient spikes: \n"
+/*    cout << "Salient spikes: \n"
             "index\tvalue\tduration" << endl;
     for(list<Signature::Spike>::const_iterator it=spikes.begin(); it!=spikes.end(); it++)
         cout << it->index << "\t" << it->value << "\t" << it->duration << endl;
+*/
 
     return spikes;
+}
+
+const list<size_t> Device::getStartTimes(
+        const AggregateData& aggregateData
+        ) const
+{
+    cout << "Getting start times for " << name << endl;
+
+    /** @todo should be relative */
+    const size_t DIFF_THRESHOLD = 50; // in Watts.  Difference between the size spike in the device signature and in the aggregate data.
+
+    struct IndexAndDelta {
+        size_t index;
+        size_t delta;
+    } indexAndDelta;
+
+    list<size_t> startTimes;
+    list<IndexAndDelta> candidates;
+
+    const list<Signature::Spike> spikes = getSalientSpikes();
+
+    // try to find the first spike from 'spikes' in the aggregateData
+    for (indexAndDelta.index = 0; indexAndDelta.index < aggregateData.getSize(); indexAndDelta.index++) {
+
+        indexAndDelta.delta =
+                abs(aggregateData.aggDelta( indexAndDelta.index ) - spikes.front().delta);
+
+        if (indexAndDelta.delta < DIFF_THRESHOLD) {
+            candidates.push_back( indexAndDelta );
+            cout << indexAndDelta.index << "\t"
+                    << aggregateData.secondsSinceFirstSample(indexAndDelta.index) << "\t" << indexAndDelta.delta << endl;
+        }
+    }
+
+    // now try to find each of the other device signature spikes
+    // where we'd expect to find them relative to the first spike
+    size_t expectedDistance, actualDistance;
+    list<Signature::Spike>::const_iterator spike;
+    for (list<IndexAndDelta>::iterator candidate=candidates.begin();
+            candidate!=candidates.end();
+            candidate++) {
+
+        spike = spikes.begin();
+        advance( spike, 1 );
+        for (; spike!=spikes.end(); spike++) {
+            expectedDistance = spike->index - spikes.front().index;
+
+            actualDistance = aggregateData.findNear(
+                    candidate->index, expectedDistance, spike->delta );
+
+        }
+
+    }
+
+    return startTimes;
 }
 
 /**
@@ -134,20 +191,15 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
 
     LOG(INFO) << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename;
 
-    // Load aggregate data file
-    fstream aggregateDataFile;
-    Utils::openFile( aggregateDataFile, aggregateDataFilename, fstream::in );
-
     list<size_t> locations;
 
-    Array<currentCostReading> aggregateData;
-    loadCurrentCostData( aggregateDataFile, &aggregateData );
-    aggregateDataFile.close();
+    AggregateData aggregateData;
+    aggregateData.loadCurrentCostData( aggregateDataFilename );
 
     // Get a handy reference to the last 'rawReading' stored in 'signatures'
     const Array<Sample_t>& sigArray = *(signatures.back());
 
-    double min = 100000000000000000;
+    double min = numeric_limits<double>::max();
 
     double lms;
     size_t foundAt;
@@ -191,7 +243,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
  */
 const double Device::LMDiff(
         const size_t aggOffset,
-        const Array<currentCostReading>& aggData, /**< aggregate data array */
+        const Array<AggregateSample>& aggData, /**< aggregate data array */
         const Array<Sample_t>& sigArray,
         const size_t aggDataSamplePeriod /**< sample period of the aggregate data */
         )
@@ -250,28 +302,5 @@ const double Device::LMDiff(
 //    LOG(INFO) << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.getSize()/aggDataSamplePeriod);
 
     return accumulator / count; // average
-}
-
-/**
- * @todo why are we loading current cost data in Device?
- * @param fs
- * @param data = a pointer to a valid but empty Array<Sample_t>
- */
-void Device::loadCurrentCostData(std::fstream& fs, Array<currentCostReading> * aggData)
-{
-    aggData->setSize( Utils::countDataPoints( fs ) );
-
-    int count = 0;
-    char ch;
-    while ( ! fs.eof() ) {
-        ch = fs.peek();
-        if ( isdigit(ch) ) {
-            fs >> (*aggData)[ count ].timestamp;
-            fs >> (*aggData)[ count ].reading;
-            count++;
-        }
-        fs.ignore( 255, '\n' );  // skip to next line
-    }
-    LOG(INFO) << "Entered " << count << " ints into data array.";
 }
 

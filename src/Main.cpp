@@ -50,12 +50,15 @@ int main(int argc, char * argv[])
     kettle.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 */
 
-      Device washer("Washer1");
-//    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 8000 );
-      washer.getReadingFromCSV( "data/input/watts_up/washer.csv", 1, 50, 2200 );
+      Device washer("Washer2");
+    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
+//      washer.getReadingFromCSV( "data/input/watts_up/washer.csv", 1, 50, 2200 );
 //    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
 //    washer.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 
+      AggregateData aggData;
+      aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+      washer.getStartTimes( aggData );
 
 //    washer.findAlignment( "data/input/watts_up/washer2.csv", 1);
 

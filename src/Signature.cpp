@@ -55,10 +55,9 @@ Signature::Signature(
     drawGraph( "-afterCropping" );
 
     Array<Sample_t> gradient;
-    getGradient( &gradient );
+    getDelta( &gradient );
     gradient.drawGraph( "-gradient" );
 
-    getGradientSpikesInOrder();
 }
 
 Signature::~Signature()
@@ -335,18 +334,11 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
 
 /**
  * Takes the gradient of this Signature,
- * then looks for 'spikes' in the gradient values, then sorts by value.
- *
- * In particular, this function discards spikes which don't fulfil the following criteria:
- *     *) isn't fleetingly transient
- *
- * (If this is used as the core strategy then remember that this will fail to detect
- *  devices which turn on/off gently.  i.e. this assumes state changes are abrupt, 1-second events.)
+ * then merges gradient values with the same sign,
+ * then removes transient spikes, then sorts by value.
  *
  * @return a list of gradient Spikes, sorted in descending order of absolute 'value'.
  *
- * @todo this function needs tidying up and further testing.  In particular, there's no
- * point dumping every element of gradient into a list at the start of the function.
  */
 const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
 {
@@ -369,7 +361,7 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
          * within LOOK_AHEAD samples.     */
         found = false;
         while ( lookAhead!=mergedSpikes.end() && (lookAhead->index - spike->index)<LOOK_AHEAD ) {
-            if ( Utils::roughlyEqual( spike->value, -lookAhead->value, LOOK_AHEAD_TOLLERANCE ) ) {
+            if ( Utils::roughlyEqual( spike->delta, -lookAhead->delta, LOOK_AHEAD_TOLLERANCE ) ) {
                 mergedSpikes.erase( lookAhead++ );
                 mergedSpikes.erase( spike++ );
                 found = true;
@@ -392,7 +384,7 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
  *
  * @return a list of merged spikes
  *
- * NOTE: returning a std::list should not be costly because
+ * NOTE: returning a @c std::list should not be costly because
  * both GCC and MSVC implement Return Value Optimisation,
  * even when optimisation is turned off.
  * http://stackoverflow.com/questions/1092561/is-returning-a-stdlist-costly
@@ -402,34 +394,32 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
     // LOCAL VARIABLES
     list<Spike> mergedSpikes;
     Spike spikeToStore;
-    double currentGradient, lastGradient;
+    double currentDelta, lastDelta;
 
     spikeToStore.duration = spikeToStore.index = 0;
-    spikeToStore.value = lastGradient = getGradient((size_t)0);
+    spikeToStore.delta = lastDelta = getDelta((size_t)0);
 
-    cout << "All gradients:" << endl;
     for (size_t i=1; i<(size-1); i++) {
 
-        currentGradient = getGradient(i);
-        cout << i << "\t" << currentGradient << endl;
+        currentDelta = getDelta(i);
 
         /* Check to see if this gradient is a continuation of
          * a larger spike.  i.e. does this gradient have the
          * same sign as the last gradient. */
         spikeToStore.duration++;
-        if ( ((lastGradient > 0.0) && (currentGradient > 0.0)) || // check both this and last spike have same sign and are non-zero
-                ((lastGradient < 0.0) && (currentGradient < 0.0))    ) {
+        if ( ((lastDelta > 0.0) && (currentDelta > 0.0)) || // check both this and last spike have same sign and are non-zero
+                ((lastDelta < 0.0) && (currentDelta < 0.0))    ) {
             // the current spike and the last spike are immediately
             // adjacent, and both spikes are the same sign.  So these
             // spikes need to be merged and not stored in mergedGradient yet.
-            spikeToStore.value += currentGradient;
+            spikeToStore.delta += currentDelta;
         }
-        else if ((lastGradient == 0.0) && (currentGradient != 0.0)) { // are we starting a new spike after having been at zero?
+        else if ((lastDelta == 0.0) && (currentDelta != 0.0)) { // are we starting a new spike after having been at zero?
             spikeToStore.index = i;
             spikeToStore.duration = 0;
-            spikeToStore.value = currentGradient; // reset mergedGradient
+            spikeToStore.delta = currentDelta; // reset mergedGradient
         }
-        else if ((lastGradient == 0.0) && (currentGradient == 0.0)) { // we're in no man's land
+        else if ((lastDelta == 0.0) && (currentDelta == 0.0)) { // we're in no man's land
             // do nothing
         }
         else {
@@ -437,12 +427,12 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
             mergedSpikes.push_back( spikeToStore );
 
             // reset
-            spikeToStore.value = currentGradient;
+            spikeToStore.delta = currentDelta;
             spikeToStore.duration = 0;
             spikeToStore.index = i;
         }
 
-        lastGradient = currentGradient;
+        lastDelta = currentDelta;
     }
 
     return mergedSpikes;

@@ -462,11 +462,12 @@ public:
         }
     }
 
-    void getGradient(
+    void getDelta(
             Array<T> * grad, /**< Return parameter.
-                                 Comes in as an instantiated but empty array.
-                                 Leaves containing gradient. */
-            const double multiplier=1 /**< Useful for negating the gradient, for example (by setting multiplier=-1) */
+                                  Comes in as an instantiated but empty @C Array.
+                                  Leaves as an @c Array of deltas. */
+            const double multiplier=1 /**< Useful for negating the gradient,
+                                           for example (by setting @c multiplier=-1 ). */
             ) const
     {
         grad->setSize( size );
@@ -475,17 +476,16 @@ public:
         grad->setSmoothing( 0 );
 
         for (size_t i=0; i<(size-1); i++) {
-            (*grad)[i] = getGradient(i) * multiplier;
+            (*grad)[i] = getDelta(i) * multiplier;
         }
 
         (*grad)[size-1] = 0;
     }
 
     /**
-     *
-     * @return data[i+1] - data[i]
+     * @return \code data[i+1] - data[i] \endcode
      */
-    const T getGradient(
+    const T getDelta(
             const size_t i
             ) const
     {
@@ -519,7 +519,7 @@ public:
         T kneeHeight=0, peakHeight=0, descent=0, ascent=0;
 
         Array<Sample_t> gradient;
-        getGradient( &gradient, -1 );
+        getDelta( &gradient, -1 );
 
         // Construct an array of smoothed gradients
         Array<Sample_t> smoothedGrad;
@@ -775,5 +775,6 @@ protected:
     size_t sizeOfSource;
 
 };
+
 
 #endif /* ARRAY_H_ */

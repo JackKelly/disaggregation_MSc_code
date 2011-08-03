@@ -22,6 +22,9 @@ ArrayTest
 *.la
 *.a
 
+# Open Office files
+*.ods
+
 # Built files #
 ###############
 /build/*

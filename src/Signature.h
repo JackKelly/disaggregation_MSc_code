@@ -30,14 +30,14 @@ public:
     struct Spike {
         size_t index;    /**< Location to find this Spike.     */
         size_t duration; /**< Length of spike in samples.      */
-        double value;    /**< Value of Spike at this location. */
+        double delta;    /**< Value of Spike at this location. */
 
         /**
          * Comparison function. Useful for sorting lists of spikes into descending order of absolute magnitude.
          */
         const static bool compareAbsValueDesc( const Spike first, const Spike second )
         {
-            return fabs(first.value) > fabs(second.value);
+            return fabs(first.delta) > fabs(second.delta);
         }
 
         const static bool compareIndexAsc( const Spike first, const Spike second )

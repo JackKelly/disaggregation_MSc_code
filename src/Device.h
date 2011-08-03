@@ -14,6 +14,7 @@
 #include "Signature.h"
 #include "Statistic.h"
 #include "PowerStateSequence.h"
+#include "AggregateData.h"
 
 /**
  * @brief Class for representing "devices" (ie appliances like "dish washer", "lamp" etc)
@@ -29,7 +30,9 @@ public:
 
     const std::string getName() const;
 
-    const std::list<Signature::Spike> getSalientSpikes();
+    const std::list<size_t> getStartTimes( const AggregateData& ) const;
+
+    const std::list<Signature::Spike> getSalientSpikes() const;
 
 private:
     /************************
@@ -38,12 +41,11 @@ private:
     void updatePowerStates();
     void updatePowerStateSequence();
 
-    struct currentCostReading; // forward declaration
-    void loadCurrentCostData(std::fstream& fs, Array<currentCostReading> * aggData);
+    void loadCurrentCostData(std::fstream& fs, Array<AggregateSample> * aggData);
 
     const double LMDiff(
             const size_t agOffset,
-            const Array<currentCostReading>& aggData, // aggregate data array
+            const Array<AggregateSample>& aggData, // aggregate data array
             const Array<Sample_t>& sigArray,
             const size_t aggDataSamplePeriod);
 
@@ -54,23 +56,6 @@ private:
     PowerStates_t powerStates;
     std::vector<Signature*> signatures;
     PowerStateSequence powerStateSequence;
-
-    /**
-     * @todo currentCostReading shouldn't be in Device. It should probably be
-     * Array -> AggregateReading -> CurrentCost
-     */
-    struct currentCostReading {
-        size_t timestamp;
-        size_t reading;
-
-        friend std::ostream& operator<<(std::ostream& o, const currentCostReading& ccr)
-        {
-            o << ccr.timestamp << "\t" << ccr.reading << std::endl;
-            return o;
-        }
-
-    };
-
 
 };
 
