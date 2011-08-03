@@ -39,7 +39,7 @@ disaggregate: $(COMMONOBJS)
 .C.o:
 	$(CXX) $< -c $(CXXFLAGS) $(INC)
 	
-# TESTING
+# TESTING (it's best to do a 'make clean' when switching between testing and normal compiling because object files are compiled with different options)
 TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework -DGOOGLE_STRIP_LOG=4 -MD
 
 testAll: ArrayTest GNUplotTest UtilsTest StatisticTest PowerStateGraphTest
@@ -86,4 +86,4 @@ clean:
 	rm -f $(SRC)*.o $(SRC)*.d
 	
 linecount:
-	wc -l $(SRC)*.cpp $(SRC)*.h $(TEST)*.cpp config/*.*
+	wc -l $(SRC)*.cpp $(SRC)*.h $(TEST)*.cpp config/*.* Makefile
