@@ -17,7 +17,7 @@
 #include <cassert>
 #include <cmath>
 #include <list>
-#include <algorithm> // find
+#include <algorithm> // for find
 
 using namespace std;
 
@@ -131,7 +131,9 @@ const PowerStates_t& Signature::getPowerStates()
  */
 void Signature::updatePowerStates()
 {
+#ifdef DEBUG
     LOG(INFO) << "Finding power states...DATA_SMOOTHING_BEFORE_HIST = " << PREPROCESSING_DATA_SMOOTHING;
+#endif
     assert ( size ); // make sure Signature is populated
 
     // Smooth raw data
@@ -453,7 +455,7 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
  */
 void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod ) const
 {
-    size_t inner, inputIndex, outputIndex, outerLimit;
+    size_t inner, inputIndex=0, outputIndex, outerLimit;
     Sample_t accumulator;
 
     LOG(INFO) << "Resampling...";

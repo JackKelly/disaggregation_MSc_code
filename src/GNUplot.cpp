@@ -154,5 +154,5 @@ void GNUplot::instantiateTemplate(
     cout << "Instantiating GNUplot template \"config/" + plotVars.inFilename + ".template.gnu\""
             " and outputting instantiated template to " << DATA_OUTPUT_PATH << plotVars.outFilename << ".gnu" << endl;
     LOG(INFO) << sedCommand;
-    system( sedCommand.c_str() ) ;
+    (void)system( sedCommand.c_str() ) ;
 }
