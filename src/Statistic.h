@@ -13,6 +13,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <boost/math/distributions/students_t.hpp>
 #include "Array.h"
 #include "Common.h"
 
@@ -25,7 +26,7 @@ struct Statistic {
     double stdev;
     T min;
     T max;
-    double stdevAccumulator; /**< Used to save the accumulated <tt>pow((data[i]-mean),2)</tt>
+    double stdevAccumulator; /**< @brief Used to save the accumulated <tt>pow((data[i]-mean),2)</tt>
                              during the stdev calc.
                              This is useful when we want to update the Statistic with new data points. */
     size_t numDataPoints;
@@ -35,7 +36,7 @@ struct Statistic {
      ************************/
 
     /**
-     * Constructor from histogram data.
+     * @brief Constructor from histogram data.
      */
     Statistic(
             const Histogram& data, /**< data */
@@ -79,7 +80,7 @@ struct Statistic {
     }
 
     /**
-     * Constructor from array data (NOT histograms)
+     * @brief Constructor from array data (NOT histograms)
      */
     Statistic(const Array<T>& data, const size_t beginning=0, size_t end=0)
     : mean(0), stdev(0)
@@ -122,7 +123,7 @@ struct Statistic {
     }
 
     /**
-     * Update an existing Statistic with new data points.
+     * @brief Update an existing Statistic with new data points.
      *
      *  NOTE: This is a bit of a hack to get a rough
      *  new stdev and will result in an inaccurate stdev
@@ -181,7 +182,51 @@ struct Statistic {
         stdev = sqrt(stdevAccumulator / (numDataPoints-1));
     }
 
+    /**
+     * @brief Uses a two-sided Student T-Test to determine if @c other.mean is 'similar' to the calling object's mean.
+     *
+     * Uses a Chi-Squared test for equal variances first.
+     *
+     * Code adapted from
+     * <a href="http://www.boost.org/doc/libs/1_43_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/stat_tut/weg/st_eg/two_sample_students_t.html">boost tutorial on Comparing the means of two samples with the Students-t test</a>
+     *
+     * @return true if @c other is 'similar' to calling object.
+     */
+    const bool similar(
+            const Statistic<T> other,
+            const double alpha=0.05        /**< significance level */
+            )
+    {
+        if (mean == other.mean)
+            return true;
 
+        assert( numDataPoints > 1 );
+        assert( other.numDataPoints > 1 );
+
+        using namespace boost::math;
+
+        // Degrees of freedom (using Chi-Squared test):
+        double v = stdev * stdev / numDataPoints + other.stdev * other.stdev / other.numDataPoints;
+        v *= v;
+        double t1 = stdev * stdev / numDataPoints;
+        t1 *= t1;
+        t1 /=  (numDataPoints - 1);
+        double t2 = other.stdev * other.stdev / other.numDataPoints;
+        t2 *= t2;
+        t2 /= (other.numDataPoints - 1);
+        v /= (t1 + t2);
+
+        // t-statistic:
+        double t_stat = (mean - other.mean) / sqrt(stdev * stdev / numDataPoints + other.stdev * other.stdev / other.numDataPoints);
+
+        // define our distribution object
+        students_t dist( v );
+
+        // calculate complement of probability (the probability that the difference is due to chance)
+        double q = cdf(complement(dist, fabs(t_stat)));
+
+        return q > (alpha/2);
+    }
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {
