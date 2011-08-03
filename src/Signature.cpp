@@ -28,7 +28,7 @@ using namespace std;
 Signature::Signature(
         const char* filename,   /**< Filename, including path and suffix. */
         const size_t _samplePeriod, /**< Sample period. In seconds. @todo sample period should be read from data file. */
-        const string _deviceName, /**< A reciprical link to the Device */
+        const string _deviceName, /**< All signatures are associated with devices */
         const size_t _sigID,    /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. Default=0. */
         const size_t cropFront, /**< Number of elements to crop from the front. Default=0. If 0 then will automatically crop 0s from the front such that there's only a single leading zero left. */
         const size_t cropBack   /**< Number of elements to crop from the back. Default=0. If 0 then will automatically crop 0s from the back such that there's only a single trailing zero left. */

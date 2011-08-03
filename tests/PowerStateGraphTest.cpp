@@ -7,8 +7,9 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
-BOOST_AUTO_TEST_CASE( constructorAndUpdateTest )
+BOOST_AUTO_TEST_CASE( constructorTest )
 {
+    PowerStateGraph psg;
 /*
     const size_t SIZE = 10;
     int pop[SIZE] = {1,2,3,4,5,6,7,8,9,10};
@@ -38,4 +39,25 @@ BOOST_AUTO_TEST_CASE( constructorAndUpdateTest )
     BOOST_CHECK_EQUAL( stat.getMax(),  10 );
     BOOST_CHECK_EQUAL( stat.getMin(),   1 );
 */
+}
+
+BOOST_AUTO_TEST_CASE( updateVerticesTest )
+{
+    std::cout << "updateVerticesTest..." << std::endl;
+
+    PowerStateGraph psg;
+
+//    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
+//    psg.updateVertices( sig );
+
+//    Signature washer( "data/input/watts_up/washer.csv", 1, "washer" );
+//    psg.updateVertices( washer );
+
+    Signature washer2( "data/input/watts_up/washer2.csv", 1, "washer2" );
+    psg.updateVertices( washer2 );
+
+    std::cout << psg << std::endl;
+
+
+
 }

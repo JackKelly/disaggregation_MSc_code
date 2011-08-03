@@ -36,6 +36,19 @@ struct Statistic {
      ************************/
 
     /**
+     * @brief Constructor from explicit values.
+     */
+    Statistic(
+            const double _mean=0,
+            const double _stdev=0,
+            const T _min=0,
+            const T _max=0
+            )
+    : mean(_mean), stdev(_stdev), min(_min), max(_max), stdevAccumulator(0), numDataPoints(1)
+    {}
+
+
+    /**
      * @brief Constructor from histogram data.
      */
     Statistic(
@@ -115,11 +128,15 @@ struct Statistic {
         mean = (double)accumulator / numDataPoints;
 
         // Find the sample standard deviation
-        stdevAccumulator = 0;
-        for (size_t i=beginning; i<end; i++) {
-            stdevAccumulator += pow( ( data[i] - mean ), 2 );
+        if (numDataPoints > 1) {
+            stdevAccumulator = 0;
+            for (size_t i=beginning; i<end; i++) {
+                stdevAccumulator += pow( ( data[i] - mean ), 2 );
+            }
+            stdev = sqrt(stdevAccumulator / (numDataPoints-1));
+        } else {
+            stdevAccumulator = stdev = 0;
         }
-        stdev = sqrt(stdevAccumulator / (numDataPoints-1));
     }
 
     /**
@@ -195,13 +212,14 @@ struct Statistic {
     const bool similar(
             const Statistic<T> other,
             const double alpha=0.05        /**< significance level */
-            )
+            ) const
     {
         if (mean == other.mean)
             return true;
 
-        assert( numDataPoints > 1 );
-        assert( other.numDataPoints > 1 );
+        // deal with case where one or both Statistic arrays only has a single data point
+        if (numDataPoints == 1  ||  other.numDataPoints == 1)
+            return (mean == other.mean);
 
         using namespace boost::math;
 

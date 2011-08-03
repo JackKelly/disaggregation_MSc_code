@@ -208,14 +208,17 @@ public:
             return;
         }
 
-        this->setSize( source.size - cropFront - cropBack );
+        this->setSize( (source.size - cropFront - cropBack) + 3 ); // "+3" for the added 0 at the front and two 0s at the end (important for the Signature::getGradientSpike code))
         upstreamSmoothing = source.getUpstreamSmoothing();
         smoothing = source.getSmoothing();
         deviceName = source.deviceName;
 
-        for (size_t i = 0; i<size; i++ ) {
-            data[i] = source[i+cropFront];
+        data[0] = 0;
+        for (size_t i = 0; i<(size-2); i++ ) {
+            data[i+1] = source[i+cropFront];
         }
+        data[size-1] = 0;
+        data[size-2] = 0;
     }
 
     /**
