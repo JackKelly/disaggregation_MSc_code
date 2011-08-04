@@ -17,7 +17,7 @@ PowerStateGraph::PowerStateGraph()
 
     // add a vertex to represent "off"
     offVertex = add_vertex(graph);
-    graph[offVertex] = Statistic<Sample_t>(0,0,0,0);
+    graph[offVertex] = Statistic<Sample_t>(0);
 
 }
 
@@ -79,14 +79,12 @@ void PowerStateGraph::updateOrInsertVertex(
     if ( ( end - start ) < 5)
         return; // ignore little stretches of data
 
-    Graph::vertex_descriptor similarVertex;
-
     bool foundSimilar; // return param for mostSimilarVertex()
 
-    similarVertex = mostSimilarVertex( &foundSimilar, stat );
+    Graph::vertex_descriptor mostSimVertex = mostSimilarVertex( &foundSimilar, stat );
 
     if ( foundSimilar ) {
-        graph[similarVertex].update( sig, start+1, end );
+        graph[mostSimVertex].update( sig, start+1, end );
     } else {
         // then add a new vertex
         Graph::vertex_descriptor newVertex = add_vertex(graph);
@@ -138,7 +136,7 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
  * <ol>
  *  <li>retrieve gradient spikes from @c sig, extract the most salient
  *      and put the spikes into temporal order.</li>
- *  <li>Create stats for the data points between each spike. Use Statistic::similar()
+ *  <li>Create stats for the data points between each spike. Use mostSimilarVertex()
  *      to determine which of the existing power state vertices this belongs to.</li>
  *  <li>Check to see if there's an existing edge representing the power state transition,
  *      if so then check the @c delta and @c duration stats for the edge and update if necessary.
@@ -152,10 +150,12 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
 void PowerStateGraph::updateEdges( const Signature& sig )
 {
     Statistic<Sample_t> powerState;
+    Graph::vertex_descriptor mostSimVertex, previousVertex;
+    pair<Graph::edge_descriptor, bool> addedEdge;
+    size_t previousIndex;
 
     // get the gradient spikes for the first signature
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
-    list<Signature::Spike>::iterator spike, prevSpike;
 
     // take just the top ten (whilst ordered by absolute value)
     if (spikes.size() > 10) {
@@ -169,10 +169,31 @@ void PowerStateGraph::updateEdges( const Signature& sig )
 
     // calculate stats for the signature's values between start and first spike
     // as long as the first spike->index > 1
-    spike = spikes.begin();
+    previousVertex = offVertex;
+    previousIndex  = 0;
+    list<Signature::Spike>::iterator spike = spikes.begin();
     if ( spike->index > 1 ) {
         powerState = Statistic<Sample_t>( sig, 1, spike->index );
+        bool foundSimilar;
+        mostSimVertex = mostSimilarVertex( &foundSimilar, powerState );
+
+        /* Add an edge from previousVertex to mostSimVertex.
+         * If an edge already exists then boost::add_edge will
+         * return an edge_descriptor to that edge. */
+        addedEdge = boost::add_edge(previousVertex, mostSimVertex, graph);
+
+        if (addedEdge.second) { // then there was not an edge already in the graph
+            graph[addedEdge.first].delta =
+                    Statistic<double>( spike->delta );
+            graph[addedEdge.first].duration =
+                    Statistic<size_t>( spike->index - previousIndex );
+        } else { // there was an edge already in the graph so update that edge
+            graph[addedEdge.first].delta.update( spike->delta );
+            graph[addedEdge.first].duration.update( spike->index - previousIndex );
+        }
+
     }
+
 
 
 

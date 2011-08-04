@@ -26,10 +26,12 @@ struct Statistic {
     double stdev;
     T min;
     T max;
-    double stdevAccumulator; /**< @brief Used to save the accumulated <tt>pow((data[i]-mean),2)</tt>
-                                         during the stdev calc. @details This is useful when we
-                                         want to update the Statistic with new data points. */
     size_t numDataPoints;
+
+    std::list<T> dataStore; /**< @brief store every data point we've ever seen so we can
+                                   re-calculate an accurate stdev on every update.
+                                   @details Memory-hungry but accurate. DOES NOT WORK with
+                                   histogram data. */
 
     /************************
      *  Member functions    *
@@ -38,14 +40,33 @@ struct Statistic {
     /**
      * @brief Constructor from explicit values.
      */
-    Statistic(
+/*    Statistic(
             const double _mean=0,
             const double _stdev=0,
             const T _min=0,
             const T _max=0
             )
-    : mean(_mean), stdev(_stdev), min(_min), max(_max), stdevAccumulator(0), numDataPoints(1)
+    : mean(_mean), stdev(_stdev), min(_min), max(_max), numDataPoints(1)
+    {
+    }
+*/
+    /**
+     * @brief Default constructor
+     */
+    Statistic()
+    : mean(0), stdev(0), min(0), max(0), numDataPoints(0)
     {}
+
+    /**
+     * @brief Constructor from a single value.
+     */
+    Statistic(
+            const T value
+            )
+    : mean(value), stdev(0), min(value), max(value), numDataPoints(1)
+    {
+        dataStore.push_back(value);
+    }
 
 
     /**
@@ -85,7 +106,7 @@ struct Statistic {
         }
 
         // Find the sample standard deviation
-        stdevAccumulator = 0;
+        double stdevAccumulator = 0;
         for (size_t i=beginning; i<end; i++) {
             stdevAccumulator += pow( ( i -  mean ), 2 ) * data[i];
         }
@@ -117,6 +138,8 @@ struct Statistic {
         for (size_t i=beginning; i<end; i++) {
             currentVal = data[i];
 
+            dataStore.push_back(currentVal);
+
             accumulator += currentVal;
 
             if ( currentVal > max )
@@ -128,29 +151,12 @@ struct Statistic {
         mean = (double)accumulator / numDataPoints;
 
         // Find the sample standard deviation
-        if (numDataPoints > 1) {
-            stdevAccumulator = 0;
-            for (size_t i=beginning; i<end; i++) {
-                stdevAccumulator += pow( ( data[i] - mean ), 2 );
-            }
-            stdev = sqrt(stdevAccumulator / (numDataPoints-1));
-        } else {
-            stdevAccumulator = stdev = 0;
-        }
+        stdev = calcStdev();
     }
 
     /**
      * @brief Update an existing Statistic with new data points.
      *
-     *  NOTE: This is a bit of a hack to get a rough
-     *  new stdev and will result in an inaccurate stdev
-     *  because we're not bothering to compare the old data points to the new mean.
-     *  However, we don't need an especially accurate stdev so this hack will do.
-     *  If we needed to calculated the new stdev properly
-     *  then the only way I can think of
-     *  is to store every value in the Statistic object
-     *  (which would massively increase the size of the object)
-     *  and to recalculate the stdev from scratch.
      */
     void update(const Array<T>& data, const size_t beginning=0, size_t end=0)
     {
@@ -171,6 +177,7 @@ struct Statistic {
         // Find the mean, min and max
         for (size_t i=beginning; i<end; i++) {
             currentVal = data[i];
+            dataStore.push_back(currentVal);
 
             accumulator += currentVal;
 
@@ -183,21 +190,54 @@ struct Statistic {
         double meanOfNewData = (double)accumulator / numNewDataPoints;
         mean = (mean * ((double)numExistingDataPoints/numDataPoints)) + (meanOfNewData * ((double)numNewDataPoints/numDataPoints) );
 
-        /** Update the sample standard deviation with the new data.
-         *
-         *  NOTE: This is a bit of a hack to get a rough
-         *  new stdev and will result in an inaccurate stdev
-         *  because we're not bothering to compare the old data points to the new mean.
-         *  However, we don't need an especially accurate stdev so this hack will do.
-         *  If we needed to do this properly then the only way I can think of
-         *  is to store every value in the Statistic object
-         *  (which would massively increase the size of the object)
-         *  and to recalculate the stdev from scratch.
-         */
-        for (size_t i=beginning; i<end; i++) {
-            stdevAccumulator += pow( ( data[i] - mean ), 2 );
-        }
-        stdev = sqrt(stdevAccumulator / (numDataPoints-1));
+        /** Update the sample standard deviation with the new data. */
+        stdev = calcStdev();
+    }
+
+    const double calcStdev() const
+    {
+        if (numDataPoints > 0) {
+            double stdevAccumulator = 0;
+            for (typename std::list<T>::const_iterator i=dataStore.begin(); i!=dataStore.end(); i++) {
+                stdevAccumulator += pow( ( *i - mean ), 2 );
+            }
+            return sqrt(stdevAccumulator / (numDataPoints-1));
+        } else
+            return 0;
+
+    }
+
+    /**
+     * @brief Update an existing Statistic with a single new data point.
+     *
+     *  NOTE: This is a bit of a hack to get a rough
+     *  new stdev and will result in an inaccurate stdev
+     *  because we're not bothering to compare the old data points to the new mean.
+     *  However, we don't need an especially accurate stdev so this hack will do.
+     *  If we needed to calculated the new stdev properly
+     *  then the only way I can think of
+     *  is to store every value in the Statistic object
+     *  (which would massively increase the size of the object)
+     *  and to recalculate the stdev from scratch.
+     */
+    void update(const T datum)
+    {
+        size_t numExistingDataPoints = numDataPoints;
+        numDataPoints = numExistingDataPoints + 1;
+        double prevMean = mean;
+
+        if ( datum > max )
+            max = datum;
+
+        if ( datum < min )
+            min = datum;
+
+        mean = (prevMean * ((double)numExistingDataPoints/numDataPoints))
+                + (datum * ((double)1.0/numDataPoints) );
+
+        /** Update the sample standard deviation with the new data. */
+        dataStore.push_back(datum);
+        stdev = calcStdev();
     }
 
     /**

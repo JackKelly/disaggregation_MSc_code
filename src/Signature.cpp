@@ -356,7 +356,7 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
 const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
 {
     // CONSTANTS
-    const size_t LOOK_AHEAD     = 20;         // check there isn't an opposite-sign spike within this number of samples.
+    const size_t LOOK_AHEAD     = 1;         // check there isn't an opposite-sign spike within this number of samples.
     const double LOOK_AHEAD_TOLLERANCE = 0.2; // what qualifies as a "similar sized" spike? 0==exactly equal.  0.1==within 10% of first spike's value.
 
     // LOCAL VARIABLES

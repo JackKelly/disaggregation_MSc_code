@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE( constructorAndUpdateTest )
 
     BOOST_CHECK_EQUAL( stat.getNumDataPoints(), SIZE+SIZE2 );
     BOOST_CHECK_CLOSE( stat.getMean(),  5.3333333333, 0.00000001 );
-    BOOST_CHECK_CLOSE( stat.getStdev(), 2.7167908239, 0.15 );
+    BOOST_CHECK_CLOSE( stat.getStdev(), 2.7167908239, 0.00000001 );
     BOOST_CHECK_EQUAL( stat.getMax(),  10 );
     BOOST_CHECK_EQUAL( stat.getMin(),   1 );
 }
@@ -73,3 +73,32 @@ BOOST_AUTO_TEST_CASE( similarTest2 )
     BOOST_CHECK( stat2.similar(stat) );
 }
 
+BOOST_AUTO_TEST_CASE( singleStatsTest )
+{
+    std::cout << "Running singleStatsTest..." << std::endl;
+
+    Statistic<size_t> stat( (size_t)10 );
+
+    BOOST_CHECK_EQUAL( stat.getMean(), 10 );
+    BOOST_CHECK_EQUAL( stat.getStdev(), 0 );
+    BOOST_CHECK_EQUAL( stat.getMin(), 10 );
+    BOOST_CHECK_EQUAL( stat.getMax(), 10 );
+    BOOST_CHECK_EQUAL( stat.getNumDataPoints(), 1 );
+
+    // now add in another data point
+    stat.update(15);
+    BOOST_CHECK_EQUAL( stat.getMean(), 12.5 );
+    BOOST_CHECK_CLOSE( stat.getStdev(), 3.5355339059, 0.0000001 );
+    BOOST_CHECK_EQUAL( stat.getMin(), 10 );
+    BOOST_CHECK_EQUAL( stat.getMax(), 15 );
+    BOOST_CHECK_EQUAL( stat.getNumDataPoints(), 2 );
+
+    // now add in another data point
+    stat.update(5);
+    BOOST_CHECK_CLOSE( stat.getMean(), 10.0, 0.00000001 );
+    BOOST_CHECK_CLOSE( stat.getStdev(), 5.0, 0.00000001 );
+    BOOST_CHECK_EQUAL( stat.getMin(),   5 );
+    BOOST_CHECK_EQUAL( stat.getMax(),  15 );
+    BOOST_CHECK_EQUAL( stat.getNumDataPoints(), 3 );
+
+}
