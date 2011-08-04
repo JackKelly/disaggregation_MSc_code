@@ -27,8 +27,8 @@ struct Statistic {
     T min;
     T max;
     double stdevAccumulator; /**< @brief Used to save the accumulated <tt>pow((data[i]-mean),2)</tt>
-                             during the stdev calc.
-                             This is useful when we want to update the Statistic with new data points. */
+                                         during the stdev calc. @details This is useful when we
+                                         want to update the Statistic with new data points. */
     size_t numDataPoints;
 
     /************************

@@ -235,7 +235,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
 }
 
 /**
- * Least Mean Difference (like LMS but take the absolute rather than the square).
+ * @brief Least Mean Difference (like LMS but take the absolute rather than the square).
  *
  * Know limitations:
  *   assumes SigArray has a sample period of 1

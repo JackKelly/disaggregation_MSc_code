@@ -45,7 +45,7 @@ public:
 
 private:
 
-    size_t samplePeriod; /**< in seconds. */
+    size_t samplePeriod; /**< @brief in seconds. */
 };
 
 #endif /* AGGREGATEDATA_H_ */

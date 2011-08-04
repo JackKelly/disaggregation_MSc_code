@@ -21,9 +21,9 @@ using namespace std;
  * @brief Plot a graph using GNUplot.
  *
  * First checks to see if
- * config/'plotVars.outFilename'.template.gnu exists.  If it does, it uses that as the template
+ * <tt>config/'plotVars.outFilename'.template.gnu</tt> exists.  If it does, it uses that as the template
  * (so individual devices can have their own specific templates). If it doesn't exist,
- * the code uses config/'plotVars.inFilename'.template.gnu as the template.
+ * the code uses <tt>config/'plotVars.inFilename'.template.gnu</tt> as the template.
  *
  * @see GNUplot::PlotVars for details of what variables
  * are expected to be instantiated in plotVars.

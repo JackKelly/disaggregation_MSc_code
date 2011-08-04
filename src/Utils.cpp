@@ -58,10 +58,9 @@ void Utils::openFile(
 }
 
 /**
- * Find the number of numeric data points in file
+ * @brief Find the number of numeric data points in file.
  *
- * @param fs
- * @return number of data points
+ * @return number of data points.
  */
 const size_t Utils::countDataPoints( std::fstream& fs )
 {
@@ -94,7 +93,7 @@ const bool Utils::fileExists( const std::string& filename )
 }
 
 /**
- * Compares 2 doubles.  Are they within (a * tolerance) of each other?
+ * @brief Compares 2 doubles.  Are they within (a * tolerance) of each other?
  */
 const bool Utils::roughlyEqual(
         const double a,

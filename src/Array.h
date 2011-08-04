@@ -21,7 +21,7 @@
 
 
 /**
- * Array class.  At it's core it's just a wrapper around a C-style array.
+ * @brief Array class.  At it's core it's just a wrapper around a C-style array.
  * With lots of added functionality useful for signal processing.
  *
  * @todo should Array inherit from <a href="http://www.cplusplus.com/reference/std/valarray/">valarray</a>. ?
@@ -33,10 +33,12 @@ protected:
      * Member variables *
      ********************/
     T * data;
-    size_t size;         /**< Number of members. size_t is 8bytes wide on x86_64 */
-    size_t smoothing;    /**< Does this array represent data which has been smoothed? */
-    size_t upstreamSmoothing; /**< If this array has been produced by processing a previous array, and that array was smoothed then 'upstreamSmoothing' records the smoothing of the upstream array. Else=0. */
-    std::string deviceName; /**< Most arrays are associated with a device.  If not, just leave blank. */
+    size_t size;         /**< @brief Number of members. size_t is 8bytes wide on x86_64 */
+    size_t smoothing;    /**< @brief Does this array represent data which has been smoothed? */
+    size_t upstreamSmoothing; /**< @brief If this array has been produced by processing
+                                   a previous array, and that array was smoothed then
+                                   'upstreamSmoothing' records the smoothing of the upstream array. Else=0. */
+    std::string deviceName; /**< @brief Most arrays are associated with a device.  If not, just leave blank. */
 
 public:
     /********************
@@ -58,7 +60,7 @@ public:
     }
 
     /**
-     * Constructor for building an Array from an existing C-array
+     * @brief Constructor for building an Array from an existing C-array
      */
     explicit Array(
             const size_t _size, /**< Size of array */
@@ -73,7 +75,7 @@ public:
     }
 
     /**
-     * Copy constructor
+     * @brief Copy constructor
      */
     Array( const Array<T>& other )
     : data(0), size(0), smoothing(other.getSmoothing()), upstreamSmoothing(other.getUpstreamSmoothing()), deviceName(other.deviceName)
@@ -108,7 +110,7 @@ public:
     /************* GETTERS AND SETTERS **************/
 
     /**
-     * Mutable subscript operator.  Fast.  No range checking
+     * @brief Mutable subscript operator.  Fast.  No range checking
      */
     T& operator[](const size_t i)
     {
@@ -116,7 +118,7 @@ public:
     }
 
     /**
-     * Const subscript operator.  Fast.  No range checking
+     * @brief Const subscript operator.  Fast.  No range checking
      */
     const T& operator[](const size_t i) const
     {
@@ -194,12 +196,8 @@ public:
 
 
     /**
-     * Copy from source to this object, starting at cropFront index and
+     * @brief Copy from source to this object, starting at cropFront index and
      * ignoring the last cropBack items from the source.
-     *
-     * @param source
-     * @param cropFront
-     * @param cropBack
      */
     void copyCrop(const Array<T>& source, const size_t cropFront, const size_t cropBack)
     {
@@ -232,9 +230,7 @@ public:
         }
     }
 
-    /**
-     *
-     */
+
     void dumpToFile(
             const std::string& filename /**< Excluding path and suffix.  DATA_OUTPUT_PATH and .dat will be added. */
             ) const
@@ -251,7 +247,7 @@ public:
     }
 
     /**
-     * Returns a rolling average of same length as the original array.
+     * @brief Returns a rolling average of same length as the original array.
      *
      * @todo this code produces a slightly odd result for Toaster-Smoothing31; almost certainly a bug.
      *
@@ -303,7 +299,7 @@ public:
     }
 
     /**
-     * Return the index of and the value of the largest element of the Array,
+     * @brief Return the index of and the value of the largest element of the Array,
      * ignoring the members between 'start' and 'end'.
      *
      * @return maxValue
@@ -338,7 +334,7 @@ public:
     }
 
     /**
-     * Find the max value outside of the mask.
+     * @brief Find the max value outside of the mask.
      *
      * @return an index to the max value.  If there are two equal values
      * then we only return the first we come to.
@@ -409,7 +405,7 @@ public:
     }
 
     /**
-     * Find where the peak plateaus or starts climbing again.
+     * @brief Find where the peak plateaus or starts climbing again.
      *
      * @deprecated This doesn't work anywhere near as well as findPeaks().
      * But leaving this function in the code in case it comes in handy.
@@ -498,7 +494,7 @@ public:
             return (data[i+1] - data[i]);
     }
 
-    static const size_t HIST_GRADIENT_RA_LENGTH = 17; /**> Length of rolling average of histogram gradient.
+    static const size_t HIST_GRADIENT_RA_LENGTH = 17; /**> @brief Length of rolling average of histogram gradient.
                                                           Best if odd. */
     /**
      * @brief Attempts to automatically find the peaks.
@@ -659,7 +655,7 @@ public:
     }
 
     /**
-     * Load data from a CSV file with a single column.
+     * @brief Load data from a CSV file with a single column.
      */
     void loadData(
             std::fstream& fs /**< An opened and valid file stream containing a CSV datafile. */

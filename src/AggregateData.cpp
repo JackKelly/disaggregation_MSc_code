@@ -45,7 +45,7 @@ const size_t AggregateData::secondsSinceFirstSample(
 }
 
 /**
- * Calculate the change between data[ @c i+1 ].reading and data[ @c i ].reading.
+ * @brief Calculate the change between data[ @c i+1 ].reading and data[ @c i ].reading.
  *
  * Would've been nice to overload @c Array::getDelta(size_t) but
  * that returns an object of type @c T and the compiler won't let me overload

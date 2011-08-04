@@ -14,14 +14,16 @@
 namespace GNUplot {
 
 /**
- * Structure for storing details about data elements to be plotted.
+ * @brief Structure for storing details about data elements to be plotted.
  */
 struct Data {
-    std::string dataFile, /**< Base data filename (without path or suffix). Directory = DATA_OUTPUT_PATH config option. */
-                title,    /**< Title of this data element (for displaying in the graph's key). */
-                tokenBase;    /**< Base of token to look for in the template. FILE and KEY will be appended to this tokenBase. */
+    std::string dataFile, /**< @brief Base data filename (without path or suffix).
+                                      Directory = @c DATA_OUTPUT_PATH config option. */
+                title,    /**< @brief Title of this data element (for displaying in the graph's key). */
+                tokenBase;/**< @brief Base of token to look for in the template.
+                                      @c FILE and @c KEY will be appended to this tokenBase. */
     /**
-     * Constructor
+     * @brief Constructor
      */
     Data(
             const std::string& _dataFile,
@@ -31,16 +33,21 @@ struct Data {
 };
 
 /**
- * Structure for storing variables destined for a GNUplot script.
+ * @brief Structure for storing variables destined for a GNUplot script.
  */
 struct PlotVars {
-    std::string inFilename,  /**< template filename (without suffix or path). Directory hard-coded to be '/config'. */
-                outFilename, /**< output filename (without suffix or path). Directory = DATA_OUTPUT_PATH config option. */
-                title,       /**< Graph title. */
+    std::string inFilename,  /**< @brief template filename (without suffix or path).
+                                         Directory hard-coded to be @c '/config'. */
+                outFilename, /**< @brief output filename (without suffix or path).
+                                         Directory = @c DATA_OUTPUT_PATH config option. */
+                title,       /**< @brief Graph title. */
                 xlabel,
                 ylabel,
-                plotArgs;    /**< Plot arguments (e.g. range). Best not to use this but to use the template.gnu file instead. */
-    std::list<Data> data;    /**< List of data elements to be plotted. @see GNUplot::Data for details. */
+                plotArgs;    /**< @brief Plot arguments (e.g. range).
+                                         Best not to use this but to put custom args
+                                         into the @c template.gnu file instead. */
+    std::list<Data> data;    /**< @brief List of data elements to be plotted.
+                                         @see GNUplot::Data for details. */
 };
 
 void plot(

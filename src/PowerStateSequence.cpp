@@ -57,8 +57,8 @@ const string PowerStateSequence::getBaseFilename() const
 }
 
 /**
- * Dump the contents of powerStateSequence to a data file ready for
- * gnuplot to plot using the 'boxxyerrorbars' style
+ * @brief Dump the contents of powerStateSequence to a data file ready for
+ * gnuplot to plot using the @c 'boxxyerrorbars' style
  * (see p42 of the gnuplot 4.4 documentation PDF).
  */
 void PowerStateSequence::dumpToFile(

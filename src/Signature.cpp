@@ -22,16 +22,25 @@
 using namespace std;
 
 /**
- * Constructor for opening a CSV file
+ * @brief Constructor for opening a CSV file.
  *
+ * @todo sample period should be read from data file.
  */
 Signature::Signature(
-        const char* filename,   /**< Filename, including path and suffix. */
-        const size_t _samplePeriod, /**< Sample period. In seconds. @todo sample period should be read from data file. */
-        const string _deviceName, /**< All signatures are associated with devices */
-        const size_t _sigID,    /**< Each Device can have multiple signatures. A Device's first sig gets a sigID of 0, the next gets a sigID of 1 etc. Default=0. */
-        const size_t cropFront, /**< Number of elements to crop from the front. Default=0. If 0 then will automatically crop 0s from the front such that there's only a single leading zero left. */
-        const size_t cropBack   /**< Number of elements to crop from the back. Default=0. If 0 then will automatically crop 0s from the back such that there's only a single trailing zero left. */
+        const char* filename,       /**< Filename, including path and suffix. */
+        const size_t _samplePeriod, /**< Sample period. In seconds.           */
+        const string _deviceName,   /**< All signatures are associated with devices */
+        const size_t _sigID,        /**< Each Device can have multiple signatures.
+                                         A Device's first sig gets a sigID of 0,
+                                         the next gets a sigID of 1 etc. Default=0. */
+        const size_t cropFront,     /**< Number of elements to crop from the front.
+                                         Default=0. If 0 then will automatically
+                                         crop 0s from the front such that there's
+                                         only a single leading zero left. */
+        const size_t cropBack       /**< Number of elements to crop from the back.
+                                         Default=0. If 0 then will automatically
+                                         crop 0s from the back such that there's
+                                         only a single trailing zero left. */
         )
 : samplePeriod(_samplePeriod), sigID(_sigID)
 {
@@ -65,7 +74,8 @@ Signature::~Signature()
 
 
 void Signature::drawGraph(
-        const string details /**< Type of graph e.g. "gradient".  NOT device name, which gets added automatically. */
+        const string details /**< Type of graph e.g. "gradient".
+                                  NOT device name, which gets added automatically. */
         ) const
 {
     Array<Sample_t>::drawGraph(
@@ -124,7 +134,8 @@ const PowerStates_t& Signature::getPowerStates()
 }
 
 /**
- * Runs through signature data to find power states and stores the resulting power states in powerStates
+ * @brief Runs through signature data to find power states
+ *        and stores the resulting power states in powerStates
  *
  * Prerequisites:
  *    signature data must be populated before this function is called.
@@ -179,7 +190,7 @@ const string Signature::getStateBarsBaseFilename() const
 }
 
 /**
- * Fill in gaps in the powerStates so that each powerState in the list is nose-to-tail
+ * @brief Fill in gaps in the powerStates so that each powerState in the list is nose-to-tail
  *
  * @deprecated not actually used.
  */
@@ -233,7 +244,7 @@ const PowerStateSequence& Signature::getPowerStateSequence()
 }
 
 /**
- * Finding out where each 'powerState' starts and ends.
+ * @brief Finding out where each 'powerState' starts and ends.
  *
  * This must be called after 'powerStates' has been populated
  */
@@ -311,7 +322,7 @@ void Signature::updatePowerStateSequence()
 
 /**
  * @return pointer to a 'powerState' within 'powerStates' corresponding to 'sample'.
- * Returns 'powerStates.end()' if 'sample' does not correspond to any 'powerState'.
+ *         Returns 'powerStates.end()' if 'sample' does not correspond to any 'powerState'.
  */
 PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) const
 {
@@ -335,9 +346,9 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
 
 
 /**
- * Takes the gradient of this Signature,
- * then merges gradient values with the same sign,
- * then removes transient spikes, then sorts by value.
+ * @brief Takes the gradient of this Signature,
+ *        then merges gradient values with the same sign,
+ *        then removes transient spikes, then sorts by value.
  *
  * @return a list of gradient Spikes, sorted in descending order of absolute 'value'.
  *
@@ -382,7 +393,7 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
 }
 
 /**
- * Merge consecutive spikes of the same sign.
+ * @brief Merge consecutive spikes of the same sign.
  *
  * @return a list of merged spikes
  *
@@ -442,18 +453,22 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
 
 
 /**
- * Convert from the Signature data to a different sample period.
+ * @brief Convert from the Signature data to a different sample period.
+ *
  * If the original sample period is 1 second and newPeriod = 6, then the returned
  * array will have 1/6th the number of entries and each entry in the downsampled
  * array will be an average of 6 samples from the original array.
  *
- * @deprecated Usually use rollingAv()
+ * @deprecated Probably better to use rollingAv().
  *
  * @todo this should be in Array shouldn't it?
  *
- * @return output
+ * @return The parameter @c output is the returned, down sampled array.
  */
-void Signature::downSample( Array<Sample_t> * output, const size_t newPeriod ) const
+void Signature::downSample(
+        Array<Sample_t> * output,
+        const size_t newPeriod
+        ) const
 {
     size_t inner, inputIndex=0, outputIndex, outerLimit;
     Sample_t accumulator;

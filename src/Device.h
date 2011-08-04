@@ -45,7 +45,7 @@ private:
 
     const double LMDiff(
             const size_t agOffset,
-            const Array<AggregateSample>& aggData, // aggregate data array
+            const Array<AggregateSample>& aggData,
             const Array<Sample_t>& sigArray,
             const size_t aggDataSamplePeriod);
 
