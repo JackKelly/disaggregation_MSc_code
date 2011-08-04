@@ -55,8 +55,29 @@ private:
             > Graph;
 
     typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
+    typedef boost::graph_traits<Graph>::edge_iterator edge_iter;
 
-    typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
+    typedef boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMap;
+    typedef boost::property_map<Graph, boost::edge_index_t >::type EdgeIndexMap;
+
+    struct my_edge_writer {
+
+            my_edge_writer(Graph& g_) : g (g_) {};
+
+            template <class Edge>
+            void operator()(std::ostream& out, Edge e) {
+                    out << " [label=\""
+                        << "dMean=" << g[e].delta.mean
+                        << " dSD=" << g[e].delta.stdev
+//                        << " dMin=" << g[e].delta.min
+//                        << " dMax=" << g[e].delta.max
+                        << " durMean=" << g[e].duration.mean
+                        << "\"]";
+            };
+
+            Graph g;
+    };
+
 
     /************************
      * MEMBER VARIABLES     *
@@ -82,7 +103,8 @@ private:
 
     Graph::vertex_descriptor mostSimilarVertex(
             bool * success,
-            const Statistic<Sample_t>& stat
+            const Statistic<Sample_t>& stat,
+            const double ALPHA = 0.0000005
         );
 
 

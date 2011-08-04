@@ -454,14 +454,14 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
     /* remove any spikes under 10 Watts
      * (because these are very unlikely to be found in the
      * aggregate data)   */
- /*   list<Spike>::iterator spike = mergedSpikes.begin();
+    list<Spike>::iterator spike = mergedSpikes.begin();
     while (spike != mergedSpikes.end()) {
         if (fabs(spike->delta) < 10)
             mergedSpikes.erase( spike++ );
         else
             spike++;
     }
-*/
+
 
     return mergedSpikes;
 }
