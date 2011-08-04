@@ -42,22 +42,8 @@ void PowerStateGraph::updateVertices( const Signature& sig )
     }
 */
 
-    // remove any spikes under 10 Watts
-    spike = spikes.begin();
-    while (spike != spikes.end()) {
-        if (fabs(spike->delta) < 10) {
-            spikes.erase( spike++ );
-        } else {
-            spike++;
-        }
-    }
-
     // re-order by index (i.e. by time)
     spikes.sort( Signature::Spike::compareIndexAsc );
-
-//    for (list<Signature::Spike>::iterator it = spikes.begin(); it!=spikes.end(); it++) {
-//        cout << it->index << "\t" << it->delta << "\t" << it->duration << endl;
-//    }
 
     // calculate stats for the signature's values between start and first spike
     // as long as the first spike->index > 1
@@ -74,14 +60,20 @@ void PowerStateGraph::updateVertices( const Signature& sig )
 
         prevSpike = spike;
     }
-
 }
 
+/**
+ * @brief Attempts to find an existing vertex which is
+ * statistically similar to @c stat.  If an existing similar
+ * vertex is found then the vertex's stats are updated
+ * with the new data points. If a similar vertex is not found,
+ * and new vertex is inserted.
+ */
 void PowerStateGraph::updateOrInsertVertex(
-        const Statistic<Sample_t>& stat,
-        const Signature& sig,
-        const size_t start,
-        const size_t end
+        const Statistic<Sample_t>& stat, /**< stat to find / insert in graph vertices */
+        const Signature& sig, /**< source of the raw data */
+        const size_t start,   /**< start of data window */
+        const size_t end      /**< end of data window */
     )
 {
     if ( ( end - start ) < 5)
@@ -113,7 +105,8 @@ void PowerStateGraph::updateOrInsertVertex(
  *
  * Basic strategy is to:
  * <ol>
- *  <li>retrieve from Signature the most salient spikes in temporal order</li>
+ *  <li>retrieve gradient spikes from @c sig, extract the most salient
+ *      and put the spikes into temporal order.</li>
  *  <li>Create stats for the data points between each spike. Use Statistic::similar()
  *      to determine which of the existing power state vertices this belongs to.</li>
  *  <li>Check to see if there's an existing edge representing the power state transition,

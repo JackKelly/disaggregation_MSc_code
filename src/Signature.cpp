@@ -393,7 +393,8 @@ const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
 }
 
 /**
- * @brief Merge consecutive spikes of the same sign.
+ * @brief Merge consecutive spikes of the same sign and
+ *        then remove any spikes under 10 Watts.
  *
  * @return a list of merged spikes
  *
@@ -447,6 +448,18 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
 
         lastDelta = currentDelta;
     }
+
+    /* remove any spikes under 10 Watts
+     * (because these are very unlikely to be found in the
+     * aggregate data)   */
+    list<Spike>::iterator spike = mergedSpikes.begin();
+    while (spike != mergedSpikes.end()) {
+        if (fabs(spike->delta) < 10)
+            mergedSpikes.erase( spike++ );
+        else
+            spike++;
+    }
+
 
     return mergedSpikes;
 }
