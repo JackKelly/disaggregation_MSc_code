@@ -22,6 +22,8 @@ public:
 
     void updateVertices( const Signature& sig );
 
+    void updateEdges( const Signature& sig );
+
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
 
 private:

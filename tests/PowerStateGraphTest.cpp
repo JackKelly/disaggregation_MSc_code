@@ -9,6 +9,7 @@
 
 BOOST_AUTO_TEST_CASE( constructorTest )
 {
+    std::cout << "constructorTest..." << std::endl;
     PowerStateGraph psg;
 /*
     const size_t SIZE = 10;

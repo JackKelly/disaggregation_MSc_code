@@ -106,6 +106,29 @@ void PowerStateGraph::updateOrInsertVertex(
 
 }
 
+/**
+ * @brief Update (or create) directional edges between power states (vertices)
+ *        so the edges are consistent with the observed transitions between
+ *        power states in @c sig.
+ *
+ * Basic strategy is to:
+ * <ol>
+ *  <li>retrieve from Signature the most salient spikes in temporal order</li>
+ *  <li>Create stats for the data points between each spike. Use Statistic::similar()
+ *      to determine which of the existing power state vertices this belongs to.</li>
+ *  <li>Check to see if there's an existing edge representing the power state transition,
+ *      if so then check the @c delta and @c duration stats for the edge and update if necessary.
+ *      If no edge exists then create one with the necessary @c delta and @c duration,
+ *      with a hard-coded stdev.</li>
+ * </ol>
+ *
+ *  @todo should 'salience' also take into consideration duration?
+ */
+void PowerStateGraph::updateEdges( const Signature& sig )
+{
+
+}
+
 std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )
 {
     PowerStateGraph::IndexMap index = boost::get(boost::vertex_index, psg.graph);
