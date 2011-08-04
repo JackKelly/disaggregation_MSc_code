@@ -146,7 +146,8 @@ struct Statistic {
      *  new stdev and will result in an inaccurate stdev
      *  because we're not bothering to compare the old data points to the new mean.
      *  However, we don't need an especially accurate stdev so this hack will do.
-     *  If we needed to do this properly then the only way I can think of
+     *  If we needed to calculated the new stdev properly
+     *  then the only way I can think of
      *  is to store every value in the Statistic object
      *  (which would massively increase the size of the object)
      *  and to recalculate the stdev from scratch.

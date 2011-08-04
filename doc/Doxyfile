@@ -160,7 +160,7 @@ SHORT_NAMES            = NO
 # comments will behave just like regular Qt-style comments 
 # (thus requiring an explicit @brief command for a brief description.)
 
-JAVADOC_AUTOBRIEF      = NO
+JAVADOC_AUTOBRIEF      = YES
 
 # If the QT_AUTOBRIEF tag is set to YES then Doxygen will 
 # interpret the first line (until the first dot) of a Qt-style 
@@ -249,7 +249,7 @@ EXTENSION_MAPPING      =
 # func(std::string) {}). This also makes the inheritance and collaboration 
 # diagrams that involve STL classes more complete and accurate.
 
-BUILTIN_STL_SUPPORT    = NO
+BUILTIN_STL_SUPPORT    = YES
 
 # If you use Microsoft's C++/CLI language, you should set this option to YES to 
 # enable parsing support.
@@ -550,7 +550,7 @@ FILE_VERSION_FILTER    =
 # You can optionally specify a file name after the option, if omitted 
 # DoxygenLayout.xml will be used as the name of the layout file.
 
-LAYOUT_FILE            =
+LAYOUT_FILE            = 
 
 #---------------------------------------------------------------------------
 # configuration options related to warning and progress messages
