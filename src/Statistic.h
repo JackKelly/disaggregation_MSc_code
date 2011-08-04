@@ -201,12 +201,8 @@ struct Statistic {
     }
 
     /**
-     * @brief Uses a two-sided Student T-Test to determine if @c other.mean is 'similar' to the calling object's mean.
-     *
-     * Uses a Chi-Squared test for equal variances first.
-     *
-     * Code adapted from
-     * <a href="http://www.boost.org/doc/libs/1_43_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/stat_tut/weg/st_eg/two_sample_students_t.html">boost tutorial on Comparing the means of two samples with the Students-t test</a>
+     * @brief Uses a two-sided Student T-Test to determine
+     *        if @c other.mean is 'similar' to the calling object's mean.
      *
      * @return true if @c other is 'similar' to calling object.
      */
@@ -215,6 +211,26 @@ struct Statistic {
             const double alpha=0.05        /**< significance level */
             ) const
     {
+        return tTest(other) > (alpha/2);
+    }
+
+    /**
+     * @brief A two-sided Student T-Test.
+     *
+     * Uses a Chi-Squared test for equal variances first.
+     *
+     * Code adapted from
+     * <a href="http://www.boost.org/doc/libs/1_43_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/stat_tut/weg/st_eg/two_sample_students_t.html">boost tutorial on Comparing the means of two samples with the Students-t test</a>
+     *
+     * @return complement of probability (the probability
+     *         that the difference is due to chance).  i.e. the
+     *         higher this value, the more likely the two distributions
+     *         have similar means.
+     */
+    const double tTest(
+                const Statistic<T> other
+                ) const
+        {
         if (mean == other.mean)
             return true;
 
@@ -244,8 +260,10 @@ struct Statistic {
         // calculate complement of probability (the probability that the difference is due to chance)
         double q = cdf(complement(dist, fabs(t_stat)));
 
-        return q > (alpha/2);
+        return q;
     }
+
+
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {

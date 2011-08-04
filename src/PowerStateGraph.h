@@ -70,6 +70,12 @@ private:
             const size_t end
         );
 
+    Graph::vertex_descriptor mostSimilarVertex(
+            bool * success,
+            const Statistic<Sample_t>& stat
+        );
+
+
 };
 
 #endif /* POWERSTATEGRAPH_H_ */

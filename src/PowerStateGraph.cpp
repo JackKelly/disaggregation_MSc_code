@@ -79,23 +79,54 @@ void PowerStateGraph::updateOrInsertVertex(
     if ( ( end - start ) < 5)
         return; // ignore little stretches of data
 
-    std::pair<vertex_iter, vertex_iter> vp;
-    bool foundSimilar = false;
+    Graph::vertex_descriptor similarVertex;
 
-    for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
-        if (stat.similar( graph[*vp.first], 0.00000000000000005 ) ) {
-            foundSimilar = true;
-            graph[*vp.first].update( sig, start+1, end );
-            break;
-        }
-    }
+    bool foundSimilar; // return param for mostSimilarVertex()
 
-    if ( ! foundSimilar ) {
+    similarVertex = mostSimilarVertex( &foundSimilar, stat );
+
+    if ( foundSimilar ) {
+        graph[similarVertex].update( sig, start+1, end );
+    } else {
         // then add a new vertex
         Graph::vertex_descriptor newVertex = add_vertex(graph);
         graph[newVertex] = Statistic<Sample_t>( sig, start+1, end );
     }
 
+}
+
+/**
+ * @brief Find the statistically most similar vertex to @c stat.
+ *
+ * @return vertex descriptor of best fit.
+ *         @c success is also used as a return parameter.
+ */
+PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
+        bool * success, /**< return parameter.  Did we find a satisfactory match? */
+        const Statistic<Sample_t>& stat /**< stat to find in graph vertices */
+    )
+{
+    const double ALPHA = 0.00000000000000005; // significance level (what constitutes as a "satisfactory" match?)
+    Graph::vertex_descriptor vertex=0;
+    std::pair<vertex_iter, vertex_iter> vp;
+    double tTest, highestTTest=0;
+
+    // Find the best fit
+    for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+        tTest = stat.tTest( graph[*vp.first] );
+        if (tTest > highestTTest) {
+            highestTTest = tTest;
+            vertex = *vp.first;
+        }
+    }
+
+    // Check whether the best fit is satisfactory
+    if ( highestTTest > (ALPHA/2) )
+        *success = true;
+    else
+        *success = false;
+
+    return vertex;
 }
 
 /**
@@ -116,9 +147,34 @@ void PowerStateGraph::updateOrInsertVertex(
  * </ol>
  *
  *  @todo should 'salience' also take into consideration duration?
+ *
  */
 void PowerStateGraph::updateEdges( const Signature& sig )
 {
+    Statistic<Sample_t> powerState;
+
+    // get the gradient spikes for the first signature
+    list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
+    list<Signature::Spike>::iterator spike, prevSpike;
+
+    // take just the top ten (whilst ordered by absolute value)
+    if (spikes.size() > 10) {
+        list<Signature::Spike>::iterator it = spikes.begin();
+        advance( it, 10 );
+        spikes.erase( it, spikes.end() );
+    }
+
+    // re-order by index (i.e. by time)
+    spikes.sort( Signature::Spike::compareIndexAsc );
+
+    // calculate stats for the signature's values between start and first spike
+    // as long as the first spike->index > 1
+    spike = spikes.begin();
+    if ( spike->index > 1 ) {
+        powerState = Statistic<Sample_t>( sig, 1, spike->index );
+    }
+
+
 
 }
 
