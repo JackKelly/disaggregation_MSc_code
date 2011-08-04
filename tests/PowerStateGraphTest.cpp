@@ -49,16 +49,20 @@ BOOST_AUTO_TEST_CASE( updateVerticesTest )
     PowerStateGraph psg;
 
 //    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
-//    psg.updateVertices( sig );
+    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble" );
+    psg.updateVertices( sig );
+    psg.updateEdges( sig );
 
 //    Signature washer( "data/input/watts_up/washer.csv", 1, "washer" );
 //    psg.updateVertices( washer );
 
-    Signature washer2( "data/input/watts_up/washer2.csv", 1, "washer2" );
-    psg.updateVertices( washer2 );
+//    Signature washer2( "data/input/watts_up/washer2.csv", 1, "washer2" );
+//    psg.updateVertices( washer2 );
+//    psg.updateEdges( washer2 );
 
     std::cout << psg << std::endl;
 
 
+    psg.writeGraphViz( std::cout );
 
 }

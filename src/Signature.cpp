@@ -353,10 +353,12 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
  * @return a list of gradient Spikes, sorted in descending order of absolute 'value'.
  *
  */
-const list<Signature::Spike> Signature::getGradientSpikesInOrder() const
+const list<Signature::Spike> Signature::getGradientSpikesInOrder(
+        const size_t LOOK_AHEAD  /**< check there isn't an opposite-sign
+                                      spike within this number of samples. */
+    ) const
 {
     // CONSTANTS
-    const size_t LOOK_AHEAD     = 1;         // check there isn't an opposite-sign spike within this number of samples.
     const double LOOK_AHEAD_TOLLERANCE = 0.2; // what qualifies as a "similar sized" spike? 0==exactly equal.  0.1==within 10% of first spike's value.
 
     // LOCAL VARIABLES
@@ -452,14 +454,14 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
     /* remove any spikes under 10 Watts
      * (because these are very unlikely to be found in the
      * aggregate data)   */
-    list<Spike>::iterator spike = mergedSpikes.begin();
+ /*   list<Spike>::iterator spike = mergedSpikes.begin();
     while (spike != mergedSpikes.end()) {
         if (fabs(spike->delta) < 10)
             mergedSpikes.erase( spike++ );
         else
             spike++;
     }
-
+*/
 
     return mergedSpikes;
 }

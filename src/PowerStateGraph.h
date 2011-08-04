@@ -24,6 +24,8 @@ public:
 
     void updateEdges( const Signature& sig );
 
+    void writeGraphViz(std::ostream& out);
+
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
 
 private:
@@ -33,6 +35,9 @@ private:
     struct PowerStateEdge {
         Statistic<double> delta;
         Statistic<size_t> duration;
+        size_t count; /**< @brief The number of times this edge has been
+                                  traversed during training.  Used with @c totalCount
+                                  to determine which edges are traversed most often. */
     };
 
     /**
@@ -42,7 +47,9 @@ private:
      * See <a href="http://www.boost.org/doc/libs/1_47_0/libs/graph/doc/bundles.html">boost::graph bundles tutorial</a>
      */
     typedef boost::adjacency_list<
-            boost::vecS, boost::vecS, boost::bidirectionalS,
+//            boost::vecS, boost::vecS, boost::bidirectionalS,
+            boost::setS, boost::vecS, boost::directedS,
+
             Statistic<Sample_t>,   // our custom vertex (node) type
             PowerStateEdge         // our custom edge type
             > Graph;
@@ -58,6 +65,9 @@ private:
     Graph graph;
 
     Graph::vertex_descriptor offVertex; /**< @todo we probably don't need this as the offVertex will probably always been vertex index 0. */
+
+    size_t totalCount; /**< @brief the total number of times any edge
+                                   has been traversed during training. */
 
     /************************
      * MEMBER FUNCTIONS      *

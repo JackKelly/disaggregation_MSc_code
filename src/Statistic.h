@@ -179,7 +179,7 @@ struct Statistic {
             currentVal = data[i];
 
             //check for outliers
-            if (stdev != 0) {
+ /*           if (stdev != 0) {
                 stdev = calcStdev();
                 if (currentVal > (mean + (stdev*5)) ||
                     currentVal < (mean - (stdev*5))   ) {
@@ -188,7 +188,7 @@ struct Statistic {
                     continue;
                 }
             }
-
+*/
             dataStore.push_back(currentVal);
 
             accumulator += currentVal;

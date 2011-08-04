@@ -8,12 +8,16 @@
 #include "PowerStateGraph.h"
 #include <iostream>
 #include <list>
+#include <boost/graph/graphviz.hpp>
+#include <cstdio> // sprintf
 
 using namespace std;
 
 PowerStateGraph::PowerStateGraph()
 {
     using namespace boost;
+
+    totalCount = 0;
 
     // add a vertex to represent "off"
     offVertex = add_vertex(graph);
@@ -31,7 +35,7 @@ void PowerStateGraph::updateVertices( const Signature& sig )
     Statistic<Sample_t> powerState;
 
     // get the gradient spikes for the first signature
-    list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
+    list<Signature::Spike> spikes = sig.getGradientSpikesInOrder(1);
     list<Signature::Spike>::iterator spike, prevSpike;
 
     // take just the top ten (whilst ordered by absolute value)
@@ -104,7 +108,7 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
         const Statistic<Sample_t>& stat /**< stat to find in graph vertices */
     )
 {
-    const double ALPHA = 0.00000000000000005; // significance level (what constitutes as a "satisfactory" match?)
+    const double ALPHA = 0.000000000000000001; // significance level (what constitutes as a "satisfactory" match?)
     Graph::vertex_descriptor vertex=0;
     std::pair<vertex_iter, vertex_iter> vp;
     double tTest, highestTTest=0;
@@ -171,32 +175,69 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     // as long as the first spike->index > 1
     previousVertex = offVertex;
     previousIndex  = 0;
-    list<Signature::Spike>::iterator spike = spikes.begin();
-    if ( spike->index > 1 ) {
-        powerState = Statistic<Sample_t>( sig, 1, spike->index );
-        bool foundSimilar;
-        mostSimVertex = mostSimilarVertex( &foundSimilar, powerState );
+    for (list<Signature::Spike>::iterator spike = spikes.begin(); spike!=spikes.end(); spike++ ) {
+        if ( spike->index > 1 ) {
+            powerState = Statistic<Sample_t>( sig, previousIndex, spike->index );
+            bool foundSimilar;
+            mostSimVertex = mostSimilarVertex( &foundSimilar, powerState );
 
-        /* Add an edge from previousVertex to mostSimVertex.
-         * If an edge already exists then boost::add_edge will
-         * return an edge_descriptor to that edge. */
-        addedEdge = boost::add_edge(previousVertex, mostSimVertex, graph);
+            if (foundSimilar && previousVertex!=mostSimVertex) {
+                /* Add an edge from previousVertex to mostSimVertex.
+                 * If an edge already exists then boost::add_edge will
+                 * return an edge_descriptor to that edge. */
+                addedEdge = boost::add_edge(previousVertex, mostSimVertex, graph);
 
-        if (addedEdge.second) { // then there was not an edge already in the graph
-            graph[addedEdge.first].delta =
-                    Statistic<double>( spike->delta );
-            graph[addedEdge.first].duration =
-                    Statistic<size_t>( spike->index - previousIndex );
-        } else { // there was an edge already in the graph so update that edge
-            graph[addedEdge.first].delta.update( spike->delta );
-            graph[addedEdge.first].duration.update( spike->index - previousIndex );
+                if (addedEdge.second) { // then there was not an edge already in the graph
+                    graph[addedEdge.first].delta =
+                            Statistic<double>( spike->delta );
+                    graph[addedEdge.first].duration =
+                            Statistic<size_t>( spike->index - previousIndex );
+                    graph[addedEdge.first].count = 1;
+                    totalCount++;
+                } else { // there was an edge already in the graph so update that edge
+                    graph[addedEdge.first].delta.update( spike->delta );
+                    graph[addedEdge.first].duration.update( spike->index - previousIndex );
+                    graph[addedEdge.first].count++;
+                    totalCount++;
+                }
+
+                previousIndex  = spike->index;
+                previousVertex = mostSimVertex;
+            }
         }
-
     }
 
+    // add the last edge back to "off"
+    addedEdge = boost::add_edge(previousVertex, offVertex, graph);
 
+}
 
+void PowerStateGraph::writeGraphViz(ostream& out)
+{
+    char * str = 0;
+    const char* name[ num_vertices(graph) ];
+    int i = 0;
 
+    PowerStateGraph::IndexMap index = boost::get(boost::vertex_index, graph);
+
+    std::pair<PowerStateGraph::vertex_iter, PowerStateGraph::vertex_iter> vp;
+    for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+        str = new char[30];
+        sprintf(str, "min%d mean%d max%d sd%d",
+                Utils::roundToNearestInt(graph[*vp.first].min),
+                Utils::roundToNearestInt(graph[*vp.first].mean),
+                Utils::roundToNearestInt(graph[*vp.first].max),
+                Utils::roundToNearestInt(graph[*vp.first].stdev)
+                );
+        name[i++] = str;
+    }
+
+    write_graphviz(out, graph, boost::make_label_writer(name));
+
+    // now delete the new strings
+    for (int j = 0; j<i; j++) {
+        delete [] name[j];
+    }
 }
 
 std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )
