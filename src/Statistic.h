@@ -177,6 +177,18 @@ struct Statistic {
         // Find the mean, min and max
         for (size_t i=beginning; i<end; i++) {
             currentVal = data[i];
+
+            //check for outliers
+            if (stdev != 0) {
+                stdev = calcStdev();
+                if (currentVal > (mean + (stdev*5)) ||
+                    currentVal < (mean - (stdev*5))   ) {
+                    numDataPoints--;
+                    numNewDataPoints--;
+                    continue;
+                }
+            }
+
             dataStore.push_back(currentVal);
 
             accumulator += currentVal;
@@ -187,11 +199,15 @@ struct Statistic {
             if ( currentVal < min )
                 min = currentVal;
         }
-        double meanOfNewData = (double)accumulator / numNewDataPoints;
-        mean = (mean * ((double)numExistingDataPoints/numDataPoints)) + (meanOfNewData * ((double)numNewDataPoints/numDataPoints) );
 
-        /** Update the sample standard deviation with the new data. */
-        stdev = calcStdev();
+        if (numNewDataPoints > 0){
+            double meanOfNewData = (double)accumulator / numNewDataPoints;
+            mean = (mean * ((double)numExistingDataPoints/numDataPoints)) + (meanOfNewData * ((double)numNewDataPoints/numDataPoints) );
+            /** Update the sample standard deviation with the new data. */
+            stdev = calcStdev();
+
+        }
+
     }
 
     const double calcStdev() const
