@@ -11,9 +11,32 @@
 #include "Signature.h"
 #include "Statistic.h"
 #include "Device.h"
+#include "PowerStateGraph.h"
 #include <iostream>
 #include <glog/logging.h>
 #include <fstream>
+
+void powerStateGraphTest()
+{
+    AggregateData aggData;
+    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+
+    PowerStateGraph psg;
+    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
+//    Signature sig( "data/input/watts_up/toaster.csv", 1, "toaster" );
+//    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble", 1, 1, 6600 );
+//    Signature sig( "data/input/watts_up/washer.csv", 1, "washer", 1, 1, 2530 );
+//    Signature sig2( "data/input/watts_up/washer2.csv", 1, "washer2", 1,1, 2000 );
+
+    psg.update( sig );
+//    psg.update( sig2 );
+
+    std::cout << psg << std::endl;
+    psg.writeGraphViz( std::cout );
+
+    psg.getStartTimes( aggData );
+
+}
 
 int main(int argc, char * argv[])
 {
@@ -50,15 +73,18 @@ int main(int argc, char * argv[])
     kettle.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 */
 
-      Device washer("Washer2");
-    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
+//      Device washer("Washer2");
+//    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
 //      washer.getReadingFromCSV( "data/input/watts_up/washer.csv", 1, 50, 2200 );
 //    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
 //    washer.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 
-      AggregateData aggData;
-      aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
-      washer.getStartTimes( aggData );
+    AggregateData aggData;
+    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+//      washer.getStartTimes( aggData );
+
+
+    powerStateGraphTest();
 
 //    washer.findAlignment( "data/input/watts_up/washer2.csv", 1);
 

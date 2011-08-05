@@ -6,6 +6,7 @@
  */
 
 #include "PowerStateGraph.h"
+#include "AggregateData.h"
 #include <iostream>
 #include <list>
 #include <boost/graph/graphviz.hpp>
@@ -454,13 +455,12 @@ void PowerStateGraph::writeGraphViz(ostream& out)
  *     start looking for the subsequent edges learnt during training.</li>
  * <li>Look for the delta corresponding to each out edge from current vertex.
  *     Store the UNIX timestamp of each candidate.  </li>
- *
  * </ol>
  *
  * @return a list of UNIX times when the device starts
  */
 const list<size_t> PowerStateGraph::getStartTimes(
-        const AggregateData& aggregateData, /**< A populated array of AggregateData */
+        const AggregateData& aggData, /**< A populated array of AggregateData */
         const bool verbose
         ) const
 {
@@ -468,7 +468,13 @@ const list<size_t> PowerStateGraph::getStartTimes(
 
     // search through aggregateData for the delta corresponding
     // to the first edge from vertex0.
+    PSG_out_edge_iter out_i, out_end;
+    tie(out_i, out_end) = out_edges(offVertex, graph);
+    PowerStateEdge firstEdgeStats = graph[*out_i];
 
+    list<AggregateData::FoundSpike> foundSpikes = aggData.findSpike(firstEdgeStats.delta);
+
+    cout << firstEdgeStats.delta << endl;
 
     return startTimes;
 }

@@ -208,7 +208,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
     double min = numeric_limits<double>::max();
 
     double lms;
-    size_t foundAt;
+    size_t foundAt=0;
     size_t i;
     for (i = 0;
             i < aggregateData.getSize() - (sigArray.getSize() / (aggDataSamplePeriod / signatures.back()->getSamplePeriod() ));

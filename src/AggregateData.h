@@ -9,6 +9,7 @@
 #define AGGREGATEDATA_H_
 
 #include "Array.h"
+#include "Statistic.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -29,6 +30,12 @@ class AggregateData : public Array<AggregateSample>
 {
 public:
 
+    struct FoundSpike {
+        size_t timestamp;
+        Sample_t delta;
+        double pdf;  /**< probability */
+    };
+
     void loadCurrentCostData(
             const std::string& filename
             );
@@ -37,11 +44,21 @@ public:
 
     const size_t aggDelta( const size_t i ) const;
 
+    std::list<AggregateData::FoundSpike> findSpike(
+            const Statistic<Sample_t>& spikeStats,
+            size_t startTime = 0 ,
+            size_t endTime = 0
+            ) const;
+
     const size_t findNear(
             const size_t candidateIndex,
             const size_t expectedDistance,
             const size_t delta
             ) const;
+
+    const size_t findTime(
+            const size_t time
+    ) const;
 
 private:
 

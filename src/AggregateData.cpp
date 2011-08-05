@@ -6,7 +6,9 @@
  */
 
 #include "AggregateData.h"
+#include <cassert>
 
+using namespace std;
 
 void AggregateData::loadCurrentCostData(
         const std::string& filename /**< including path and suffix. */
@@ -64,9 +66,13 @@ const size_t AggregateData::aggDelta(
 }
 
 /**
- * @brief Find 'delta'.  Start searching 'expectedDistance' away from 'candidateIndex'.
+ * @brief Find 'delta'.  Start searching 'expectedDistance' away from 'candidateIndex'. DOESN'T WORK YET.
  *
  * @return AggregateData index where best delta match was found
+ *
+ * @deprecated a relic from an unfinished previous attempt to disaggregate
+ *
+ * @todo unfinished (obviously)
  */
 const size_t AggregateData::findNear(
         const size_t candidateIndex, /**< index into aggregateData */
@@ -74,5 +80,75 @@ const size_t AggregateData::findNear(
         const size_t delta /**< the delta we're looking for */
 ) const
 {
+    return 0;
+}
 
+list<AggregateData::FoundSpike> AggregateData::findSpike(
+        const Statistic<Sample_t>& spikeStats,
+        size_t startTime,
+        size_t endTime
+        ) const
+{
+    size_t i;
+    list<AggregateData::FoundSpike> foundSpikes;
+
+    // lots of range checking and default parameter setting
+    if (endTime == 0) { // default parameter used
+        endTime = data[size-1].timestamp;
+    }
+    else if (endTime > data[size-1].timestamp) {
+        LOG(ERROR) << "(endTime > data[size-1].timestamp)";
+        endTime = data[size-1].timestamp;
+    }
+
+    if (startTime == 0) { // default parameter used
+        startTime = data[0].timestamp;
+        i = 0;
+    }
+    else if (startTime < data[0].timestamp) {
+        LOG(ERROR) << "(startTime < data[0].timestamp)";
+        startTime = data[0].timestamp;
+        i = 0;
+    }
+    else {
+        i = findTime(startTime);
+    }
+
+    assert( endTime > startTime );
+
+    size_t time = startTime;
+    while (time < endTime) {
+
+    }
+
+    return foundSpikes;
+}
+
+/**
+ * @brief a simple and inefficient way to find a timestamp.
+ * If precise time cannot be found, returns the index to the
+ * sample immediately prior.
+ * Terminates program if time is out of range (as this is always fatal).
+ *
+ * @return the index at which @time is located.
+ */
+const size_t AggregateData::findTime(
+        const size_t time
+    ) const
+{
+    if (time > data[size-1].timestamp || time < data[0].timestamp) {
+        LOG(FATAL) << "Timestamp is out of range.  Fatal error.";
+    }
+
+    if (data[size-1].timestamp == time)
+        return size-1;
+
+    size_t i = 0;
+    for (; i<size-2; i++) {
+        if ( Utils::between(data[i].timestamp, data[i+1].timestamp-1, time))
+            return i;
+    }
+
+    // should never get here
+    return -1;
 }

@@ -37,23 +37,16 @@ public:
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
 
 private:
-    /************************
-     * STRUCTS AND TYPEDEFS *
-     ************************/
+    /***********************************
+     * P.S.G. GRAPH USED FOR TRAINING: *
+     * (PSG = Power State Graph)       *
+     ***********************************/
     struct PowerStateEdge {
         Statistic<double> delta;
         Statistic<size_t> duration;
         size_t count; /**< @brief The number of times this edge has been
                                   traversed during training.  Used with @c totalCount
                                   to determine which edges are traversed most often. */
-    };
-
-    /**
-     * @brief A vertex for the directed acylic graphs used by getStartTimes()
-     */
-    struct DissagVertex {
-        size_t timestamp; /**< UNIX timestamp taken from AggregateData. */
-        double meanPower; /**< The mean power used between this vertex and the previous one. */
     };
 
     /**
@@ -69,17 +62,9 @@ private:
             PowerStateEdge         // our custom edge type
             > PSGraph;
 
-    /**
-     * @brief Directed Acyclic Graph (DAG) used during disaggregation.
-     */
-    typedef boost::adjacency_list<
-            boost::setS, boost::vecS, boost::directedS,
-            DissagVertex,   // our custom vertex (node) type
-            boost::property<boost::edge_weight_t, double>
-            > DAGGraph;
-
     typedef boost::graph_traits<PSGraph>::vertex_iterator PSG_vertex_iter;
     typedef boost::graph_traits<PSGraph>::edge_iterator PSG_edge_iter;
+    typedef boost::graph_traits<PSGraph>::out_edge_iterator PSG_out_edge_iter;
 
     typedef boost::property_map<PSGraph, boost::vertex_index_t>::type PSG_vertex_index_map;
     typedef boost::property_map<PSGraph, boost::edge_index_t >::type PSG_edge_index_map;
@@ -104,6 +89,31 @@ private:
             PSGraph g;
     };
 
+
+    /**********************************
+     * GRAPH USED FOR DISAGGREGATION: *
+     **********************************/
+
+    /**
+     * @brief A vertex for the directed acylic graphs used by getStartTimes()
+     */
+    struct DissagVertex {
+        size_t timestamp; /**< UNIX timestamp taken from AggregateData. */
+        double meanPower; /**< The mean power used between this vertex and the previous one. */
+    };
+
+
+    /**
+     * @brief Directed Acyclic Graph (DAG) used during disaggregation.
+     */
+    typedef boost::adjacency_list<
+            boost::setS, boost::vecS, boost::directedS,
+            DissagVertex,   // our custom vertex (node) type
+            boost::property<boost::edge_weight_t, double>
+            > DAGGraph;
+
+    typedef boost::graph_traits<DAGGraph>::out_edge_iterator DAG_out_edge_iter;
+    typedef boost::graph_traits<DAGGraph>::edge_descriptor DAG_edge_desc;
 
     /************************
      * MEMBER VARIABLES     *

@@ -16,7 +16,11 @@ ifeq ($(origin LDFLAGS), undefined)
 endif
 
 ifeq ($(origin CXXFLAGS), undefined)
-	CXXFLAGS = $(LDFLAGS) -DDEBUG=1 -MD -O2 -Wno-deprecated # MD is required for auto dependency, -O2 and -Wno-deprecated are required for Boost Graph Library.
+	CXXFLAGS = $(LDFLAGS) -DDEBUG=1 -MD -O2 -Wno-deprecated -Wno-unused-result 
+	# -MD is required for auto dependency, 
+	# -O2 and -Wno-deprecated are required for Boost Graph Library.
+	# -Wno-unused-result is required to stop warnings from GNUplot about ignoring
+	#    the returned int from system().
 endif
 
 
@@ -67,7 +71,12 @@ StatisticTest: $(TEST)StatisticTest.cpp $(SRC)Statistic.h $(SRC)Array.h $(STOBJF
 PSGTOBJFILES = $(SRC)PowerStateGraph.o $(SRC)Signature.o $(SRC)GNUplot.o $(SRC)Utils.o $(SRC)PowerStateSequence.o
 PowerStateGraphTest: CXXFLAGS = $(TESTCXXFLAGS) -Wno-deprecated -Wno-unused-result # -O2 PUT BACK AFTER TESTING
 PowerStateGraphTest: $(TEST)PowerStateGraphTest.cpp $(SRC)Array.h $(PSGTOBJFILES)
-	g++ $(CXXFLAGS) -Wno-deprecated -o $(TEST)PowerStateGraphTest $(PSGTOBJFILES) $(TEST)PowerStateGraphTest.cpp && $(TEST)PowerStateGraphTest
+	g++ $(CXXFLAGS) -o $(TEST)PowerStateGraphTest $(PSGTOBJFILES) $(TEST)PowerStateGraphTest.cpp && $(TEST)PowerStateGraphTest
+
+ADTOBJFILES = $(SRC)AggregateData.o $(SRC)GNUplot.o $(SRC)Utils.o
+AggregateDataTest: CXXFLAGS = $(TESTCXXFLAGS) -Wno-deprecated -Wno-unused-result # -O2 PUT BACK AFTER TESTING
+AggregateDataTest: $(TEST)AggregateDataTest.cpp $(SRC)Array.h $(ADTOBJFILES)
+	g++ $(CXXFLAGS) -o $(TEST)AggregateDataTest $(ADTOBJFILES) $(TEST)AggregateDataTest.cpp && $(TEST)AggregateDataTest
 
 # AUTOMATIC DEPENDENCY DETECTION
 # http://www.wlug.org.nz/MakefileHowto
