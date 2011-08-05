@@ -9,6 +9,8 @@
 disaggregate
 ArrayTest
 
+backup.sh
+
 # Compiled Object files
 *.slo
 *.lo

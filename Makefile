@@ -87,3 +87,4 @@ clean:
 	
 linecount:
 	wc -l $(SRC)*.cpp $(SRC)*.h $(TEST)*.cpp config/*.* Makefile
+
