@@ -14,6 +14,7 @@
 #include <cmath>
 #include <iostream>
 #include <boost/math/distributions/students_t.hpp>
+#include <limits> // for std::numeric_limits<std::size_t>::max()
 #include "Array.h"
 #include "Common.h"
 
@@ -75,14 +76,14 @@ struct Statistic {
     Statistic(
             const Histogram& data, /**< data */
             const size_t beginning=0,  /**< beginning (gets included in stats) */
-            size_t end=0               /**< end (excluded from stats) */
+            size_t end=std::numeric_limits<std::size_t>::max() /**< end (excluded from stats) */
             )
     : mean(0), stdev(0), numDataPoints(0)
     {
         register T accumulator = 0;
         register T currentVal;
 
-        if (end==0) { // default value used
+        if (end==std::numeric_limits<std::size_t>::max()) { // default value used
             end = data.getSize();
         }
 
@@ -116,13 +117,25 @@ struct Statistic {
     /**
      * @brief Constructor from array data (NOT histograms)
      */
-    Statistic(const Array<T>& data, const size_t beginning=0, size_t end=0)
+    Statistic(
+            const Array<T>& data,
+            const size_t beginning=0,
+            size_t end=std::numeric_limits<std::size_t>::max()
+            )
     : mean(0), stdev(0)
     {
+        // deal with the case where beginning and end or equal or within 1 of each other
+        if (beginning==end || beginning==(end-1)) {
+            min = max = mean = data[beginning];
+            numDataPoints = 1;
+            dataStore.push_back( data[beginning] );
+            return;
+        }
+
         register T accumulator = 0;
         register T currentVal;
 
-        if (end==0) { // if default value used
+        if (end==std::numeric_limits<std::size_t>::max()) { // if default value used
             end = data.getSize();
         }
 
@@ -158,12 +171,16 @@ struct Statistic {
      * @brief Update an existing Statistic with new data points.
      *
      */
-    void update(const Array<T>& data, const size_t beginning=0, size_t end=0)
+    void update(
+            const Array<T>& data,
+            const size_t beginning=0,
+            size_t end=std::numeric_limits<std::size_t>::max()
+            )
     {
         register T accumulator = 0;
         register T currentVal;
 
-        if (end==0) { // if default value used
+        if (end==std::numeric_limits<std::size_t>::max()) { // if default value used
             end = data.getSize();
         }
 
@@ -226,15 +243,6 @@ struct Statistic {
     /**
      * @brief Update an existing Statistic with a single new data point.
      *
-     *  NOTE: This is a bit of a hack to get a rough
-     *  new stdev and will result in an inaccurate stdev
-     *  because we're not bothering to compare the old data points to the new mean.
-     *  However, we don't need an especially accurate stdev so this hack will do.
-     *  If we needed to calculated the new stdev properly
-     *  then the only way I can think of
-     *  is to store every value in the Statistic object
-     *  (which would massively increase the size of the object)
-     *  and to recalculate the stdev from scratch.
      */
     void update(const T datum)
     {

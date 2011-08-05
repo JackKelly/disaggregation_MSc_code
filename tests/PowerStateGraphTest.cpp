@@ -48,9 +48,9 @@ BOOST_AUTO_TEST_CASE( updateVerticesTest )
 
     PowerStateGraph psg;
 
-    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
+//    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
 //    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble" );
-//    Signature sig( "data/input/watts_up/washer.csv", 1, "washer" );
+    Signature sig( "data/input/watts_up/washer.csv", 1, "washer" );
     psg.updateVertices( sig );
 //    psg.updateEdges( sig );
 
