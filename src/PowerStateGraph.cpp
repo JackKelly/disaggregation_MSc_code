@@ -21,8 +21,8 @@ PowerStateGraph::PowerStateGraph()
     totalCount = 0;
 
     // add a vertex to represent "off"
+    // uses Statistic's default constructor to make a stat with all-zeros
     offVertex = add_vertex(graph);
-    graph[offVertex] = Statistic<Sample_t>(0);
 
 }
 
@@ -423,7 +423,7 @@ void PowerStateGraph::writeGraphViz(ostream& out)
         edgeName[i++] = str;
     }
 
-    write_graphviz(out, graph, boost::make_label_writer(vertexName), my_edge_writer(graph));
+    write_graphviz(out, graph, boost::make_label_writer(vertexName), PSG_edge_writer(graph));
 
     // now delete the dynamically allocated strings
     for (i = 0; i<num_vertices(graph); i++) {
@@ -459,12 +459,13 @@ void PowerStateGraph::writeGraphViz(ostream& out)
  *
  * @return a list of UNIX times when the device starts
  */
-const list<size_t> PowerStateGraph::getStartTimes(
+const list<PowerStateGraph::DisaggregatedStruct> PowerStateGraph::getStartTimes(
         const AggregateData& aggData, /**< A populated array of AggregateData */
         const bool verbose
         ) const
 {
-    list<size_t> startTimes;
+    list<DisaggregatedStruct> disaggregateList;
+    DisaggregatedStruct candidateDisaggStruct;
 
     // search through aggregateData for the delta corresponding
     // to the first edge from vertex0.
@@ -474,9 +475,54 @@ const list<size_t> PowerStateGraph::getStartTimes(
 
     list<AggregateData::FoundSpike> foundSpikes = aggData.findSpike(firstEdgeStats.delta);
 
-    cout << firstEdgeStats.delta << endl;
+    for (list<AggregateData::FoundSpike>::const_iterator spike=foundSpikes.begin();
+            spike!=foundSpikes.end();
+            spike++) {
 
-    return startTimes;
+        candidateDisaggStruct = traceToEnd( *spike );
+        if ( candidateDisaggStruct.confidence != -1 ) {
+            disaggregateList.push_back( candidateDisaggStruct );
+        }
+    }
+
+    return disaggregateList;
+}
+
+/**
+ *
+ * @return DisaggregatedStruct.confidence will be set to -1 if
+ * this looks like it's not a good candidate match.
+ */
+const PowerStateGraph::DisaggregatedStruct PowerStateGraph::traceToEnd(
+        const AggregateData::FoundSpike& spike
+        ) const
+{
+    DAGraph dag;
+
+    // make the first vertex to represent "off"
+    DAGraph::vertex_descriptor dagOffVertex = add_vertex(dag);
+
+
+    // add a vertex to represent the first true power state
+    DAGraph::vertex_descriptor firstVertex = add_vertex(dag);
+
+    // retrieve info for firstVertex and for edge between dagOffVertex and firstVertex
+    PSG_out_edge_iter out_i, out_end;
+    PSG_vertex_iter v_i, v_end;
+    tie(out_i, out_end) = out_edges(offVertex, graph);
+    PowerStateEdge firstEdgeStats = graph[*out_i];
+    tie(v_i, v_end) = vertices(graph);
+    v_i++;
+
+    dag[firstVertex] = DissagVertex( firstEdgeStats.duration.mean, graph[*v_i].mean );
+
+    // add an edge
+    DAGraph::edge_descriptor edge;
+    bool existingEdge;
+    tie(edge, existingEdge) = add_edge(dagOffVertex, firstVertex, spike.pdf, dag);
+
+    write_graphviz(cout, dag, DAG_vertex_writer(dag));
+
 }
 
 std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )

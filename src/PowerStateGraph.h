@@ -29,7 +29,13 @@ public:
 
     void writeGraphViz(std::ostream& out);
 
-    const std::list<size_t> getStartTimes(
+    struct DisaggregatedStruct {
+        size_t timestamp; /**< @brief UNIX timestamp for start time */
+        double energy; /**< @brief energy consumed */
+        double confidence;
+    };
+
+    const std::list<DisaggregatedStruct> getStartTimes(
             const AggregateData& aggregateData, /**< A populated array of AggregateData */
             const bool verbose = true
             ) const;
@@ -69,9 +75,9 @@ private:
     typedef boost::property_map<PSGraph, boost::vertex_index_t>::type PSG_vertex_index_map;
     typedef boost::property_map<PSGraph, boost::edge_index_t >::type PSG_edge_index_map;
 
-    struct my_edge_writer {
+    struct PSG_edge_writer {
 
-            my_edge_writer(PSGraph& g_) : g (g_) {};
+            PSG_edge_writer(PSGraph& g_) : g (g_) {};
 
             template <class Edge>
             void operator()(std::ostream& out, Edge e) {
@@ -100,6 +106,17 @@ private:
     struct DissagVertex {
         size_t timestamp; /**< UNIX timestamp taken from AggregateData. */
         double meanPower; /**< The mean power used between this vertex and the previous one. */
+
+        DissagVertex()
+        : timestamp(0), meanPower(0)
+        {}
+
+        DissagVertex(
+                const size_t t,
+                const double p
+                )
+        : timestamp(t), meanPower(p)
+        {}
     };
 
 
@@ -110,10 +127,28 @@ private:
             boost::setS, boost::vecS, boost::directedS,
             DissagVertex,   // our custom vertex (node) type
             boost::property<boost::edge_weight_t, double>
-            > DAGGraph;
+            > DAGraph;
 
-    typedef boost::graph_traits<DAGGraph>::out_edge_iterator DAG_out_edge_iter;
-    typedef boost::graph_traits<DAGGraph>::edge_descriptor DAG_edge_desc;
+    typedef boost::graph_traits<DAGraph>::out_edge_iterator DAG_out_edge_iter;
+    typedef boost::graph_traits<DAGraph>::edge_descriptor DAG_edge_desc;
+
+    struct DAG_vertex_writer {
+
+            DAG_vertex_writer(DAGraph& g_) : g (g_) {};
+
+            template <class Edge>
+            void operator()(std::ostream& out, Edge e) {
+                    out << " [label=\""
+                        << "timestamp=" << g[e].timestamp
+                        << ", meanPower=" << g[e].meanPower
+                        << "\"]";
+            };
+
+            DAGraph g;
+    };
+
+
+
 
     /************************
      * MEMBER VARIABLES     *
@@ -158,6 +193,11 @@ private:
             );
 
     void updateEdges( const Signature& sig );
+
+    const DisaggregatedStruct traceToEnd(
+            const AggregateData::FoundSpike& spike
+            ) const;
+
 
 };
 

@@ -121,7 +121,9 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
     // "fake" the standard deviation if it's 0
     // (i.e. if the Statistic was created from a single value.)
     const double stdev = (spikeStats.stdev ? spikeStats.stdev : spikeStats.mean*0.1 );
+
     boost::math::normal dist(spikeStats.mean, stdev);
+    // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html
 
     size_t time = startTime;
     while (time < endTime && i < size) {
