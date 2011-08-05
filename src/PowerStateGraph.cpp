@@ -33,7 +33,10 @@ PowerStateGraph::~PowerStateGraph()
 /**
  * Update or initialise Power State Graph.
  */
-void PowerStateGraph::update( const Signature& sig )
+void PowerStateGraph::update(
+        const Signature& sig,
+        const bool verbose
+        )
 {
     Statistic<Sample_t> powerState;
 
@@ -41,12 +44,12 @@ void PowerStateGraph::update( const Signature& sig )
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
     list<Signature::Spike>::iterator spike;
     size_t indexOfLastAcceptedSpike = 0;
-    Graph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
+    PSGraph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 6) {
+    if (spikes.size() > 10) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 6 );
+        advance( it, 10 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -56,7 +59,13 @@ void PowerStateGraph::update( const Signature& sig )
     // for each spike, locate the samples immediately before and immediately after the spike
     const size_t WINDOW = 8; // how far either side of the spike will we look?
     for (spike = spikes.begin(); spike!=spikes.end(); spike++) {
-        cout << "SPIKE: index=" << spike->index << ", delta=" << spike->delta << ", duration=" << spike->duration << endl;
+
+        if (verbose) {
+            cout << "SPIKE: index=" << spike->index
+                 << ", delta=" << spike->delta
+                 << ", duration=" << spike->duration
+                 << endl;
+        }
 
         size_t start = ((spike->index > WINDOW) ?
                 (spike->index - WINDOW) : 0 );
@@ -68,14 +77,19 @@ void PowerStateGraph::update( const Signature& sig )
         Statistic<Sample_t> before(sig, start, spike->index);
         Statistic<Sample_t> after(sig, (spike->index + spike->duration + 1), end);
 
-        cout << "Before=" << before << endl
-             << "After =" << after  << endl;
+        if (verbose) {
+            cout << "Before=" << before << endl
+                 << "After =" << after  << endl;
+        }
 
         if (rejectSpike(before, after) ||
-            start < indexOfLastAcceptedSpike)  // check the spikes aren't too close
-            cout << " REJECT";
-        else {
-            cout << " KEEP";
+            start < indexOfLastAcceptedSpike) {  // check the spikes aren't too close
+
+            if (verbose) cout << " REJECT";
+
+        } else {
+
+            if (verbose) cout << " KEEP";
 
             afterVertex =
                     updateOrInsertVertex(  after, sig, (spike->index + spike->duration + 1), end);
@@ -88,42 +102,43 @@ void PowerStateGraph::update( const Signature& sig )
             prevAcceptedVertex = afterVertex;
             indexOfLastAcceptedSpike = spike->index;
         }
-        cout << endl;
+        if (verbose) cout << endl;
 
-        for (size_t i=start; i<end; i++ ) {
-            cout << i << "\t" << sig[i];
-
-            if (i < spike->index)
-                cout << " before";
-            else if (i == spike->index)
-                cout << " <--SPIKE";
-            else if (i < (spike->index + spike->duration))
-                cout << " <--Spike continues";
-            else
-                cout << " after";
-
-            cout << endl;
+        if (verbose) {
+            for (size_t i=start; i<end; i++ ) {
+                cout << i << "\t" << sig[i];
+                if (i < spike->index)
+                    cout << " before";
+                else if (i == spike->index)
+                    cout << " <--SPIKE";
+                else if (i < (spike->index + spike->duration))
+                    cout << " <--Spike continues";
+                else
+                    cout << " after";
+                cout << endl;
+            }
         }
     }
 }
 
 const bool PowerStateGraph::rejectSpike(
         const Statistic<Sample_t>& before,
-        const Statistic<Sample_t>& after
+        const Statistic<Sample_t>& after,
+        const bool verbose
         ) const
 {
     // if either 'before' or 'after' has a stdev greater than
     // its mean then reject
     if ( (before.stdev > (before.mean)) ||
          ( after.stdev > ( after.mean))   ) {
-        cout << "stdev too big";
+        if (verbose) cout << "stdev too big";
         return true;
     }
 
 
     if (Utils::within(before.mean, after.mean, Utils::largest(before.stdev, after.stdev)*2) ||
         Utils::within(before.mean, after.mean, Utils::largest(before.mean, after.mean)*0.2)     ) {
-        cout << "means too close";
+        if (verbose) cout << "means too close";
         return true;
     }
 
@@ -138,39 +153,46 @@ const bool PowerStateGraph::rejectSpike(
  * with the new data points. If a similar vertex is not found,
  * and new vertex is inserted.
  */
-PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::updateOrInsertVertex(
+PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::updateOrInsertVertex(
         const Statistic<Sample_t>& stat, /**< stat to find or insert in graph vertices */
         const Signature& sig, /**< source of the raw data */
         const size_t start,   /**< start of data window */
-        const size_t end      /**< end of data window */
+        const size_t end,      /**< end of data window */
+        const bool verbose  /**< cout debugging messages? */
     )
 {
 
     bool foundSimilar; // return param for mostSimilarVertex()
 
-    Graph::vertex_descriptor vertex = mostSimilarVertex( &foundSimilar, stat );
+    PSGraph::vertex_descriptor vertex = mostSimilarVertex( &foundSimilar, stat );
 
-    cout << " mostSimlar = " << graph[vertex] << endl;
+    if (verbose)
+        cout << " mostSimlar = " << graph[vertex] << endl;
 
     if ( foundSimilar ) {
         if (vertex != offVertex) {
-            cout << endl
-                    << "Updating existing vertex: " << endl
-                    << "    start=" << start << ", end=" << end << endl
-                    << "    existing vertex = " << graph[vertex] << endl
-                    << "    new stat        = " << stat << endl;;
+            if (verbose) {
+                cout << endl
+                        << "Updating existing vertex: " << endl
+                        << "    start=" << start << ", end=" << end << endl
+                        << "    existing vertex = " << graph[vertex] << endl
+                        << "    new stat        = " << stat << endl;
+            }
             graph[vertex].update( sig, start, end );
-            cout << "    merged          = " << graph[vertex] << endl;
+            if (verbose)
+                cout << "    merged          = " << graph[vertex] << endl;
         }
     } else {
         // then add a new vertex
         vertex = add_vertex(graph);
         graph[vertex] = Statistic<Sample_t>( sig, start, end );
-        cout << endl
-             << "Adding new vertex: " << endl
-             << "    start=" << start << ", end=" << end << endl
-             << "    vertex = " << graph[vertex] << endl
-             << "    stat   = " << stat << endl;;
+        if (verbose) {
+            cout << endl
+                    << "Adding new vertex: " << endl
+                    << "    start=" << start << ", end=" << end << endl
+                    << "    vertex = " << graph[vertex] << endl
+                    << "    stat   = " << stat << endl;
+        }
     }
     return vertex;
 
@@ -182,20 +204,20 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::updateOrInsertVertex(
  * @return vertex descriptor of best fit.
  *         @c success is also used as a return parameter.
  */
-PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
+PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
         bool * success, /**< return parameter.  Did we find a satisfactory match? */
         const Statistic<Sample_t>& stat, /**< stat to find in graph vertices */
         const double ALPHA /**< significance level (what constitutes as a "satisfactory" match?) */
     ) const
 {
-    Graph::vertex_descriptor vertex=0;
-    std::pair<vertex_iter, vertex_iter> vp;
-    double tTest, highestTTest=0, diff, lowestDiff = std::numeric_limits<double>::max();
+    PSGraph::vertex_descriptor vertex=0;
+    std::pair<PSG_vertex_iter, PSG_vertex_iter> vp;
+    double highestTTest=0, diff, lowestDiff = std::numeric_limits<double>::max();
 
     // Find the best fit
     for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
         // t test
-/*        tTest = stat.tTest( graph[*vp.first] );
+/*      tTest = stat.tTest( graph[*vp.first] );
         cout << "tTest=" << tTest << "  " << graph[*vp.first] << endl;
         if (tTest > highestTTest) {
             highestTTest = tTest;
@@ -230,8 +252,8 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
 }
 
 void PowerStateGraph::updateOrInsertEdge(
-        const Graph::vertex_descriptor& beforeVertex,
-        const Graph::vertex_descriptor& afterVertex,
+        const PSGraph::vertex_descriptor& beforeVertex,
+        const PSGraph::vertex_descriptor& afterVertex,
         const size_t sampleSinceLastSpike,
         const double spikeDelta
         )
@@ -240,7 +262,7 @@ void PowerStateGraph::updateOrInsertEdge(
      * If an edge already exists then boost::add_edge will
      * return an edge_descriptor to that edge. */
 
-    Graph::edge_descriptor edge;
+    PSGraph::edge_descriptor edge;
     bool existingEdge;
     tie(edge, existingEdge) = boost::add_edge(beforeVertex, afterVertex, graph);
 
@@ -281,8 +303,8 @@ void PowerStateGraph::updateOrInsertEdge(
 void PowerStateGraph::updateEdges( const Signature& sig )
 {
     Statistic<Sample_t> nextPowerState, prevPowerState;
-    Graph::vertex_descriptor mostSimVertex, previousVertex;
-    pair<Graph::edge_descriptor, bool> addedEdge;
+    PSGraph::vertex_descriptor mostSimVertex, previousVertex;
+    pair<PSGraph::edge_descriptor, bool> addedEdge;
     size_t previousIndex;
 
     // get the gradient spikes for the first signature
@@ -298,10 +320,11 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     // re-order by index (i.e. by time)
     spikes.sort( Signature::Spike::compareIndexAsc );
 
-    for (list<Signature::Spike>::const_iterator it=spikes.begin(); it!=spikes.end(); it++) {
+    // Useful for seeing what's going on...
+/*    for (list<Signature::Spike>::const_iterator it=spikes.begin(); it!=spikes.end(); it++) {
         cout << it->index << "\t" << it->delta << endl;
     }
-
+*/
     // calculate stats for the signature's values between start and first spike
     // as long as the first spike->index > 1
     previousVertex = offVertex;
@@ -369,8 +392,8 @@ void PowerStateGraph::writeGraphViz(ostream& out)
 
     // generate names for vertices
     const char* vertexName[ num_vertices(graph) ];
-    PowerStateGraph::VertexIndexMap vertexIndex = boost::get(boost::vertex_index, graph);
-    std::pair<PowerStateGraph::vertex_iter, PowerStateGraph::vertex_iter> vp;
+    PowerStateGraph::PSG_vertex_index_map vertexIndex = boost::get(boost::vertex_index, graph);
+    std::pair<PowerStateGraph::PSG_vertex_iter, PowerStateGraph::PSG_vertex_iter> vp;
     for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
         str = new char[30];
         sprintf(str, "min%d mean%d max%d sd%d",
@@ -385,8 +408,8 @@ void PowerStateGraph::writeGraphViz(ostream& out)
     // generate names for edges
     const char* edgeName[ num_edges(graph) ];
     i=0;
-    PowerStateGraph::EdgeIndexMap edgeIndex = boost::get(boost::edge_index, graph);
-    std::pair<PowerStateGraph::edge_iter, PowerStateGraph::edge_iter> ep;
+    PowerStateGraph::PSG_edge_index_map edgeIndex = boost::get(boost::edge_index, graph);
+    std::pair<PowerStateGraph::PSG_edge_iter, PowerStateGraph::PSG_edge_iter> ep;
     for (ep = boost::edges(graph); ep.first != ep.second; ++ep.first) {
         str = new char[30];
 /*        sprintf(str, "delta%d dur%d c%d",
@@ -410,12 +433,52 @@ void PowerStateGraph::writeGraphViz(ostream& out)
     }
 }
 
+/**
+ *
+ * Each candidate solution is represented as a
+ * directed acyclic graph (DAG).  Each vertex
+ * on this tree is a spike found in the aggregate data.
+ * The edge weights are the mean of the probability density
+ * functions for the spike size and the timing.  If an
+ * edge described in PowerStateGraph (from training) cannot be found
+ * in the aggregate data then this candidate is discarded.  If
+ * we successfully get from vertex0 back to vertex0 then the
+ * shortest path through the tree is calculated and saved.
+ *
+ * <ol>
+ * <li>Retrieve from @c graph edge @c e which connects @c vertex0 (offVertex)
+ *     to vertex1.  Look through the AggregateData
+ *     searching for any spike within a certain number of
+ *     standard deviations of @c e.delta.</li>
+ * <li>When a spike is found, start a DAG structure and
+ *     start looking for the subsequent edges learnt during training.</li>
+ * <li>Look for the delta corresponding to each out edge from current vertex.
+ *     Store the UNIX timestamp of each candidate.  </li>
+ *
+ * </ol>
+ *
+ * @return a list of UNIX times when the device starts
+ */
+const list<size_t> PowerStateGraph::getStartTimes(
+        const AggregateData& aggregateData, /**< A populated array of AggregateData */
+        const bool verbose
+        ) const
+{
+    list<size_t> startTimes;
+
+    // search through aggregateData for the delta corresponding
+    // to the first edge from vertex0.
+
+
+    return startTimes;
+}
+
 std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )
 {
-    PowerStateGraph::VertexIndexMap index = boost::get(boost::vertex_index, psg.graph);
+    PowerStateGraph::PSG_vertex_index_map index = boost::get(boost::vertex_index, psg.graph);
 
     o << "vertices(graph) = " << std::endl;
-    std::pair<PowerStateGraph::vertex_iter, PowerStateGraph::vertex_iter> vp;
+    std::pair<PowerStateGraph::PSG_vertex_iter, PowerStateGraph::PSG_vertex_iter> vp;
     for (vp = boost::vertices(psg.graph); vp.first != vp.second; ++vp.first) {
         o << "vertex" << index[*vp.first] << " = {" << psg.graph[*vp.first] <<  "}";
         if ( *vp.first == psg.offVertex ) {

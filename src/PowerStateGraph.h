@@ -10,19 +10,29 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <vector>
+#include <list>
 #include <ostream>
 #include "Statistic.h"
 #include "Common.h"    // for Sample_t
 #include "Signature.h"
+#include "AggregateData.h"
 
 class PowerStateGraph {
 public:
     PowerStateGraph();
     virtual ~PowerStateGraph();
 
-    void update( const Signature& sig );
+    void update(
+            const Signature& sig,
+            const bool verbose = false
+            );
 
     void writeGraphViz(std::ostream& out);
+
+    const std::list<size_t> getStartTimes(
+            const AggregateData& aggregateData, /**< A populated array of AggregateData */
+            const bool verbose = true
+            ) const;
 
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
 
@@ -39,6 +49,14 @@ private:
     };
 
     /**
+     * @brief A vertex for the directed acylic graphs used by getStartTimes()
+     */
+    struct DissagVertex {
+        size_t timestamp; /**< UNIX timestamp taken from AggregateData. */
+        double meanPower; /**< The mean power used between this vertex and the previous one. */
+    };
+
+    /**
      * @brief A graph where each vertex(node) is a @c Statistic<Sample_t>
      *        and each edge is a @c PowerStateEdge .
      *
@@ -47,20 +65,28 @@ private:
     typedef boost::adjacency_list<
 //            boost::vecS, boost::vecS, boost::bidirectionalS,
             boost::setS, boost::vecS, boost::directedS,
-
             Statistic<Sample_t>,   // our custom vertex (node) type
             PowerStateEdge         // our custom edge type
-            > Graph;
+            > PSGraph;
 
-    typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
-    typedef boost::graph_traits<Graph>::edge_iterator edge_iter;
+    /**
+     * @brief Directed Acyclic Graph (DAG) used during disaggregation.
+     */
+    typedef boost::adjacency_list<
+            boost::setS, boost::vecS, boost::directedS,
+            DissagVertex,   // our custom vertex (node) type
+            boost::property<boost::edge_weight_t, double>
+            > DAGGraph;
 
-    typedef boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMap;
-    typedef boost::property_map<Graph, boost::edge_index_t >::type EdgeIndexMap;
+    typedef boost::graph_traits<PSGraph>::vertex_iterator PSG_vertex_iter;
+    typedef boost::graph_traits<PSGraph>::edge_iterator PSG_edge_iter;
+
+    typedef boost::property_map<PSGraph, boost::vertex_index_t>::type PSG_vertex_index_map;
+    typedef boost::property_map<PSGraph, boost::edge_index_t >::type PSG_edge_index_map;
 
     struct my_edge_writer {
 
-            my_edge_writer(Graph& g_) : g (g_) {};
+            my_edge_writer(PSGraph& g_) : g (g_) {};
 
             template <class Edge>
             void operator()(std::ostream& out, Edge e) {
@@ -75,7 +101,7 @@ private:
                         << "\"]";
             };
 
-            Graph g;
+            PSGraph g;
     };
 
 
@@ -83,9 +109,9 @@ private:
      * MEMBER VARIABLES     *
      ************************/
 
-    Graph graph;
+    PSGraph graph;
 
-    Graph::vertex_descriptor offVertex; /**< @todo we probably don't need this as the offVertex will probably always been vertex index 0. */
+    PSGraph::vertex_descriptor offVertex; /**< @todo we probably don't need this as the offVertex will probably always been vertex index 0. */
 
     size_t totalCount; /**< @brief the total number of times any edge
                                    has been traversed during training. */
@@ -94,14 +120,15 @@ private:
      * MEMBER FUNCTIONS      *
      ************************/
 
-    Graph::vertex_descriptor updateOrInsertVertex(
+    PSGraph::vertex_descriptor updateOrInsertVertex(
             const Statistic<Sample_t>& stat,
             const Signature& sig,
             const size_t start,
-            const size_t end
+            const size_t end,
+            const bool verbose = false
         );
 
-    Graph::vertex_descriptor mostSimilarVertex(
+    PSGraph::vertex_descriptor mostSimilarVertex(
             bool * success,
             const Statistic<Sample_t>& stat,
             const double ALPHA = 0.0000005
@@ -109,12 +136,13 @@ private:
 
     const bool rejectSpike(
             const Statistic<Sample_t>& before,
-            const Statistic<Sample_t>& after
+            const Statistic<Sample_t>& after,
+            const bool verbose = false
             ) const;
 
     void updateOrInsertEdge(
-            const Graph::vertex_descriptor& before,
-            const Graph::vertex_descriptor& after,
+            const PSGraph::vertex_descriptor& before,
+            const PSGraph::vertex_descriptor& after,
             const size_t sampleSinceLastSpike,
             const double spikeDelta
             );

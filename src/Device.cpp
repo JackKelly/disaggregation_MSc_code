@@ -43,11 +43,11 @@ void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod,
             );
     signatures.push_back( sig );
 
-    updatePowerStates();
+    updatePowerStates();  // old technique
 
-    updatePowerStateSequence();
+    updatePowerStateSequence();  // old technique
 
-    getSalientSpikes();
+    getSalientSpikes();  // old technique
 }
 
 /**
@@ -130,6 +130,8 @@ const list<Signature::Spike> Device::getSalientSpikes() const
 /**
  *
  * @return a list of UNIX times when the device starts
+ *
+ * @deprecated ?
  */
 const list<size_t> Device::getStartTimes(
         const AggregateData& aggregateData /**< A populated array of AggregateData */
