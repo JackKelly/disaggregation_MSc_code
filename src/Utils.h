@@ -34,6 +34,23 @@ const bool roughlyEqual(
         const double tolerance
         );
 
+const double& largest(
+        const double& a,
+        const double& b
+        );
+
+const bool within(
+        const double a,
+        const double b,
+        const double diff
+        );
+
+const bool between(
+        const double bound1,
+        const double bound2,
+        const double sample
+        );
+
 } /* namespace Utils */
 
 #endif /* UTILS_H_ */

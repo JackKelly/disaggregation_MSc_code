@@ -34,7 +34,7 @@ void PowerStateGraph::updateVertices( const Signature& sig )
 {
     Statistic<Sample_t> powerState;
 
-    // get the gradient spikes for the first signature
+    // get the gradient spikes for the signature
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
     list<Signature::Spike>::iterator spike, prevSpike;
 
@@ -45,9 +45,48 @@ void PowerStateGraph::updateVertices( const Signature& sig )
         spikes.erase( it, spikes.end() );
     }
 
-
     // re-order by index (i.e. by time)
     spikes.sort( Signature::Spike::compareIndexAsc );
+
+    // for each spike, locate the samples immediately before and immediately after the spike
+    const size_t WINDOW = 18; // how far either side of the spike will we look?
+    for (spike = spikes.begin(); spike!=spikes.end(); spike++) {
+        cout << "SPIKE: index=" << spike->index << ", delta=" << spike->delta << ", duration=" << spike->duration << endl;
+
+        size_t start = ((spike->index > WINDOW) ?
+                (spike->index - WINDOW) : 0 );
+
+        size_t end = spike->index + WINDOW + spike->duration + 1;
+        if (end > sig.getSize())
+            end = sig.getSize();
+
+        Statistic<Sample_t> before(sig, start, spike->index);
+        Statistic<Sample_t> after(sig, (spike->index + spike->duration + 1), end);
+
+        cout << "Before=" << before << endl
+             << "After =" << after  << endl;
+
+        if (rejectSpike(before, after))
+            cout << " REJECT";
+        else
+            cout << " KEEP";
+        cout << endl;
+
+        for (size_t i=start; i<end; i++ ) {
+            cout << i << "\t" << sig[i];
+
+            if (i < spike->index)
+                cout << " before";
+            else if (i == spike->index)
+                cout << " <--SPIKE";
+            else if (i < (spike->index + spike->duration))
+                cout << " <--Spike continues";
+            else
+                cout << " after";
+
+            cout << endl;
+        }
+    }
 
     // calculate stats for the signature's values between start and first spike
     // as long as the first spike->index > 1
@@ -66,6 +105,34 @@ void PowerStateGraph::updateVertices( const Signature& sig )
 
         prevSpike = spike;
     }
+}
+
+const bool PowerStateGraph::rejectSpike(
+        const Statistic<Sample_t>& before,
+        const Statistic<Sample_t>& after
+        ) const
+{
+    // if either 'before' or 'after' has a stdev greater than
+    // a third its mean then reject
+    if ( (before.stdev > (before.mean/3)) ||
+         ( after.stdev > ( after.mean/3))   ) {
+        cout << "stdev too big";
+        return true;
+    }
+
+    // find the largest mean and its stdev.
+    // if the two means are within 2 of these stdevs then reject
+    double stdevLargestMean;
+    if (before.mean > after.mean)
+        stdevLargestMean = before.stdev;
+    else
+        stdevLargestMean = after.stdev;
+
+    if (Utils::within(before.mean, after.mean, stdevLargestMean*2))
+        return true;
+
+    // if we get to here then don't reject
+    return false;
 }
 
 /**

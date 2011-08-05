@@ -65,7 +65,7 @@ StatisticTest: $(TEST)StatisticTest.cpp $(SRC)Statistic.h $(SRC)Array.h $(STOBJF
 	g++ $(CXXFLAGS) -o $(TEST)StatisticTest $(TEST)StatisticTest.cpp $(STOBJFILES)  && $(TEST)StatisticTest
 
 PSGTOBJFILES = $(SRC)PowerStateGraph.o $(SRC)Signature.o $(SRC)GNUplot.o $(SRC)Utils.o $(SRC)PowerStateSequence.o
-PowerStateGraphTest: CXXFLAGS = $(TESTCXXFLAGS) -O2 -Wno-deprecated -Wno-unused-result
+PowerStateGraphTest: CXXFLAGS = $(TESTCXXFLAGS) -Wno-deprecated -Wno-unused-result # -O2 PUT BACK AFTER TESTING
 PowerStateGraphTest: $(TEST)PowerStateGraphTest.cpp $(SRC)Array.h $(PSGTOBJFILES)
 	g++ $(CXXFLAGS) -Wno-deprecated -o $(TEST)PowerStateGraphTest $(PSGTOBJFILES) $(TEST)PowerStateGraphTest.cpp && $(TEST)PowerStateGraphTest
 

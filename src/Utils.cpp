@@ -104,3 +104,54 @@ const bool Utils::roughlyEqual(
     return fabs(a-b) <= fabs(tolerance*a);
 }
 
+/**
+ * @return the larger of the two values
+ */
+const double& Utils::largest(
+        const double& a,
+        const double& b
+        )
+{
+    if ( a > b )
+        return a;
+    else
+        return b;
+}
+
+/**
+ * @return true if @c a and @b and within @c diff of each other.
+ */
+const bool Utils::within(
+        const double a,
+        const double b,
+        const double diff)
+{
+    if ( between(a-diff, a+diff, b) )
+        return true;
+    else
+        return false;
+}
+
+/**
+ * @return true if @c sample is between @c bound1 and @c bound2.
+ */
+const bool Utils::between(
+        const double bound1,
+        const double bound2,
+        const double sample
+        )
+{
+    double lower, upper;
+    if ( bound1 < bound2 ) {
+        lower = bound1;
+        upper = bound2;
+    } else {
+        lower = bound2;
+        upper = bound1;
+    }
+
+    if ( sample <= upper && sample >= lower )
+        return true;
+    else
+        return false;
+}

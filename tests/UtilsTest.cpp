@@ -30,3 +30,37 @@ BOOST_AUTO_TEST_CASE( roughlyEqualTest )
     BOOST_CHECK( roughlyEqual(-1.1,-1  , 0.1) );
     BOOST_CHECK(!roughlyEqual( 1.2, 1  , 0.1) );
 }
+
+BOOST_AUTO_TEST_CASE( largestTest )
+{
+    std::cout << "Running largestTest case..." << std::endl;
+    BOOST_CHECK_EQUAL( largest(4,5), 5);
+    BOOST_CHECK_EQUAL( largest(-10,50), 50);
+    BOOST_CHECK_EQUAL( largest(-10,-100), -10);
+}
+
+BOOST_AUTO_TEST_CASE( betweenTest )
+{
+    std::cout << "Running betweenTest case..." << std::endl;
+    BOOST_CHECK( between( 4, 5, 4.5) );
+    BOOST_CHECK( !between( 4, 5, 5.5) );
+    BOOST_CHECK( between( 4, 5, 5) );
+    BOOST_CHECK( between( 4, 5, 4) );
+    BOOST_CHECK( between( -4, 5, 4) );
+    BOOST_CHECK( !between( -4, -5, 4) );
+    BOOST_CHECK( between( -4, -5, -4) );
+    BOOST_CHECK( between( -4, -5, -4.5) );
+    BOOST_CHECK( between( -4, -5, -5) );
+}
+
+BOOST_AUTO_TEST_CASE( withinTest )
+{
+    std::cout << "Running withinTest case..." << std::endl;
+    BOOST_CHECK( within( 4, 5, 1) );
+    BOOST_CHECK( within( 4, 5, 1.1) );
+    BOOST_CHECK( !within( 4, 5, 0.9) );
+    BOOST_CHECK( !within( -4, 5, 1) );
+    BOOST_CHECK( !within( 4, -5, 1) );
+    BOOST_CHECK( within( -4, -5, 1) );
+    BOOST_CHECK( !within( -4, -5, 0.9) );
+}

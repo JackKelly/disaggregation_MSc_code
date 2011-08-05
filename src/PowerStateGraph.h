@@ -107,6 +107,11 @@ private:
             const double ALPHA = 0.0000005
         );
 
+    const bool rejectSpike(
+            const Statistic<Sample_t>& before,
+            const Statistic<Sample_t>& after
+            ) const;
+
 
 };
 
