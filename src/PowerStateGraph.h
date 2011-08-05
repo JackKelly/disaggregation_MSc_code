@@ -20,9 +20,7 @@ public:
     PowerStateGraph();
     virtual ~PowerStateGraph();
 
-    void updateVertices( const Signature& sig );
-
-    void updateEdges( const Signature& sig );
+    void update( const Signature& sig );
 
     void writeGraphViz(std::ostream& out);
 
@@ -120,6 +118,8 @@ private:
             const size_t sampleSinceLastSpike,
             const double spikeDelta
             );
+
+    void updateEdges( const Signature& sig );
 
 };
 

@@ -42,29 +42,21 @@ BOOST_AUTO_TEST_CASE( constructorTest )
 */
 }
 
-BOOST_AUTO_TEST_CASE( updateVerticesTest )
+BOOST_AUTO_TEST_CASE( updateTest )
 {
-    std::cout << "updateVerticesTest..." << std::endl;
+    std::cout << "updateTest..." << std::endl;
 
     PowerStateGraph psg;
 
 //    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
 //    Signature sig( "data/input/watts_up/toaster.csv", 1, "toaster" );
-//    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble" );
+//    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble", 1, 1, 6600 );
     Signature sig( "data/input/watts_up/washer.csv", 1, "washer", 1, 1, 2530 );
-    psg.updateVertices( sig );
-//    psg.updateEdges( sig );
+    Signature sig2( "data/input/watts_up/washer2.csv", 1, "washer2", 1,1, 2000 );
 
-
-//    psg.updateVertices( washer );
-
-//    Signature washer2( "data/input/watts_up/washer2.csv", 1, "washer2" );
-//    psg.updateVertices( washer2 );
-//    psg.updateEdges( washer2 );
+    psg.update( sig );
+    psg.update( sig2 );
 
     std::cout << psg << std::endl;
-
-
     psg.writeGraphViz( std::cout );
-
 }

@@ -30,7 +30,10 @@ PowerStateGraph::~PowerStateGraph()
     // TODO Auto-generated destructor stub
 }
 
-void PowerStateGraph::updateVertices( const Signature& sig )
+/**
+ * Update or initialise Power State Graph.
+ */
+void PowerStateGraph::update( const Signature& sig )
 {
     Statistic<Sample_t> powerState;
 
@@ -38,8 +41,7 @@ void PowerStateGraph::updateVertices( const Signature& sig )
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
     list<Signature::Spike>::iterator spike;
     size_t indexOfLastAcceptedSpike = 0;
-    Graph::vertex_descriptor beforeVertex=offVertex, afterVertex, prevAcceptedVertex=offVertex;
-    bool firstAccepted = true;
+    Graph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
 
     // take just the top ten (whilst ordered by absolute value)
     if (spikes.size() > 100) {
@@ -75,8 +77,6 @@ void PowerStateGraph::updateVertices( const Signature& sig )
         else {
             cout << " KEEP";
 
-//            updateOrInsertVertex( before, sig, start, spike->index);
-
             afterVertex =
                     updateOrInsertVertex(  after, sig, (spike->index + spike->duration + 1), end);
 
@@ -105,25 +105,6 @@ void PowerStateGraph::updateVertices( const Signature& sig )
             cout << endl;
         }
     }
-
-    // calculate stats for the signature's values between start and first spike
-    // as long as the first spike->index > 1
-/*    spike = spikes.begin();
-    if ( spike->index > 1 ) {
-        updateOrInsertVertex( Statistic<Sample_t>( sig, 1, spike->index ), sig, 1, spike->index );
-    }
-
-    // go through each subsequent spike, updating an existing vertex or adding a new one
-    prevSpike = spike;
-    while ( ++spike != spikes.end() ) {
-//        updateOrInsertVertex( Statistic<Sample_t>( sig, prevSpike->index, spike->index ),
-//                sig, prevSpike->index, spike->index );
-        updateOrInsertVertex( Statistic<Sample_t>( sig, prevSpike->index+1, prevSpike->index+50 ),
-                sig, prevSpike->index+1, prevSpike->index+50 );
-
-        prevSpike = spike;
-    }
-*/
 }
 
 const bool PowerStateGraph::rejectSpike(
@@ -139,14 +120,6 @@ const bool PowerStateGraph::rejectSpike(
         return true;
     }
 
-    // find the largest mean and its stdev.
-    // if the two means are within 2 of these stdevs then reject
-/*    double stdevLargestMean;
-    if (before.mean > after.mean)
-        stdevLargestMean = before.stdev;
-    else
-        stdevLargestMean = after.stdev;
-*/
 
     if (Utils::within(before.mean, after.mean, Utils::largest(before.stdev, after.stdev)*2) ||
         Utils::within(before.mean, after.mean, Utils::largest(before.mean, after.mean)*0.2)     ) {
@@ -172,12 +145,12 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::updateOrInsertVertex(
         const size_t end      /**< end of data window */
     )
 {
-//    if ( ( end - start ) < 5)
-//        return; // ignore little stretches of data
 
     bool foundSimilar; // return param for mostSimilarVertex()
 
     Graph::vertex_descriptor vertex = mostSimilarVertex( &foundSimilar, stat );
+
+    cout << " mostSimlar = " << graph[vertex] << endl;
 
     if ( foundSimilar ) {
         if (vertex != offVertex) {
@@ -217,16 +190,28 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
 {
     Graph::vertex_descriptor vertex=0;
     std::pair<vertex_iter, vertex_iter> vp;
-    double tTest, highestTTest=0;
+    double tTest, highestTTest=0, diff, lowestDiff = std::numeric_limits<double>::max();
 
     // Find the best fit
     for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
-        tTest = stat.tTest( graph[*vp.first] );
+        // t test
+/*        tTest = stat.tTest( graph[*vp.first] );
+        cout << "tTest=" << tTest << "  " << graph[*vp.first] << endl;
         if (tTest > highestTTest) {
             highestTTest = tTest;
             vertex = *vp.first;
         }
+*/
+
+        // Now compare means.  In the vast majority of the cases, comparing
+        // means will produce the same best match as the tTest.
+        diff = fabs( graph[*vp.first].mean - stat.mean );
+        if (diff < lowestDiff) {
+            lowestDiff = diff;
+            vertex = *vp.first;
+        }
     }
+
 
     // Check whether the best fit is satisfactory
     if ( (highestTTest > (ALPHA/2)) || // T-Test
@@ -234,8 +219,8 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
                  (
                  graph[vertex].mean,
                  stat.mean,
-                 Utils::largest(graph[vertex].mean, stat.mean) * 0.02
-                 ) // check if the means are within 2% of each other
+                 (Utils::largest(graph[vertex].mean, stat.mean) * 0.2)
+                 ) // check if the means are within 20% of each other
          ))
         *success = true;
     else
@@ -254,7 +239,6 @@ void PowerStateGraph::updateOrInsertEdge(
     /* Add an edge from beforeVertex to afterVertex.
      * If an edge already exists then boost::add_edge will
      * return an edge_descriptor to that edge. */
-//    pair<Graph::edge_descriptor, bool> addedEdge = boost::add_edge(beforeVertex, afterVertex, graph);
 
     Graph::edge_descriptor edge;
     bool existingEdge;
@@ -290,7 +274,8 @@ void PowerStateGraph::updateOrInsertEdge(
  *      with a hard-coded stdev.</li>
  * </ol>
  *
- *  @todo should 'salience' also take into consideration duration?
+ *  @deprecated just leaving this here to illustrate one of the strategies I tried.
+ *  This has been superceded by update() (which used to be updateVertices) and updateOrInsertEdge()
  *
  */
 void PowerStateGraph::updateEdges( const Signature& sig )
