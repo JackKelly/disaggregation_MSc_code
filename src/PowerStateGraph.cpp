@@ -44,9 +44,9 @@ void PowerStateGraph::update( const Signature& sig )
     Graph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 100) {
+    if (spikes.size() > 6) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 100 );
+        advance( it, 6 );
         spikes.erase( it, spikes.end() );
     }
 
