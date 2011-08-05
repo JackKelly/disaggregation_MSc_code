@@ -72,6 +72,8 @@ private:
 //                        << " dMin=" << g[e].delta.min
 //                        << " dMax=" << g[e].delta.max
                         << " durMean=" << g[e].duration.mean
+//                        << " durMin=" << g[e].duration.min
+//                        << " durMax=" << g[e].duration.max
                         << "\"]";
             };
 
@@ -94,7 +96,7 @@ private:
      * MEMBER FUNCTIONS      *
      ************************/
 
-    void updateOrInsertVertex(
+    Graph::vertex_descriptor updateOrInsertVertex(
             const Statistic<Sample_t>& stat,
             const Signature& sig,
             const size_t start,
@@ -105,13 +107,19 @@ private:
             bool * success,
             const Statistic<Sample_t>& stat,
             const double ALPHA = 0.0000005
-        );
+        ) const;
 
     const bool rejectSpike(
             const Statistic<Sample_t>& before,
             const Statistic<Sample_t>& after
             ) const;
 
+    void updateOrInsertEdge(
+            const Graph::vertex_descriptor& before,
+            const Graph::vertex_descriptor& after,
+            const size_t sampleSinceLastSpike,
+            const double spikeDelta
+            );
 
 };
 

@@ -36,12 +36,15 @@ void PowerStateGraph::updateVertices( const Signature& sig )
 
     // get the gradient spikes for the signature
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
-    list<Signature::Spike>::iterator spike, prevSpike;
+    list<Signature::Spike>::iterator spike;
+    size_t indexOfLastAcceptedSpike = 0;
+    Graph::vertex_descriptor beforeVertex=offVertex, afterVertex, prevAcceptedVertex=offVertex;
+    bool firstAccepted = true;
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 10) {
+    if (spikes.size() > 100) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 10 );
+        advance( it, 100 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -49,7 +52,7 @@ void PowerStateGraph::updateVertices( const Signature& sig )
     spikes.sort( Signature::Spike::compareIndexAsc );
 
     // for each spike, locate the samples immediately before and immediately after the spike
-    const size_t WINDOW = 18; // how far either side of the spike will we look?
+    const size_t WINDOW = 8; // how far either side of the spike will we look?
     for (spike = spikes.begin(); spike!=spikes.end(); spike++) {
         cout << "SPIKE: index=" << spike->index << ", delta=" << spike->delta << ", duration=" << spike->duration << endl;
 
@@ -66,10 +69,25 @@ void PowerStateGraph::updateVertices( const Signature& sig )
         cout << "Before=" << before << endl
              << "After =" << after  << endl;
 
-        if (rejectSpike(before, after))
+        if (rejectSpike(before, after) ||
+            start < indexOfLastAcceptedSpike)  // check the spikes aren't too close
             cout << " REJECT";
-        else
+        else {
             cout << " KEEP";
+
+//            updateOrInsertVertex( before, sig, start, spike->index);
+
+            afterVertex =
+                    updateOrInsertVertex(  after, sig, (spike->index + spike->duration + 1), end);
+
+            if (prevAcceptedVertex != afterVertex) {
+                updateOrInsertEdge( prevAcceptedVertex, afterVertex,
+                        (spike->index - indexOfLastAcceptedSpike), spike->delta );
+            }
+
+            prevAcceptedVertex = afterVertex;
+            indexOfLastAcceptedSpike = spike->index;
+        }
         cout << endl;
 
         for (size_t i=start; i<end; i++ ) {
@@ -90,7 +108,7 @@ void PowerStateGraph::updateVertices( const Signature& sig )
 
     // calculate stats for the signature's values between start and first spike
     // as long as the first spike->index > 1
-    spike = spikes.begin();
+/*    spike = spikes.begin();
     if ( spike->index > 1 ) {
         updateOrInsertVertex( Statistic<Sample_t>( sig, 1, spike->index ), sig, 1, spike->index );
     }
@@ -105,6 +123,7 @@ void PowerStateGraph::updateVertices( const Signature& sig )
 
         prevSpike = spike;
     }
+*/
 }
 
 const bool PowerStateGraph::rejectSpike(
@@ -113,23 +132,27 @@ const bool PowerStateGraph::rejectSpike(
         ) const
 {
     // if either 'before' or 'after' has a stdev greater than
-    // a third its mean then reject
-    if ( (before.stdev > (before.mean/3)) ||
-         ( after.stdev > ( after.mean/3))   ) {
+    // its mean then reject
+    if ( (before.stdev > (before.mean)) ||
+         ( after.stdev > ( after.mean))   ) {
         cout << "stdev too big";
         return true;
     }
 
     // find the largest mean and its stdev.
     // if the two means are within 2 of these stdevs then reject
-    double stdevLargestMean;
+/*    double stdevLargestMean;
     if (before.mean > after.mean)
         stdevLargestMean = before.stdev;
     else
         stdevLargestMean = after.stdev;
+*/
 
-    if (Utils::within(before.mean, after.mean, stdevLargestMean*2))
+    if (Utils::within(before.mean, after.mean, Utils::largest(before.stdev, after.stdev)*2) ||
+        Utils::within(before.mean, after.mean, Utils::largest(before.mean, after.mean)*0.2)     ) {
+        cout << "means too close";
         return true;
+    }
 
     // if we get to here then don't reject
     return false;
@@ -142,27 +165,41 @@ const bool PowerStateGraph::rejectSpike(
  * with the new data points. If a similar vertex is not found,
  * and new vertex is inserted.
  */
-void PowerStateGraph::updateOrInsertVertex(
-        const Statistic<Sample_t>& stat, /**< stat to find / insert in graph vertices */
+PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::updateOrInsertVertex(
+        const Statistic<Sample_t>& stat, /**< stat to find or insert in graph vertices */
         const Signature& sig, /**< source of the raw data */
         const size_t start,   /**< start of data window */
         const size_t end      /**< end of data window */
     )
 {
-    if ( ( end - start ) < 5)
-        return; // ignore little stretches of data
+//    if ( ( end - start ) < 5)
+//        return; // ignore little stretches of data
 
     bool foundSimilar; // return param for mostSimilarVertex()
 
-    Graph::vertex_descriptor mostSimVertex = mostSimilarVertex( &foundSimilar, stat );
+    Graph::vertex_descriptor vertex = mostSimilarVertex( &foundSimilar, stat );
 
     if ( foundSimilar ) {
-        graph[mostSimVertex].update( sig, start+1, end-1 );
+        if (vertex != offVertex) {
+            cout << endl
+                    << "Updating existing vertex: " << endl
+                    << "    start=" << start << ", end=" << end << endl
+                    << "    existing vertex = " << graph[vertex] << endl
+                    << "    new stat        = " << stat << endl;;
+            graph[vertex].update( sig, start, end );
+            cout << "    merged          = " << graph[vertex] << endl;
+        }
     } else {
         // then add a new vertex
-        Graph::vertex_descriptor newVertex = add_vertex(graph);
-        graph[newVertex] = Statistic<Sample_t>( sig, start+1, end-1 );
+        vertex = add_vertex(graph);
+        graph[vertex] = Statistic<Sample_t>( sig, start, end );
+        cout << endl
+             << "Adding new vertex: " << endl
+             << "    start=" << start << ", end=" << end << endl
+             << "    vertex = " << graph[vertex] << endl
+             << "    stat   = " << stat << endl;;
     }
+    return vertex;
 
 }
 
@@ -176,7 +213,7 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
         bool * success, /**< return parameter.  Did we find a satisfactory match? */
         const Statistic<Sample_t>& stat, /**< stat to find in graph vertices */
         const double ALPHA /**< significance level (what constitutes as a "satisfactory" match?) */
-)
+    ) const
 {
     Graph::vertex_descriptor vertex=0;
     std::pair<vertex_iter, vertex_iter> vp;
@@ -192,12 +229,48 @@ PowerStateGraph::Graph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
     }
 
     // Check whether the best fit is satisfactory
-    if ( highestTTest > (ALPHA/2) )
+    if ( (highestTTest > (ALPHA/2)) || // T-Test
+         ( Utils::within
+                 (
+                 graph[vertex].mean,
+                 stat.mean,
+                 Utils::largest(graph[vertex].mean, stat.mean) * 0.02
+                 ) // check if the means are within 2% of each other
+         ))
         *success = true;
     else
         *success = false;
 
     return vertex;
+}
+
+void PowerStateGraph::updateOrInsertEdge(
+        const Graph::vertex_descriptor& beforeVertex,
+        const Graph::vertex_descriptor& afterVertex,
+        const size_t sampleSinceLastSpike,
+        const double spikeDelta
+        )
+{
+    /* Add an edge from beforeVertex to afterVertex.
+     * If an edge already exists then boost::add_edge will
+     * return an edge_descriptor to that edge. */
+//    pair<Graph::edge_descriptor, bool> addedEdge = boost::add_edge(beforeVertex, afterVertex, graph);
+
+    Graph::edge_descriptor edge;
+    bool existingEdge;
+    tie(edge, existingEdge) = boost::add_edge(beforeVertex, afterVertex, graph);
+
+    if (existingEdge) { // then there was not an edge already in the graph
+        graph[edge].delta    = Statistic<double>( spikeDelta );
+        graph[edge].duration = Statistic<size_t>( sampleSinceLastSpike );
+        graph[edge].count    = 1;
+    } else { // there was an edge already in the graph so update that edge
+        graph[edge].delta.update( spikeDelta );
+        graph[edge].duration.update( sampleSinceLastSpike );
+        graph[edge].count++;
+    }
+
+    totalCount++;
 }
 
 /**

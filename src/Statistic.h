@@ -177,6 +177,14 @@ struct Statistic {
             size_t end=std::numeric_limits<std::size_t>::max()
             )
     {
+
+        // deal with the case where beginning and end or equal or within 1 of each other
+        if (beginning==end || beginning==(end-1)) {
+            update( data[beginning] );
+            return;
+        }
+
+
         register T accumulator = 0;
         register T currentVal;
 
@@ -196,16 +204,16 @@ struct Statistic {
             currentVal = data[i];
 
             //check for outliers
-            if (stdev != 0) {
+/*            if (stdev != 0) {
                 stdev = calcStdev();
-                if (currentVal > (mean + (stdev*2)) ||
-                    currentVal < (mean - (stdev*2))   ) {
+                if (currentVal > (mean + (stdev*5)) ||
+                    currentVal < (mean - (stdev*5))   ) {
                     numDataPoints--;
                     numNewDataPoints--;
                     continue;
                 }
             }
-
+*/
             dataStore.push_back(currentVal);
 
             accumulator += currentVal;
