@@ -6,6 +6,7 @@
  */
 
 #include "AggregateData.h"
+#include <boost/math/distributions/normal.hpp>
 #include <cassert>
 
 using namespace std;
@@ -86,7 +87,8 @@ const size_t AggregateData::findNear(
 list<AggregateData::FoundSpike> AggregateData::findSpike(
         const Statistic<Sample_t>& spikeStats,
         size_t startTime,
-        size_t endTime
+        size_t endTime,
+        double stdevMultiplier
         ) const
 {
     size_t i;
@@ -116,9 +118,26 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
 
     assert( endTime > startTime );
 
-    size_t time = startTime;
-    while (time < endTime) {
+    // "fake" the standard deviation if it's 0
+    // (i.e. if the Statistic was created from a single value.)
+    const double stdev = (spikeStats.stdev ? spikeStats.stdev : spikeStats.mean*0.1 );
+    boost::math::normal dist(spikeStats.mean, stdev);
 
+    size_t time = startTime;
+    while (time < endTime && i < size) {
+
+        // Are spikeStats.mean and aggDelta(i) within stdev*stdevMultiplier of eachother?
+        if ( Utils::within(aggDelta(i), spikeStats.mean, stdev*stdevMultiplier) ) {
+
+            foundSpikes.push_back(
+                    FoundSpike(
+                            time,
+                            aggDelta(i),
+                            boost::math::pdf(dist, aggDelta(i))
+                            ) );
+        }
+
+        time = data[++i].timestamp;
     }
 
     return foundSpikes;

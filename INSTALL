@@ -2,7 +2,7 @@ DEPENDENCIES:
 
 COMPILING:
 
-Boost
+Boost (developed against Boost version 1.42.0.1 )
   boost::algorithm
   
   

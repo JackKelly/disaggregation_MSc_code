@@ -34,6 +34,21 @@ public:
         size_t timestamp;
         Sample_t delta;
         double pdf;  /**< probability */
+
+        friend std::ostream& operator<<( std::ostream& o, const FoundSpike& fs)
+        {
+            o << "timestamp=" << fs.timestamp << ", delta=" << fs.delta << ", pdf=" << fs.pdf;
+            return o;
+        }
+
+        FoundSpike(
+                const size_t   t,
+                const Sample_t d,
+                const double   p
+                )
+        : timestamp(t), delta(d), pdf(p)
+        {}
+
     };
 
     void loadCurrentCostData(
@@ -47,7 +62,8 @@ public:
     std::list<AggregateData::FoundSpike> findSpike(
             const Statistic<Sample_t>& spikeStats,
             size_t startTime = 0 ,
-            size_t endTime = 0
+            size_t endTime = 0,
+            double stdevMultiplier = 2
             ) const;
 
     const size_t findNear(
