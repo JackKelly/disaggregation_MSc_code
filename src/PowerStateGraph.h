@@ -64,7 +64,8 @@ private:
      */
     typedef boost::adjacency_list<
 //            boost::vecS, boost::vecS, boost::bidirectionalS,
-            boost::setS, boost::vecS, boost::directedS,
+//            boost::setS, boost::vecS, boost::directedS, // setS means we can only have single edges
+            boost::vecS, boost::vecS, boost::directedS,
             Statistic<Sample_t>,   // our custom vertex (node) type
             PowerStateEdge         // our custom edge type
             > PSGraph;

@@ -561,7 +561,7 @@ void PowerStateGraph::traceToEnd(
         PowerStateGraph::DisagGraph::vertex_descriptor startVertex
         ) const
 {
-    const double STDEV_MULT = 5; // higher = more permissive.
+    const double STDEV_MULT = 1; // higher = more permissive.
 
     list<AggregateData::FoundSpike> foundSpikes;
 

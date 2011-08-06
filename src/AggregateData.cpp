@@ -91,7 +91,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         double stdevMultiplier /**< Higher = more permissive */
         ) const
 {
-    cout << "...findSpike looking for " << spikeStats << " from startTime=" << startTime << " endTime=" << endTime << endl;
+//    cout << "...findSpike looking for " << spikeStats << " from startTime=" << startTime << " endTime=" << endTime << endl;
 
     size_t i;
     list<AggregateData::FoundSpike> foundSpikes;
