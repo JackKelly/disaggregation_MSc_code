@@ -11,6 +11,7 @@
 #include <list>
 #include <boost/graph/graphviz.hpp>
 #include <cstdio> // sprintf
+#include <boost/math/distributions/normal.hpp>
 
 using namespace std;
 
@@ -580,7 +581,10 @@ void PowerStateGraph::traceToEnd(
 
     for (; psg_out_i!=psg_out_end; psg_out_i++ ) {
 
-        // Set beginning of search window
+
+        //***************************************//
+        // Calculate beginning of search window  //
+
         size_t begOfSearchWindow = disagGraph[startVertex].timestamp +
                 powerStateGraph[*psg_out_i].duration.mean -
                 (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT);
@@ -588,27 +592,66 @@ void PowerStateGraph::traceToEnd(
         if (begOfSearchWindow < disagGraph[startVertex].timestamp)
             begOfSearchWindow = disagGraph[startVertex].timestamp;
 
-        // get a list of candidate spikes matching this PSG out edge
+
+        //***************************************//
+        //    Calculate end of search window     //
+
+        size_t endOfSearchWindow = disagGraph[startVertex].timestamp +
+                powerStateGraph[*psg_out_i].duration.mean;
+
+        // check that we're not looking past the end of aggData
+        if (endOfSearchWindow > (*aggData)[ (*aggData).getSize() - 1 ].timestamp )
+            continue;
+
+        // add on stdev*STDEV_MULT
+        endOfSearchWindow += powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT;
+
+
+        //************************************************************//
+        // get a list of candidate spikes matching this PSG out edge  //
+
         foundSpikes = (*aggData).findSpike(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
-                disagGraph[startVertex].timestamp +
-                   powerStateGraph[*psg_out_i].duration.mean +
-                   (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT), // endTime
-                10
+                endOfSearchWindow,
+                4
                 );
 
-        // for each candidate spike, create a new vertex in disagGraph
-        // and recursively trace this to the end
+
+        //***************************************************************//
+        // for each candidate spike, create a new vertex in disagGraph   //
+        // and recursively trace this to the end                         //
+
         for (list<AggregateData::FoundSpike>::const_iterator spike=foundSpikes.begin();
                 spike!=foundSpikes.end();
                 spike++) {
 
+            // calculate probability density function for the time at which the spike was found
+            boost::math::normal dist(
+                    powerStateGraph[*psg_out_i].duration.mean,
+                    powerStateGraph[*psg_out_i].duration.stdev
+                    );
+            double pdf_for_time = boost::math::pdf(
+                    dist,
+                    spike->timestamp - disagGraph[startVertex].timestamp
+                    );
+
+            // create an average probability
+            double avPdf = (pdf_for_time + spike->pdf) / 2;
+
+            // check avPdf isn't too low
+            if (avPdf < 0.00097)
+                continue;
+
+            // create new vertex
             DisagGraph::vertex_descriptor newVertex=add_vertex(disagGraph);
+
+            // create new edge
             DisagGraph::edge_descriptor newEdge;
             bool existingEdge;
             tie(newEdge, existingEdge) =
-                    add_edge(startVertex, newVertex, spike->pdf, disagGraph);
+                    add_edge(startVertex, newVertex, avPdf, disagGraph);
+
             /** @todo the probability needs to be the mean of spike->pdf
              * and the pdf for the timing. */
 
@@ -620,7 +663,7 @@ void PowerStateGraph::traceToEnd(
                     powerStateGraph[disagGraph[newVertex].psgVertex].mean;
 
             // recursively trace to end.
-//            traceToEnd(disagGraph_p, newVertex);
+            traceToEnd(disagGraph_p, newVertex);
         }
     }
 }
