@@ -314,18 +314,22 @@ void PowerStateGraph::updateOrInsertEdge(
 
         // check if any of the out edges from beforeVertex have the same
         // history as our current history... if so, update that edge.
+        PSGraph::out_edge_iterator out_e_i, out_e_end;
+        tie(out_e_i, out_e_end) = out_edges(beforeVertex, powerStateGraph);
+        for (; out_e_i != out_e_end; out_e_i++) {
+            // check if the edge has the same history as out current history
+            if ( edgeListsAreEqual(powerStateGraph[*out_e_i].edgeHistory, edgeHistory) ) {
+                cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
 
-        if ( edgeListsAreEqual(powerStateGraph[existingEdge].edgeHistory, edgeHistory) ) {
-            cout << "edge histories the same. merging with" << existingEdge << powerStateGraph[existingEdge].delta << endl;
+                // update existing edge's stats
+                powerStateGraph[*out_e_i].delta.update( spikeDelta );
+                powerStateGraph[*out_e_i].duration.update( sampleSinceLastSpike );
+                powerStateGraph[*out_e_i].count++;
 
-            // update existing edge's stats
-            powerStateGraph[existingEdge].delta.update( spikeDelta );
-            powerStateGraph[existingEdge].duration.update( sampleSinceLastSpike );
-            powerStateGraph[existingEdge].count++;
+                addItemToEdgeHistory( *out_e_i );
 
-            addItemToEdgeHistory( existingEdge );
-
-            return;
+                return;
+            }
         }
     }
 
