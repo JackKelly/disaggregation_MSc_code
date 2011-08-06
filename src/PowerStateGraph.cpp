@@ -22,7 +22,7 @@ PowerStateGraph::PowerStateGraph()
 
     // add a vertex to represent "off"
     // uses Statistic's default constructor to make a stat with all-zeros
-    offVertex = add_vertex(graph);
+    offVertex = add_vertex(powerStateGraph);
 
 }
 
@@ -168,7 +168,7 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::updateOrInsertVerte
     PSGraph::vertex_descriptor vertex = mostSimilarVertex( &foundSimilar, stat );
 
     if (verbose)
-        cout << " mostSimlar = " << graph[vertex] << endl;
+        cout << " mostSimlar = " << powerStateGraph[vertex] << endl;
 
     if ( foundSimilar ) {
         if (vertex != offVertex) {
@@ -176,22 +176,22 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::updateOrInsertVerte
                 cout << endl
                         << "Updating existing vertex: " << endl
                         << "    start=" << start << ", end=" << end << endl
-                        << "    existing vertex = " << graph[vertex] << endl
+                        << "    existing vertex = " << powerStateGraph[vertex] << endl
                         << "    new stat        = " << stat << endl;
             }
-            graph[vertex].update( sig, start, end );
+            powerStateGraph[vertex].update( sig, start, end );
             if (verbose)
-                cout << "    merged          = " << graph[vertex] << endl;
+                cout << "    merged          = " << powerStateGraph[vertex] << endl;
         }
     } else {
         // then add a new vertex
-        vertex = add_vertex(graph);
-        graph[vertex] = Statistic<Sample_t>( sig, start, end );
+        vertex = add_vertex(powerStateGraph);
+        powerStateGraph[vertex] = Statistic<Sample_t>( sig, start, end );
         if (verbose) {
             cout << endl
                     << "Adding new vertex: " << endl
                     << "    start=" << start << ", end=" << end << endl
-                    << "    vertex = " << graph[vertex] << endl
+                    << "    vertex = " << powerStateGraph[vertex] << endl
                     << "    stat   = " << stat << endl;
         }
     }
@@ -216,7 +216,7 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
     double highestTTest=0, diff, lowestDiff = std::numeric_limits<double>::max();
 
     // Find the best fit
-    for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+    for (vp = boost::vertices(powerStateGraph); vp.first != vp.second; ++vp.first) {
         // t test
 /*      tTest = stat.tTest( graph[*vp.first] );
         cout << "tTest=" << tTest << "  " << graph[*vp.first] << endl;
@@ -228,7 +228,7 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
 
         // Now compare means.  In the vast majority of the cases, comparing
         // means will produce the same best match as the tTest.
-        diff = fabs( graph[*vp.first].mean - stat.mean );
+        diff = fabs( powerStateGraph[*vp.first].mean - stat.mean );
         if (diff < lowestDiff) {
             lowestDiff = diff;
             vertex = *vp.first;
@@ -240,9 +240,9 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
     if ( (highestTTest > (ALPHA/2)) || // T-Test
          ( Utils::within
                  (
-                 graph[vertex].mean,
+                 powerStateGraph[vertex].mean,
                  stat.mean,
-                 (Utils::largest(graph[vertex].mean, stat.mean) * 0.2)
+                 (Utils::largest(powerStateGraph[vertex].mean, stat.mean) * 0.2)
                  ) // check if the means are within 20% of each other
          ))
         *success = true;
@@ -265,16 +265,16 @@ void PowerStateGraph::updateOrInsertEdge(
 
     PSGraph::edge_descriptor edge;
     bool existingEdge;
-    tie(edge, existingEdge) = boost::add_edge(beforeVertex, afterVertex, graph);
+    tie(edge, existingEdge) = boost::add_edge(beforeVertex, afterVertex, powerStateGraph);
 
     if (existingEdge) { // then there was not an edge already in the graph
-        graph[edge].delta    = Statistic<double>( spikeDelta );
-        graph[edge].duration = Statistic<size_t>( sampleSinceLastSpike );
-        graph[edge].count    = 1;
+        powerStateGraph[edge].delta    = Statistic<double>( spikeDelta );
+        powerStateGraph[edge].duration = Statistic<size_t>( sampleSinceLastSpike );
+        powerStateGraph[edge].count    = 1;
     } else { // there was an edge already in the graph so update that edge
-        graph[edge].delta.update( spikeDelta );
-        graph[edge].duration.update( sampleSinceLastSpike );
-        graph[edge].count++;
+        powerStateGraph[edge].delta.update( spikeDelta );
+        powerStateGraph[edge].duration.update( sampleSinceLastSpike );
+        powerStateGraph[edge].count++;
     }
 
     totalCount++;
@@ -345,19 +345,19 @@ void PowerStateGraph::updateEdges( const Signature& sig )
             /* Add an edge from previousVertex to mostSimVertex.
              * If an edge already exists then boost::add_edge will
              * return an edge_descriptor to that edge. */
-            addedEdge = boost::add_edge(previousVertex, mostSimVertex, graph);
+            addedEdge = boost::add_edge(previousVertex, mostSimVertex, powerStateGraph);
 
             if (addedEdge.second) { // then there was not an edge already in the graph
-                graph[addedEdge.first].delta =
+                powerStateGraph[addedEdge.first].delta =
                         Statistic<double>( prevSpike->delta );
-                graph[addedEdge.first].duration =
+                powerStateGraph[addedEdge.first].duration =
                         Statistic<size_t>( prevSpike->index - previousIndex );
-                graph[addedEdge.first].count = 1;
+                powerStateGraph[addedEdge.first].count = 1;
                 totalCount++;
             } else { // there was an edge already in the graph so update that edge
-                graph[addedEdge.first].delta.update( prevSpike->delta );
-                graph[addedEdge.first].duration.update( prevSpike->index - previousIndex );
-                graph[addedEdge.first].count++;
+                powerStateGraph[addedEdge.first].delta.update( prevSpike->delta );
+                powerStateGraph[addedEdge.first].duration.update( prevSpike->index - previousIndex );
+                powerStateGraph[addedEdge.first].count++;
                 totalCount++;
             }
 
@@ -368,18 +368,18 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     }
 
     // add the last edge back to "off"
-    addedEdge = boost::add_edge(previousVertex, offVertex, graph);
+    addedEdge = boost::add_edge(previousVertex, offVertex, powerStateGraph);
     if (addedEdge.second) { // then there was not an edge already in the graph
-        graph[addedEdge.first].delta =
+        powerStateGraph[addedEdge.first].delta =
                 Statistic<double>( prevSpike->delta );
-        graph[addedEdge.first].duration =
+        powerStateGraph[addedEdge.first].duration =
                 Statistic<size_t>( prevSpike->index - previousIndex );
-        graph[addedEdge.first].count = 1;
+        powerStateGraph[addedEdge.first].count = 1;
         totalCount++;
     } else { // there was an edge already in the graph so update that edge
-        graph[addedEdge.first].delta.update( prevSpike->delta );
-        graph[addedEdge.first].duration.update( prevSpike->index - previousIndex );
-        graph[addedEdge.first].count++;
+        powerStateGraph[addedEdge.first].delta.update( prevSpike->delta );
+        powerStateGraph[addedEdge.first].duration.update( prevSpike->index - previousIndex );
+        powerStateGraph[addedEdge.first].count++;
         totalCount++;
     }
 
@@ -392,26 +392,26 @@ void PowerStateGraph::writeGraphViz(ostream& out)
     size_t i = 0;
 
     // generate names for vertices
-    const char* vertexName[ num_vertices(graph) ];
-    PowerStateGraph::PSG_vertex_index_map vertexIndex = boost::get(boost::vertex_index, graph);
+    const char* vertexName[ num_vertices(powerStateGraph) ];
+    PowerStateGraph::PSG_vertex_index_map vertexIndex = boost::get(boost::vertex_index, powerStateGraph);
     std::pair<PowerStateGraph::PSG_vertex_iter, PowerStateGraph::PSG_vertex_iter> vp;
-    for (vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+    for (vp = boost::vertices(powerStateGraph); vp.first != vp.second; ++vp.first) {
         str = new char[30];
         sprintf(str, "min%d mean%d max%d sd%d",
-                Utils::roundToNearestInt(graph[*vp.first].min),
-                Utils::roundToNearestInt(graph[*vp.first].mean),
-                Utils::roundToNearestInt(graph[*vp.first].max),
-                Utils::roundToNearestInt(graph[*vp.first].stdev)
+                Utils::roundToNearestInt(powerStateGraph[*vp.first].min),
+                Utils::roundToNearestInt(powerStateGraph[*vp.first].mean),
+                Utils::roundToNearestInt(powerStateGraph[*vp.first].max),
+                Utils::roundToNearestInt(powerStateGraph[*vp.first].stdev)
                 );
         vertexName[i++] = str;
     }
 
     // generate names for edges
-    const char* edgeName[ num_edges(graph) ];
+    const char* edgeName[ num_edges(powerStateGraph) ];
     i=0;
-    PowerStateGraph::PSG_edge_index_map edgeIndex = boost::get(boost::edge_index, graph);
+    PowerStateGraph::PSG_edge_index_map edgeIndex = boost::get(boost::edge_index, powerStateGraph);
     std::pair<PowerStateGraph::PSG_edge_iter, PowerStateGraph::PSG_edge_iter> ep;
-    for (ep = boost::edges(graph); ep.first != ep.second; ++ep.first) {
+    for (ep = boost::edges(powerStateGraph); ep.first != ep.second; ++ep.first) {
         str = new char[30];
 /*        sprintf(str, "delta%d dur%d c%d",
                 Utils::roundToNearestInt(graph[*ep.first].delta.mean ),
@@ -423,13 +423,13 @@ void PowerStateGraph::writeGraphViz(ostream& out)
         edgeName[i++] = str;
     }
 
-    write_graphviz(out, graph, boost::make_label_writer(vertexName), PSG_edge_writer(graph));
+    write_graphviz(out, powerStateGraph, boost::make_label_writer(vertexName), PSG_edge_writer(powerStateGraph));
 
     // now delete the dynamically allocated strings
-    for (i = 0; i<num_vertices(graph); i++) {
+    for (i = 0; i<num_vertices(powerStateGraph); i++) {
         delete [] vertexName[i];
     }
-    for (i = 0; i<num_edges(graph); i++) {
+    for (i = 0; i<num_edges(powerStateGraph); i++) {
         delete [] edgeName[i];
     }
 }
@@ -470,8 +470,8 @@ const list<PowerStateGraph::DisaggregatedStruct> PowerStateGraph::getStartTimes(
     // search through aggregateData for the delta corresponding
     // to the first edge from vertex0.
     PSG_out_edge_iter out_i, out_end;
-    tie(out_i, out_end) = out_edges(offVertex, graph);
-    PowerStateEdge firstEdgeStats = graph[*out_i];
+    tie(out_i, out_end) = out_edges(offVertex, powerStateGraph);
+    PowerStateEdge firstEdgeStats = powerStateGraph[*out_i];
 
     list<AggregateData::FoundSpike> foundSpikes = aggData.findSpike(firstEdgeStats.delta);
 
@@ -480,6 +480,7 @@ const list<PowerStateGraph::DisaggregatedStruct> PowerStateGraph::getStartTimes(
             spike++) {
 
         candidateDisaggStruct = traceToEnd( *spike );
+
         if ( candidateDisaggStruct.confidence != -1 ) {
             disaggregateList.push_back( candidateDisaggStruct );
         }
@@ -497,42 +498,46 @@ const PowerStateGraph::DisaggregatedStruct PowerStateGraph::traceToEnd(
         const AggregateData::FoundSpike& spike
         ) const
 {
-    DAGraph dag;
+    DisagGraph dag;
 
     // make the first vertex to represent "off"
-    DAGraph::vertex_descriptor dagOffVertex = add_vertex(dag);
+    DisagGraph::vertex_descriptor dagOffVertex = add_vertex(dag);
 
 
     // add a vertex to represent the first true power state
-    DAGraph::vertex_descriptor firstVertex = add_vertex(dag);
+    DisagGraph::vertex_descriptor firstVertex = add_vertex(dag);
 
     // retrieve info for firstVertex and for edge between dagOffVertex and firstVertex
     PSG_out_edge_iter out_i, out_end;
     PSG_vertex_iter v_i, v_end;
-    tie(out_i, out_end) = out_edges(offVertex, graph);
-    PowerStateEdge firstEdgeStats = graph[*out_i];
-    tie(v_i, v_end) = vertices(graph);
+    tie(out_i, out_end) = out_edges(offVertex, powerStateGraph);
+    PowerStateEdge firstEdgeStats = powerStateGraph[*out_i];
+    tie(v_i, v_end) = vertices(powerStateGraph);
     v_i++;
 
-    dag[firstVertex] = DissagVertex( firstEdgeStats.duration.mean, graph[*v_i].mean );
+    dag[firstVertex] = DisagVertex(
+            firstEdgeStats.duration.mean,
+            powerStateGraph[*v_i].mean,
+            *v_i
+            );
 
     // add an edge
-    DAGraph::edge_descriptor edge;
+    DisagGraph::edge_descriptor edge;
     bool existingEdge;
     tie(edge, existingEdge) = add_edge(dagOffVertex, firstVertex, spike.pdf, dag);
 
-    write_graphviz(cout, dag, DAG_vertex_writer(dag));
+    write_graphviz(cout, dag, Disag_vertex_writer(dag));
 
 }
 
 std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )
 {
-    PowerStateGraph::PSG_vertex_index_map index = boost::get(boost::vertex_index, psg.graph);
+    PowerStateGraph::PSG_vertex_index_map index = boost::get(boost::vertex_index, psg.powerStateGraph);
 
     o << "vertices(graph) = " << std::endl;
     std::pair<PowerStateGraph::PSG_vertex_iter, PowerStateGraph::PSG_vertex_iter> vp;
-    for (vp = boost::vertices(psg.graph); vp.first != vp.second; ++vp.first) {
-        o << "vertex" << index[*vp.first] << " = {" << psg.graph[*vp.first] <<  "}";
+    for (vp = boost::vertices(psg.powerStateGraph); vp.first != vp.second; ++vp.first) {
+        o << "vertex" << index[*vp.first] << " = {" << psg.powerStateGraph[*vp.first] <<  "}";
         if ( *vp.first == psg.offVertex ) {
             o << " (offVertex)";
         }

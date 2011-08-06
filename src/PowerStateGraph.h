@@ -103,48 +103,56 @@ private:
     /**
      * @brief A vertex for the directed acylic graphs used by getStartTimes()
      */
-    struct DissagVertex {
-        size_t timestamp; /**< UNIX timestamp taken from AggregateData. */
-        double meanPower; /**< The mean power used between this vertex and the previous one. */
+    struct DisagVertex {
+        size_t timestamp; /**< @brief UNIX timestamp taken from AggregateData. */
+        double meanPower; /**< @brief Mean power used between this and the previous vertex. */
+        PSGraph::vertex_descriptor psgVertex; /**< @brief link to vertex in Power State Graph. */
 
-        DissagVertex()
-        : timestamp(0), meanPower(0)
+        DisagVertex()
+        : timestamp(0), meanPower(0), psgVertex(0)
         {}
 
-        DissagVertex(
+        DisagVertex(
                 const size_t t,
-                const double p
+                const double p,
+                const PSGraph::vertex_descriptor _psgVertex
                 )
-        : timestamp(t), meanPower(p)
+        : timestamp(t), meanPower(p), psgVertex(_psgVertex)
         {}
     };
 
 
     /**
-     * @brief Directed Acyclic Graph (DAG) used during disaggregation.
+     * @brief Tree structure used to keep track of all the
+     * possible solutions during disaggregation.
+     *
+     * Implemented using the Boost Graph Library.
      */
     typedef boost::adjacency_list<
             boost::setS, boost::vecS, boost::directedS,
-            DissagVertex,   // our custom vertex (node) type
-            boost::property<boost::edge_weight_t, double>
-            > DAGraph;
+            DisagVertex,   // our custom vertex (node) type
+            double          // our custom edge type (for storing probabilities)
+            > DisagGraph;
 
-    typedef boost::graph_traits<DAGraph>::out_edge_iterator DAG_out_edge_iter;
-    typedef boost::graph_traits<DAGraph>::edge_descriptor DAG_edge_desc;
+    typedef boost::graph_traits<DisagGraph>::out_edge_iterator DAG_out_edge_iter;
+    typedef boost::graph_traits<DisagGraph>::edge_descriptor DAG_edge_desc;
 
-    struct DAG_vertex_writer {
+    /**
+     * @brief used for write_graphviz for DisagGraph.
+     */
+    struct Disag_vertex_writer {
 
-            DAG_vertex_writer(DAGraph& g_) : g (g_) {};
+            Disag_vertex_writer(DisagGraph& g_) : g (g_) {};
 
             template <class Edge>
             void operator()(std::ostream& out, Edge e) {
                     out << " [label=\""
-                        << "timestamp=" << g[e].timestamp
+                        <<   "timestamp=" << g[e].timestamp
                         << ", meanPower=" << g[e].meanPower
                         << "\"]";
             };
 
-            DAGraph g;
+            DisagGraph g;
     };
 
 
@@ -154,7 +162,7 @@ private:
      * MEMBER VARIABLES     *
      ************************/
 
-    PSGraph graph;
+    PSGraph powerStateGraph; /**< @brief store the power state graph learnt during training. */
 
     PSGraph::vertex_descriptor offVertex; /**< @todo we probably don't need this as the offVertex will probably always been vertex index 0. */
 
