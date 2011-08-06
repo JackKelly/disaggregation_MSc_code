@@ -15,10 +15,9 @@
 using namespace std;
 
 PowerStateGraph::PowerStateGraph()
+: totalCount(0), aggData(0)
 {
     using namespace boost;
-
-    totalCount = 0;
 
     // add a vertex to represent "off"
     // uses Statistic's default constructor to make a stat with all-zeros
@@ -459,13 +458,17 @@ void PowerStateGraph::writeGraphViz(ostream& out)
  *
  * @return a list of UNIX times when the device starts
  */
-const list<PowerStateGraph::DisaggregatedStruct> PowerStateGraph::getStartTimes(
-        const AggregateData& aggData, /**< A populated array of AggregateData */
+const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
+        const AggregateData& aggregateData, /**< A populated array of AggregateData */
         const bool verbose
-        ) const
+        )
 {
-    list<DisaggregatedStruct> disaggregateList;
-    DisaggregatedStruct candidateDisaggStruct;
+    list<DisagDataItem> disagList; // what we return
+
+    // Store a pointer to aggregateData for use later.
+    aggData = &aggregateData;
+
+    DisagDataItem candidateDisagDataItem;
 
     // search through aggregateData for the delta corresponding
     // to the first edge from vertex0.
@@ -473,20 +476,32 @@ const list<PowerStateGraph::DisaggregatedStruct> PowerStateGraph::getStartTimes(
     tie(out_i, out_end) = out_edges(offVertex, powerStateGraph);
     PowerStateEdge firstEdgeStats = powerStateGraph[*out_i];
 
-    list<AggregateData::FoundSpike> foundSpikes = aggData.findSpike(firstEdgeStats.delta);
+    list<AggregateData::FoundSpike> foundSpikes
+    = aggregateData.findSpike(firstEdgeStats.delta);
 
+    // for each spike which might possibly be the start of
+    // the device signature in the aggregate reading,
+    // attempt to find all the subsequent state changes.
     for (list<AggregateData::FoundSpike>::const_iterator spike=foundSpikes.begin();
             spike!=foundSpikes.end();
             spike++) {
 
-        candidateDisaggStruct = traceToEnd( *spike );
+        candidateDisagDataItem = initTraceToEnd(
+                *spike,
+                ( spike->timestamp - firstEdgeStats.duration.mean ) // time the device probably started
+                );
 
-        if ( candidateDisaggStruct.confidence != -1 ) {
-            disaggregateList.push_back( candidateDisaggStruct );
+        if ( candidateDisagDataItem.confidence != -1 ) {
+            disagList.push_back( candidateDisagDataItem );
         }
+
+        /**
+         * @todo if two or more candidateDisagDataItems overlap then
+         * remove all but the one with the highest confidence.
+         */
     }
 
-    return disaggregateList;
+    return disagList;
 }
 
 /**
@@ -494,20 +509,23 @@ const list<PowerStateGraph::DisaggregatedStruct> PowerStateGraph::getStartTimes(
  * @return DisaggregatedStruct.confidence will be set to -1 if
  * this looks like it's not a good candidate match.
  */
-const PowerStateGraph::DisaggregatedStruct PowerStateGraph::traceToEnd(
-        const AggregateData::FoundSpike& spike
+const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
+        const AggregateData::FoundSpike& spike,
+        const size_t deviceStart /**< The possible time the device started. */
         ) const
 {
-    DisagGraph dag;
+    DisagGraph disagGraph;
 
-    // make the first vertex to represent "off"
-    DisagGraph::vertex_descriptor dagOffVertex = add_vertex(dag);
-
+    // make the first vertex (which represents "off")
+    DisagGraph::vertex_descriptor disagOffVertex = add_vertex(disagGraph);
+    disagGraph[disagOffVertex].timestamp = deviceStart;
+    disagGraph[disagOffVertex].meanPower = 0; // this is "off"
+    disagGraph[disagOffVertex].psgVertex = offVertex;
 
     // add a vertex to represent the first true power state
-    DisagGraph::vertex_descriptor firstVertex = add_vertex(dag);
+    DisagGraph::vertex_descriptor firstVertex = add_vertex(disagGraph);
 
-    // retrieve info for firstVertex and for edge between dagOffVertex and firstVertex
+    // retrieve info for firstVertex and for edge between disagOffVertex and firstVertex
     PSG_out_edge_iter out_i, out_end;
     PSG_vertex_iter v_i, v_end;
     tie(out_i, out_end) = out_edges(offVertex, powerStateGraph);
@@ -515,19 +533,101 @@ const PowerStateGraph::DisaggregatedStruct PowerStateGraph::traceToEnd(
     tie(v_i, v_end) = vertices(powerStateGraph);
     v_i++;
 
-    dag[firstVertex] = DisagVertex(
-            firstEdgeStats.duration.mean,
-            powerStateGraph[*v_i].mean,
-            *v_i
-            );
+    disagGraph[firstVertex].timestamp = spike.timestamp;
+    disagGraph[firstVertex].meanPower = powerStateGraph[*v_i].mean;
+    disagGraph[firstVertex].psgVertex = *v_i;
 
-    // add an edge
+    // add an edge between disagOffVertex and firstVertex
     DisagGraph::edge_descriptor edge;
     bool existingEdge;
-    tie(edge, existingEdge) = add_edge(dagOffVertex, firstVertex, spike.pdf, dag);
+    tie(edge, existingEdge) = add_edge(disagOffVertex, firstVertex, spike.pdf, disagGraph);
 
-    write_graphviz(cout, dag, Disag_vertex_writer(dag));
+    // now recursively trace from this edge to the end
+    traceToEnd( &disagGraph, firstVertex );
 
+    write_graphviz(cout, disagGraph,
+            Disag_vertex_writer(disagGraph), Disag_edge_writer(disagGraph));
+
+    // find route through the tree with highest average edge probabilities
+
+}
+
+/**
+ * Trace from startVertex to the off state in PSGraph
+ */
+void PowerStateGraph::traceToEnd(
+        PowerStateGraph::DisagGraph * disagGraph_p, /**< input and output parameter */
+        PowerStateGraph::DisagGraph::vertex_descriptor startVertex
+        ) const
+{
+//    cout << "traceToEnd starting..." << endl;
+
+    const double STDEV_MULT = 5; // higher = more permissive.
+
+    list<AggregateData::FoundSpike> foundSpikes;
+
+    // A handy reference to make the code more readable
+    DisagGraph& disagGraph = *disagGraph_p;
+
+    // base case
+    if ( disagGraph[startVertex].psgVertex == offVertex ) {
+        return;
+    }
+
+    // For each out-edge from startVertex.psgVertex, retrieve a list of
+    // spikes which match and create a new vertex for each match.
+    PSG_out_edge_iter psg_out_i, psg_out_end;
+    tie(psg_out_i, psg_out_end) =
+            out_edges(disagGraph[startVertex].psgVertex, powerStateGraph);
+
+    for (; psg_out_i!=psg_out_end; psg_out_i++ ) {
+
+//        cout << "...looping through psg_out_iterators from " <<
+//                powerStateGraph[disagGraph[startVertex].psgVertex] << endl;
+
+        // get a list of candidate spikes matching this PSG out edge
+        foundSpikes = (*aggData).findSpike(
+                powerStateGraph[*psg_out_i].delta,  // spike stats
+                disagGraph[startVertex].timestamp +
+                   powerStateGraph[*psg_out_i].duration.mean -
+                   powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT, // startTime
+                disagGraph[startVertex].timestamp +
+                   powerStateGraph[*psg_out_i].duration.mean +
+                   powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT, // endTime
+                1
+                );
+
+        // for each candidate spike, create a new vertex in disagGraph
+        // and recursively trace this to the end
+        for (list<AggregateData::FoundSpike>::const_iterator spike=foundSpikes.begin();
+                spike!=foundSpikes.end();
+                spike++) {
+
+//            cout << "...found spike: " << *spike << endl;
+
+            DisagGraph::vertex_descriptor newVertex=add_vertex(disagGraph);
+            DisagGraph::edge_descriptor newEdge;
+            bool existingEdge;
+            tie(newEdge, existingEdge) =
+                    add_edge(startVertex, newVertex, spike->pdf, disagGraph);
+            /** @todo the probability needs to be the mean of spike->pdf
+             * and the pdf for the timing. */
+
+            // add details to newVertex
+            disagGraph[newVertex].timestamp = spike->timestamp;
+            // get vertex that *pst_out_i points to
+            disagGraph[newVertex].psgVertex = target(*psg_out_i, powerStateGraph);
+            disagGraph[newVertex].meanPower =
+                    powerStateGraph[disagGraph[newVertex].psgVertex].mean;
+
+//            write_graphviz(cout, disagGraph,
+//                    Disag_vertex_writer(disagGraph), Disag_edge_writer(disagGraph));
+
+
+            // recursively trace to end.
+//            traceToEnd(disagGraph_p, newVertex);
+        }
+    }
 }
 
 std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )

@@ -29,16 +29,17 @@ public:
 
     void writeGraphViz(std::ostream& out);
 
-    struct DisaggregatedStruct {
+    struct DisagDataItem {
         size_t timestamp; /**< @brief UNIX timestamp for start time */
+        size_t duration;
         double energy; /**< @brief energy consumed */
         double confidence;
     };
 
-    const std::list<DisaggregatedStruct> getStartTimes(
+    const std::list<DisagDataItem> getStartTimes(
             const AggregateData& aggregateData, /**< A populated array of AggregateData */
             const bool verbose = true
-            ) const;
+            );
 
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
 
@@ -107,17 +108,19 @@ private:
         size_t timestamp; /**< @brief UNIX timestamp taken from AggregateData. */
         double meanPower; /**< @brief Mean power used between this and the previous vertex. */
         PSGraph::vertex_descriptor psgVertex; /**< @brief link to vertex in Power State Graph. */
+        bool deadEnd; /**< @todo remove this if I implement unwinding. */
 
         DisagVertex()
-        : timestamp(0), meanPower(0), psgVertex(0)
+        : timestamp(0), meanPower(0), psgVertex(0), deadEnd(0)
         {}
 
         DisagVertex(
-                const size_t t,
-                const double p,
-                const PSGraph::vertex_descriptor _psgVertex
+                const size_t _timestamp,
+                const double _meanPower,
+                const PSGraph::vertex_descriptor _psgVertex,
+                const bool _deadEnd = false
                 )
-        : timestamp(t), meanPower(p), psgVertex(_psgVertex)
+        : timestamp(_timestamp), meanPower(_meanPower), psgVertex(_psgVertex), deadEnd(_deadEnd)
         {}
     };
 
@@ -144,11 +147,28 @@ private:
 
             Disag_vertex_writer(DisagGraph& g_) : g (g_) {};
 
+            template <class Vertex>
+            void operator()(std::ostream& out, Vertex e) {
+                    out << " [label=\""
+                        <<   "timestamp=" << g[e].timestamp-1310252400
+                        << ", meanPower=" << g[e].meanPower
+                        << "\"]";
+            };
+
+            DisagGraph g;
+    };
+
+    /**
+     * @brief used for write_graphviz for DisagGraph.
+     */
+    struct Disag_edge_writer {
+
+            Disag_edge_writer(DisagGraph& g_) : g (g_) {};
+
             template <class Edge>
             void operator()(std::ostream& out, Edge e) {
                     out << " [label=\""
-                        <<   "timestamp=" << g[e].timestamp
-                        << ", meanPower=" << g[e].meanPower
+                        <<  g[e]
                         << "\"]";
             };
 
@@ -158,9 +178,9 @@ private:
 
 
 
-    /************************
-     * MEMBER VARIABLES     *
-     ************************/
+    /****************************
+     * PRIVATE MEMBER VARIABLES *
+     ****************************/
 
     PSGraph powerStateGraph; /**< @brief store the power state graph learnt during training. */
 
@@ -169,9 +189,11 @@ private:
     size_t totalCount; /**< @brief the total number of times any edge
                                    has been traversed during training. */
 
-    /************************
-     * MEMBER FUNCTIONS      *
-     ************************/
+    AggregateData const * aggData;
+
+    /****************************
+     * PRIVATE MEMBER FUNCTIONS *
+     ****************************/
 
     PSGraph::vertex_descriptor updateOrInsertVertex(
             const Statistic<Sample_t>& stat,
@@ -202,8 +224,14 @@ private:
 
     void updateEdges( const Signature& sig );
 
-    const DisaggregatedStruct traceToEnd(
-            const AggregateData::FoundSpike& spike
+    const DisagDataItem initTraceToEnd(
+            const AggregateData::FoundSpike& spike,
+            const size_t deviceStart
+            ) const;
+
+    void traceToEnd(
+            DisagGraph * disagGraph,
+            DisagGraph::vertex_descriptor startVertex
             ) const;
 
 

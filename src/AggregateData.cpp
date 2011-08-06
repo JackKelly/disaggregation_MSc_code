@@ -56,14 +56,14 @@ const size_t AggregateData::secondsSinceFirstSample(
  *
  * @return \code data[i+1].reading - data[i].reading \endcode
  */
-const size_t AggregateData::aggDelta(
+const int AggregateData::aggDelta(
         const size_t i
         ) const
 {
     if ( i > (size-2) )
         return 0;
     else
-        return data[i+1].reading - data[i].reading;
+        return (int)data[i+1].reading - (int)data[i].reading;
 }
 
 /**
@@ -88,9 +88,11 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         const Statistic<Sample_t>& spikeStats,
         size_t startTime,
         size_t endTime,
-        double stdevMultiplier
+        double stdevMultiplier /**< Higher = more permissive */
         ) const
 {
+//    cout << "...findSpike looking for " << spikeStats << " from startTime=" << startTime << " endTime=" << endTime << endl;
+
     size_t i;
     list<AggregateData::FoundSpike> foundSpikes;
 
@@ -99,7 +101,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         endTime = data[size-1].timestamp;
     }
     else if (endTime > data[size-1].timestamp) {
-        LOG(ERROR) << "(endTime > data[size-1].timestamp)";
+//        LOG(WARNING) << "(endTime > data[size-1].timestamp)... setting endTime = data[size-1].timestamp; ";
         endTime = data[size-1].timestamp;
     }
 
@@ -108,7 +110,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         i = 0;
     }
     else if (startTime < data[0].timestamp) {
-        LOG(ERROR) << "(startTime < data[0].timestamp)";
+//        LOG(WARNING) << "(startTime < data[0].timestamp)... setting startTime = data[0].timestamp;";
         startTime = data[0].timestamp;
         i = 0;
     }
@@ -118,9 +120,10 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
 
     assert( endTime > startTime );
 
-    // "fake" the standard deviation if it's 0
-    // (i.e. if the Statistic was created from a single value.)
-    const double stdev = (spikeStats.stdev ? spikeStats.stdev : spikeStats.mean*0.1 );
+    // (if the statistic was created from a single value then stdev will
+    //  already have been "faked" by the single-value constructor
+    //  in Statistic.h )
+    const double stdev = spikeStats.stdev;
 
     boost::math::normal dist(spikeStats.mean, stdev);
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html

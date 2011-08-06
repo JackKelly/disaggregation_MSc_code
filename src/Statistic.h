@@ -64,7 +64,7 @@ struct Statistic {
     Statistic(
             const T value
             )
-    : mean(value), stdev(0), min(value), max(value), numDataPoints(1)
+    : mean(value), stdev(fabs(value*0.1)), min(value), max(value), numDataPoints(1)
     {
         dataStore.push_back(value);
     }

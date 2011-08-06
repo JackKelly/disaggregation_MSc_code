@@ -57,13 +57,13 @@ public:
 
     const size_t secondsSinceFirstSample( const size_t i ) const;
 
-    const size_t aggDelta( const size_t i ) const;
+    const int aggDelta( const size_t i ) const;
 
     std::list<AggregateData::FoundSpike> findSpike(
             const Statistic<Sample_t>& spikeStats,
             size_t startTime = 0 ,
             size_t endTime = 0,
-            double stdevMultiplier = 0.1
+            double stdevMultiplier = 0.8
             ) const;
 
     const size_t findNear(
