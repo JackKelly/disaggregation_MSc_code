@@ -31,6 +31,18 @@ PowerStateGraph::~PowerStateGraph()
     // TODO Auto-generated destructor stub
 }
 
+void PowerStateGraph::addItemToEdgeHistory(
+        const PSGraph::edge_descriptor& edge
+        )
+{
+    const size_t SIZE_OF_EDGE_HISTORY = 3;
+
+    if (edgeHistory.size() >= SIZE_OF_EDGE_HISTORY)
+        edgeHistory.erase( edgeHistory.begin() );
+
+    edgeHistory.push_back(edge);
+}
+
 /**
  * Update or initialise Power State Graph.
  */
@@ -40,6 +52,8 @@ void PowerStateGraph::update(
         )
 {
     Statistic<Sample_t> powerState;
+
+    edgeHistory.clear();
 
     // get the gradient spikes for the signature
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
@@ -68,9 +82,11 @@ void PowerStateGraph::update(
                  << endl;
         }
 
+        // calculate the start index for the window of signature data we'll examine
         size_t start = ((spike->index > WINDOW) ?
                 (spike->index - WINDOW) : 0 );
 
+        // calculate the end index
         size_t end = spike->index + WINDOW + spike->duration + 1;
         if (end > sig.getSize())
             end = sig.getSize();
@@ -89,6 +105,7 @@ void PowerStateGraph::update(
             if (verbose) cout << " REJECT";
 
         } else {
+            // We're keeping this spike.
 
             if (verbose) cout << " KEEP";
 
@@ -252,6 +269,17 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
     return vertex;
 }
 
+/**
+ * @brief Update or Insert a new edge into powerStateGraph.
+ *
+ * - If an edge already exists between beforeVertex and afterVertex then
+ *     - check if its history is the same as the current history. if so
+ *         - update the existing edge's statistics
+ *     - else
+ *         - create a new edge.
+ * - else
+ *     - create a new edge
+ */
 void PowerStateGraph::updateOrInsertEdge(
         const PSGraph::vertex_descriptor& beforeVertex,
         const PSGraph::vertex_descriptor& afterVertex,
@@ -259,25 +287,99 @@ void PowerStateGraph::updateOrInsertEdge(
         const double spikeDelta
         )
 {
-    /* Add an edge from beforeVertex to afterVertex.
-     * If an edge already exists then boost::add_edge will
-     * return an edge_descriptor to that edge. */
+    totalCount++;
 
-    PSGraph::edge_descriptor edge;
-    bool existingEdge;
-    tie(edge, existingEdge) = boost::add_edge(beforeVertex, afterVertex, powerStateGraph);
+    cout << "-------------------" << endl;
 
-    if (existingEdge) { // then there was not an edge already in the graph
-        powerStateGraph[edge].delta    = Statistic<double>( spikeDelta );
-        powerStateGraph[edge].duration = Statistic<size_t>( sampleSinceLastSpike );
-        powerStateGraph[edge].count    = 1;
-    } else { // there was an edge already in the graph so update that edge
-        powerStateGraph[edge].delta.update( spikeDelta );
-        powerStateGraph[edge].duration.update( sampleSinceLastSpike );
-        powerStateGraph[edge].count++;
+    PSGraph::edge_descriptor existingEdge, newEdge;
+    bool edgeExistsAlready;
+    tie(existingEdge, edgeExistsAlready) = boost::edge(beforeVertex, afterVertex, powerStateGraph);
+
+    if ( edgeExistsAlready )
+        cout << "edgeExistsAlready" << endl;
+    else
+        cout << "edge does not Exist Already" << endl;
+
+    if ( edgeExistsAlready ) {
+
+        for (list<PSGraph::edge_descriptor>::iterator edge=edgeHistory.begin(); edge!=edgeHistory.end(); edge++) {
+            cout << "                              edgeHistory = " << *edge << endl;
+        }
+        for (list<PSGraph::edge_descriptor>::iterator edge=powerStateGraph[existingEdge].edgeHistory.begin();
+                edge!=powerStateGraph[existingEdge].edgeHistory.end(); edge++) {
+            cout << "powerStateGraph[existingEdge].edgeHistory = " << *edge << endl;
+        }
+
+        cout << endl;
+
+        // check if any of the out edges from beforeVertex have the same
+        // history as our current history... if so, update that edge.
+
+        if ( edgeListsAreEqual(powerStateGraph[existingEdge].edgeHistory, edgeHistory) ) {
+            cout << "edge histories the same. merging with" << existingEdge << powerStateGraph[existingEdge].delta << endl;
+
+            // update existing edge's stats
+            powerStateGraph[existingEdge].delta.update( spikeDelta );
+            powerStateGraph[existingEdge].duration.update( sampleSinceLastSpike );
+            powerStateGraph[existingEdge].count++;
+
+            addItemToEdgeHistory( existingEdge );
+
+            return;
+        }
     }
 
-    totalCount++;
+    // if we get to here then we know that either:
+    //    an edge doesn't already exist between these 2 vertices
+    // or
+    //    an edge does exist but it doesn't share our history.
+    // either way, we need to add a new edge:
+
+    tie(newEdge, edgeExistsAlready) = boost::add_edge(beforeVertex, afterVertex, powerStateGraph);
+    powerStateGraph[newEdge].delta    = Statistic<double>( spikeDelta );
+    powerStateGraph[newEdge].duration = Statistic<size_t>( sampleSinceLastSpike );
+    powerStateGraph[newEdge].count    = 1;
+    powerStateGraph[newEdge].edgeHistory = edgeHistory;
+
+    cout << "adding new edge" << newEdge << " " << powerStateGraph[newEdge].delta << endl;
+
+    addItemToEdgeHistory( newEdge );
+}
+
+const bool PowerStateGraph::edgeListsAreEqual(
+        const list< PSGraph::edge_descriptor >& a,
+        const list< PSGraph::edge_descriptor >& b
+        ) const
+{
+    if (a.size() != b.size()) {
+        cout << "sizes not equal" << endl;
+        return false;
+    }
+
+    list<PSGraph::edge_descriptor>::const_iterator a_i, b_i;
+
+    a_i = a.begin();
+    b_i = b.begin();
+
+    cout << "edgeListsAreEqual..." << endl;
+
+    while (a_i != a.end() && b_i != b.end()) {
+
+        cout << "*a_i=" << *a_i << " *b_i=" << *b_i << endl;
+
+        if ( source(*a_i, powerStateGraph) != source(*b_i, powerStateGraph) &&
+             target(*a_i, powerStateGraph) != target(*b_i, powerStateGraph)   ) {
+
+            cout << "not equal" << endl << endl;
+            return false;
+        }
+
+        a_i++;
+        b_i++;
+    }
+
+    return true;
+
 }
 
 /**

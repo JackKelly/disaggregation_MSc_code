@@ -48,13 +48,7 @@ private:
      * P.S.G. GRAPH USED FOR TRAINING: *
      * (PSG = Power State Graph)       *
      ***********************************/
-    struct PowerStateEdge {
-        Statistic<double> delta;
-        Statistic<size_t> duration;
-        size_t count; /**< @brief The number of times this edge has been
-                                  traversed during training.  Used with @c totalCount
-                                  to determine which edges are traversed most often. */
-    };
+    struct PowerStateEdge; // forward declared to fix interdependency introduced by edgeHistory
 
     /**
      * @brief A graph where each vertex(node) is a @c Statistic<Sample_t>
@@ -65,10 +59,23 @@ private:
     typedef boost::adjacency_list<
 //            boost::vecS, boost::vecS, boost::bidirectionalS,
 //            boost::setS, boost::vecS, boost::directedS, // setS means we can only have single edges
-            boost::vecS, boost::vecS, boost::directedS,
+            boost::vecS, boost::vecS, boost::directedS,  // vecS allows multiple edges between vertices
             Statistic<Sample_t>,   // our custom vertex (node) type
             PowerStateEdge         // our custom edge type
             > PSGraph;
+
+    struct PowerStateEdge {
+        Statistic<double> delta;
+        Statistic<size_t> duration;
+        size_t count; /**< @brief The number of times this edge has been
+                                  traversed during training.  Used with @c totalCount
+                                  to determine which edges are traversed most often.
+                                  @todo remove if we're not using this. */
+        std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
+                                                                the previous few edges we've seen. */
+
+    };
+
 
     typedef boost::graph_traits<PSGraph>::vertex_iterator PSG_vertex_iter;
     typedef boost::graph_traits<PSGraph>::edge_iterator PSG_edge_iter;
@@ -84,14 +91,21 @@ private:
             template <class Edge>
             void operator()(std::ostream& out, Edge e) {
                     out << " [label=\""
-                        << "dMean=" << g[e].delta.mean
-                        << " dSD=" << g[e].delta.stdev
+                        << "dMean=" << g[e].delta.mean << " \\n"
+                        << " dSD=" << g[e].delta.stdev << " \\n"
 //                        << " dMin=" << g[e].delta.min
 //                        << " dMax=" << g[e].delta.max
-                        << " durMean=" << g[e].duration.mean
+                        << " durMean=" << g[e].duration.mean;
 //                        << " durMin=" << g[e].duration.min
 //                        << " durMax=" << g[e].duration.max
-                        << "\"]";
+
+                    for (std::list< PSGraph::edge_descriptor >::const_iterator
+                            edge=g[e].edgeHistory.begin();
+                            edge != g[e].edgeHistory.end(); edge++) {
+                        out << " \\n" << *edge;
+                    }
+
+                    out << "\"]";
             };
 
             PSGraph g;
@@ -192,6 +206,9 @@ private:
 
     AggregateData const * aggData;
 
+    std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
+                                                            the previous few edges we've seen. */
+
     /****************************
      * PRIVATE MEMBER FUNCTIONS *
      ****************************/
@@ -233,6 +250,15 @@ private:
     void traceToEnd(
             DisagGraph * disagGraph,
             DisagGraph::vertex_descriptor startVertex
+            ) const;
+
+    void addItemToEdgeHistory(
+            const PSGraph::edge_descriptor& edge
+            );
+
+    const bool edgeListsAreEqual(
+            const std::list< PSGraph::edge_descriptor >& a,
+            const std::list< PSGraph::edge_descriptor >& b
             ) const;
 
 
