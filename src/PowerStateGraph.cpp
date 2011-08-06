@@ -560,8 +560,6 @@ void PowerStateGraph::traceToEnd(
         PowerStateGraph::DisagGraph::vertex_descriptor startVertex
         ) const
 {
-//    cout << "traceToEnd starting..." << endl;
-
     const double STDEV_MULT = 5; // higher = more permissive.
 
     list<AggregateData::FoundSpike> foundSpikes;
@@ -582,19 +580,22 @@ void PowerStateGraph::traceToEnd(
 
     for (; psg_out_i!=psg_out_end; psg_out_i++ ) {
 
-//        cout << "...looping through psg_out_iterators from " <<
-//                powerStateGraph[disagGraph[startVertex].psgVertex] << endl;
+        // Set beginning of search window
+        size_t begOfSearchWindow = disagGraph[startVertex].timestamp +
+                powerStateGraph[*psg_out_i].duration.mean -
+                (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT);
+        // ensure we're not looking backwards in time
+        if (begOfSearchWindow < disagGraph[startVertex].timestamp)
+            begOfSearchWindow = disagGraph[startVertex].timestamp;
 
         // get a list of candidate spikes matching this PSG out edge
         foundSpikes = (*aggData).findSpike(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
-                disagGraph[startVertex].timestamp +
-                   powerStateGraph[*psg_out_i].duration.mean -
-                   powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT, // startTime
+                begOfSearchWindow,
                 disagGraph[startVertex].timestamp +
                    powerStateGraph[*psg_out_i].duration.mean +
-                   powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT, // endTime
-                1
+                   (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT), // endTime
+                10
                 );
 
         // for each candidate spike, create a new vertex in disagGraph
@@ -602,8 +603,6 @@ void PowerStateGraph::traceToEnd(
         for (list<AggregateData::FoundSpike>::const_iterator spike=foundSpikes.begin();
                 spike!=foundSpikes.end();
                 spike++) {
-
-//            cout << "...found spike: " << *spike << endl;
 
             DisagGraph::vertex_descriptor newVertex=add_vertex(disagGraph);
             DisagGraph::edge_descriptor newEdge;
@@ -619,10 +618,6 @@ void PowerStateGraph::traceToEnd(
             disagGraph[newVertex].psgVertex = target(*psg_out_i, powerStateGraph);
             disagGraph[newVertex].meanPower =
                     powerStateGraph[disagGraph[newVertex].psgVertex].mean;
-
-//            write_graphviz(cout, disagGraph,
-//                    Disag_vertex_writer(disagGraph), Disag_edge_writer(disagGraph));
-
 
             // recursively trace to end.
 //            traceToEnd(disagGraph_p, newVertex);
