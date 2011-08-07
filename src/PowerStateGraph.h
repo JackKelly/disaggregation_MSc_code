@@ -225,20 +225,13 @@ private:
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
-    /**
-     * @brief used by findBestPathThroughDisagTree
-     */
-    struct EnergyConfidence {
-        double energy;
+    struct ConfidenceAndVertex {
         double confidence;
-        size_t hops;
-        bool hitDeadEnd;
-
-        EnergyConfidence()
-        : energy(0), confidence(0), hops(0), hitDeadEnd(0)
-        {}
+        DisagTree::vertex_descriptor vertex;
     };
 
+
+    std::list< std::list<ConfidenceAndVertex> > listOfPaths;
 
     /****************************
      * PRIVATE MEMBER FUNCTIONS *
@@ -276,7 +269,7 @@ private:
     const DisagDataItem initTraceToEnd(
             const AggregateData::FoundSpike& spike,
             const size_t deviceStart
-            ) const;
+            );
 
     void traceToEnd(
             DisagTree * disagGraph,
@@ -297,11 +290,11 @@ private:
             const DisagTree::vertex_descriptor& startVertex
             ) const;
 
-    EnergyConfidence findBestPathThroughDisagTree(
-            DisagDataItem * disagDataItem_p,
+    std::list<ConfidenceAndVertex> findListOfPathsThroughDisagTree(
             const DisagTree& disagTree,
-            const DisagTree::vertex_descriptor vertex
-            ) const;
+            const DisagTree::vertex_descriptor vertex,
+            bool * hitDeadEnd
+            );
 
 };
 

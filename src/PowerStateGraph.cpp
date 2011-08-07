@@ -587,7 +587,7 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
 const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
         const AggregateData::FoundSpike& spike,
         const size_t deviceStart /**< The possible time the device started. */
-        ) const
+        )
 {
     DisagTree disagTree;
 
@@ -632,10 +632,21 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     disagDataItem.energy     = 0;
     disagDataItem.duration   = 0;
 
-    EnergyConfidence ec =
-            findBestPathThroughDisagTree( &disagDataItem, disagTree, disagOffVertex );
+    listOfPaths.clear();
 
-    cout << "ec.hops = " << ec.hops << " ec.confidence = " << ec.confidence << endl;
+    bool hitDeadEnd;
+    findListOfPathsThroughDisagTree( disagTree, disagOffVertex, &hitDeadEnd );
+
+
+    cout << "path dump:" << endl;
+
+    for (list< list<ConfidenceAndVertex> >::const_iterator path=listOfPaths.begin();
+            path!=listOfPaths.end(); path++){
+        for (list<PowerStateGraph::ConfidenceAndVertex>::const_iterator it=path->begin(); it!=path->end(); it++ ) {
+            cout << it->confidence << " " << it->vertex << ", ";
+        }
+        cout << endl;
+    }
 
     return disagDataItem;
 
@@ -648,13 +659,13 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
  *
  * Traces the tree downwards.
  */
-PowerStateGraph::EnergyConfidence PowerStateGraph::findBestPathThroughDisagTree(
-        DisagDataItem * disagDataItem_p,
+list<PowerStateGraph::ConfidenceAndVertex> PowerStateGraph::findListOfPathsThroughDisagTree(
         const DisagTree& disagTree,
-        const DisagTree::vertex_descriptor vertex
-        ) const
+        const DisagTree::vertex_descriptor vertex,
+        bool * hitDeadEnd
+        )
 {
-    EnergyConfidence ec, ecDownstream; // used to locally keep track of this branch.
+    list<PowerStateGraph::ConfidenceAndVertex> path;
 
     // iterate through each out-edge
     Disag_out_edge_iter out_e_i, out_e_end;
@@ -662,33 +673,45 @@ PowerStateGraph::EnergyConfidence PowerStateGraph::findBestPathThroughDisagTree(
     for (; out_e_i!=out_e_end; out_e_i++) {
 
         DisagTree::vertex_descriptor downstreamVertex = target(*out_e_i, disagTree);
+        ConfidenceAndVertex cav;
+        cav.confidence = disagTree[*out_e_i];
+        cav.vertex     = downstreamVertex;
 
         // check if this edge leads to a finish node
         if ( disagTree[ downstreamVertex ].meanPower == 0 ) {
             cout << *out_e_i << " takes us to a finish node" << endl;
-            ec.hitDeadEnd = false;
-            ec.confidence = disagTree[ *out_e_i ];
-            ec.energy     = 0;
-            ec.hops       = 1;
-            return ec;
-        } else {
-            ecDownstream = findBestPathThroughDisagTree(
-                    disagDataItem_p,
-                    disagTree,
-                    downstreamVertex );
+            *hitDeadEnd = false;
+            path.push_back( cav );
+            return path;
 
-            if ( ! ecDownstream.hitDeadEnd) {
-                ec.hitDeadEnd = false;
-                ec.hops       = ecDownstream.hops + 1;
-                ec.confidence = ( disagTree[ *out_e_i ] +
-                        ( ecDownstream.confidence / ecDownstream.hops )) / ec.hops ;
-                return ec;
+        } else {
+            // we haven't hit the end yet so recursively follow tree downwards.
+
+            bool downstreamHitDeadEnd;
+            path = findListOfPathsThroughDisagTree(
+                    disagTree,
+                    downstreamVertex,
+                    &downstreamHitDeadEnd );
+
+            if ( ! downstreamHitDeadEnd ) {
+                *hitDeadEnd = false;
+                path.push_front(cav);
+
+                // check if this is a complete path (and hence needs to be added to listOfPaths)
+                if ( ( path.size() > 1 ) &&
+                        ( disagTree[ path.front().vertex ].meanPower == 0 ) &&
+                        ( disagTree[ path.back().vertex ].meanPower == 0 )) {
+                    cout << "adding to listOfPAths" << endl;
+                    listOfPaths.push_back( path );
+                }
+
+                return path;
             }
         }
     }
 
-    ec.hitDeadEnd = true;
-    return ec;
+    *hitDeadEnd = true;
+    return path;
 }
 
 
