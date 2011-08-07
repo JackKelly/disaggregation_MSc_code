@@ -21,7 +21,7 @@ PowerStateGraph::PowerStateGraph()
     using namespace boost;
 
     // add a vertex to represent "off"
-    // uses Statistic's default constructor to make a stat with all-zeros
+    // uses Statistic's default constructor to make a Statistic with all-zeros
     offVertex = add_vertex(powerStateGraph);
 
 }
@@ -35,9 +35,7 @@ void PowerStateGraph::addItemToEdgeHistory(
         const PSGraph::edge_descriptor& edge
         )
 {
-    const size_t SIZE_OF_EDGE_HISTORY = 3;
-
-    if (edgeHistory.size() >= SIZE_OF_EDGE_HISTORY)
+    if (edgeHistory.size() >= EDGE_HISTORY_SIZE)
         edgeHistory.erase( edgeHistory.begin() );
 
     edgeHistory.push_back(edge);
@@ -242,7 +240,6 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
             vertex = *vp.first;
         }
 */
-
         // Now compare means.  In the vast majority of the cases, comparing
         // means will produce the same best match as the tTest.
         diff = fabs( powerStateGraph[*vp.first].mean - stat.mean );
@@ -251,7 +248,6 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
             vertex = *vp.first;
         }
     }
-
 
     // Check whether the best fit is satisfactory
     if ( (highestTTest > (ALPHA/2)) || // T-Test
@@ -395,7 +391,6 @@ const bool PowerStateGraph::edgeListsAreEqual(
     }
 
     return true;
-
 }
 
 /**
@@ -416,7 +411,7 @@ const bool PowerStateGraph::edgeListsAreEqual(
  * </ol>
  *
  *  @deprecated just leaving this here to illustrate one of the strategies I tried.
- *  This has been superceded by update() (which used to be updateVertices) and updateOrInsertEdge()
+ *  This has been superseded by update() (which used to be updateVertices) and updateOrInsertEdge()
  *
  */
 void PowerStateGraph::updateEdges( const Signature& sig )
@@ -594,16 +589,16 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
         const size_t deviceStart /**< The possible time the device started. */
         ) const
 {
-    DisagGraph disagGraph;
+    DisagTree disagTree;
 
     // make the first vertex (which represents "off")
-    DisagGraph::vertex_descriptor disagOffVertex = add_vertex(disagGraph);
-    disagGraph[disagOffVertex].timestamp = deviceStart;
-    disagGraph[disagOffVertex].meanPower = 0; // this is "off"
-    disagGraph[disagOffVertex].psgVertex = offVertex;
+    DisagTree::vertex_descriptor disagOffVertex = add_vertex(disagTree);
+    disagTree[disagOffVertex].timestamp = deviceStart;
+    disagTree[disagOffVertex].meanPower = 0; // this is "off"
+    disagTree[disagOffVertex].psgVertex = offVertex;
 
     // add a vertex to represent the first true power state
-    DisagGraph::vertex_descriptor firstVertex = add_vertex(disagGraph);
+    DisagTree::vertex_descriptor firstVertex = add_vertex(disagTree);
 
     // retrieve info for firstVertex and for edge between disagOffVertex and firstVertex
     PSG_out_edge_iter out_i, out_end;
@@ -613,41 +608,104 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     tie(v_i, v_end) = vertices(powerStateGraph);
     v_i++;
 
-    disagGraph[firstVertex].timestamp = spike.timestamp;
-    disagGraph[firstVertex].meanPower = powerStateGraph[*v_i].mean;
-    disagGraph[firstVertex].psgVertex = *v_i;
-    disagGraph[firstVertex].psgEdge   = *out_i;
-    disagGraph[firstVertex].edgeHistory.push_back(*out_i);
+    disagTree[firstVertex].timestamp = spike.timestamp;
+    disagTree[firstVertex].meanPower = powerStateGraph[*v_i].mean;
+    disagTree[firstVertex].psgVertex = *v_i;
+    disagTree[firstVertex].psgEdge   = *out_i;
+    disagTree[firstVertex].edgeHistory.push_back(*out_i);
 
     // add an edge between disagOffVertex and firstVertex
-    DisagGraph::edge_descriptor edge;
+    DisagTree::edge_descriptor edge;
     bool existingEdge;
-    tie(edge, existingEdge) = add_edge(disagOffVertex, firstVertex, spike.pdf, disagGraph);
+    tie(edge, existingEdge) = add_edge(disagOffVertex, firstVertex, spike.pdf, disagTree);
 
     // now recursively trace from this edge to the end
-    traceToEnd( &disagGraph, firstVertex );
+    traceToEnd( &disagTree, firstVertex );
 
-    write_graphviz(cout, disagGraph,
-            Disag_vertex_writer(disagGraph), Disag_edge_writer(disagGraph));
+    write_graphviz(cout, disagTree,
+            Disag_vertex_writer(disagTree), Disag_edge_writer(disagTree));
 
     // find route through the tree with highest average edge probabilities
+    DisagDataItem disagDataItem;
+    disagDataItem.timestamp  = deviceStart;
+    disagDataItem.confidence = 0;
+    disagDataItem.energy     = 0;
+    disagDataItem.duration   = 0;
+
+    EnergyConfidence ec =
+            findBestPathThroughDisagTree( &disagDataItem, disagTree, disagOffVertex );
+
+    cout << "ec.hops = " << ec.hops << " ec.confidence = " << ec.confidence << endl;
+
+    return disagDataItem;
 
 }
+
+/**
+ * @brief Trace the tree downwards from @c vertex recursively finding
+ * the path with the highest average confidence and the corresponding
+ * values for @c DisagDataItem.
+ *
+ * Traces the tree downwards.
+ */
+PowerStateGraph::EnergyConfidence PowerStateGraph::findBestPathThroughDisagTree(
+        DisagDataItem * disagDataItem_p,
+        const DisagTree& disagTree,
+        const DisagTree::vertex_descriptor vertex
+        ) const
+{
+    EnergyConfidence ec, ecDownstream; // used to locally keep track of this branch.
+
+    // iterate through each out-edge
+    Disag_out_edge_iter out_e_i, out_e_end;
+    tie(out_e_i, out_e_end) = out_edges(vertex, disagTree);
+    for (; out_e_i!=out_e_end; out_e_i++) {
+
+        DisagTree::vertex_descriptor downstreamVertex = target(*out_e_i, disagTree);
+
+        // check if this edge leads to a finish node
+        if ( disagTree[ downstreamVertex ].meanPower == 0 ) {
+            cout << *out_e_i << " takes us to a finish node" << endl;
+            ec.hitDeadEnd = false;
+            ec.confidence = disagTree[ *out_e_i ];
+            ec.energy     = 0;
+            ec.hops       = 1;
+            return ec;
+        } else {
+            ecDownstream = findBestPathThroughDisagTree(
+                    disagDataItem_p,
+                    disagTree,
+                    downstreamVertex );
+
+            if ( ! ecDownstream.hitDeadEnd) {
+                ec.hitDeadEnd = false;
+                ec.hops       = ecDownstream.hops + 1;
+                ec.confidence = ( disagTree[ *out_e_i ] +
+                        ( ecDownstream.confidence / ecDownstream.hops )) / ec.hops ;
+                return ec;
+            }
+        }
+    }
+
+    ec.hitDeadEnd = true;
+    return ec;
+}
+
 
 /**
  * Trace from startVertex to the off state in PSGraph
  */
 void PowerStateGraph::traceToEnd(
-        DisagGraph * disagGraph_p, /**< input and output parameter */
-        const DisagGraph::vertex_descriptor& startVertex
+        DisagTree * disagGraph_p, /**< input and output parameter */
+        const DisagTree::vertex_descriptor& startVertex
         ) const
 {
-    const double STDEV_MULT = 5; // higher = more permissive.
+    const double STDEV_MULT = 5; // higher = more permissive. (time)
 
     list<AggregateData::FoundSpike> foundSpikes;
 
     // A handy reference to make the code more readable
-    DisagGraph& disagGraph = *disagGraph_p;
+    DisagTree& disagGraph = *disagGraph_p;
 
     // base case
     if ( disagGraph[startVertex].psgVertex == offVertex ) {
@@ -675,8 +733,8 @@ void PowerStateGraph::traceToEnd(
         //***************************************//
         // Calculate beginning of search window  //
 
-        size_t begOfSearchWindow = disagGraph[startVertex].timestamp +
-                powerStateGraph[*psg_out_i].duration.mean -
+        size_t begOfSearchWindow = disagGraph[startVertex].timestamp
+                + powerStateGraph[*psg_out_i].duration.mean -
                 (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT);
         // ensure we're not looking backwards in time
         if (begOfSearchWindow < disagGraph[startVertex].timestamp)
@@ -729,21 +787,21 @@ void PowerStateGraph::traceToEnd(
             // create an average probability
             double avPdf = (pdf_for_time + spike->pdf) / 2;
 
+            /** @todo experiment with weighting the avPdf in favour of the spike->pdf. */
+
             // check avPdf isn't too low
             if (avPdf < 0.00097)
                 continue;
 
             // create new vertex
-            DisagGraph::vertex_descriptor newVertex=add_vertex(disagGraph);
+            DisagTree::vertex_descriptor newVertex=add_vertex(disagGraph);
 
             // create new edge
-            DisagGraph::edge_descriptor newEdge;
+            DisagTree::edge_descriptor newEdge;
             bool existingEdge;
             tie(newEdge, existingEdge) =
                     add_edge(startVertex, newVertex, avPdf, disagGraph);
 
-            /** @todo the probability needs to be the mean of spike->pdf
-             * and the pdf for the timing. */
 
             // add details to newVertex
             disagGraph[newVertex].timestamp = spike->timestamp;
@@ -769,17 +827,16 @@ void PowerStateGraph::traceToEnd(
  * Trace the disagGraph backwards
  */
 list< PowerStateGraph::PSGraph::edge_descriptor > PowerStateGraph::getEdgeHistoryForVertex(
-        const DisagGraph& disagGraph,
-        const DisagGraph::vertex_descriptor& startVertex
+        const DisagTree& disagGraph,
+        const DisagTree::vertex_descriptor& startVertex
         ) const
 {
-    const size_t SIZE_OF_HISTORY = 3; /** @todo should be static const */
     list< PSGraph::edge_descriptor > eHistory;
-    DisagGraph::vertex_descriptor disagVertex = startVertex;
+    DisagTree::vertex_descriptor disagVertex = startVertex;
 
-    DisagGraph::in_edge_iterator in_e_i, in_e_end;
+    DisagTree::in_edge_iterator in_e_i, in_e_end;
 
-    while (disagGraph[disagVertex].psgVertex != offVertex && eHistory.size() < SIZE_OF_HISTORY) {
+    while (disagGraph[disagVertex].psgVertex != offVertex && eHistory.size() < EDGE_HISTORY_SIZE) {
         eHistory.push_front( disagGraph[disagVertex].psgEdge );
         tie(in_e_i, in_e_end) = in_edges(disagVertex, disagGraph);
         disagVertex = source( *in_e_i, disagGraph ); // the vertex upstream from in_e_i

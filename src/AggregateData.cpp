@@ -71,7 +71,7 @@ const int AggregateData::aggDelta(
  *
  * @return AggregateData index where best delta match was found
  *
- * @deprecated a relic from an unfinished previous attempt to disaggregate
+ * @deprecated a relic from an abandoned attempt to disaggregate
  *
  * @todo unfinished (obviously)
  */
@@ -91,8 +91,6 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         double stdevMultiplier /**< Higher = more permissive */
         ) const
 {
-//    cout << "...findSpike looking for " << spikeStats << " from startTime=" << startTime << " endTime=" << endTime << endl;
-
     size_t i;
     list<AggregateData::FoundSpike> foundSpikes;
 
@@ -101,7 +99,6 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         endTime = data[size-1].timestamp;
     }
     else if (endTime > data[size-1].timestamp) {
-//        LOG(WARNING) << "(endTime > data[size-1].timestamp)... setting endTime = data[size-1].timestamp; ";
         endTime = data[size-1].timestamp;
     }
 
@@ -110,7 +107,6 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         i = 0;
     }
     else if (startTime < data[0].timestamp) {
-//        LOG(WARNING) << "(startTime < data[0].timestamp)... setting startTime = data[0].timestamp;";
         startTime = data[0].timestamp;
         i = 0;
     }

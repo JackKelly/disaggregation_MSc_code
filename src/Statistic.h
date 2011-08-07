@@ -39,19 +39,6 @@ struct Statistic {
      ************************/
 
     /**
-     * @brief Constructor from explicit values.
-     */
-/*    Statistic(
-            const double _mean=0,
-            const double _stdev=0,
-            const T _min=0,
-            const T _max=0
-            )
-    : mean(_mean), stdev(_stdev), min(_min), max(_max), numDataPoints(1)
-    {
-    }
-*/
-    /**
      * @brief Default constructor
      */
     Statistic()
@@ -59,7 +46,7 @@ struct Statistic {
     {}
 
     /**
-     * @brief Constructor from a single value.
+     * @brief Constructor from a single value.  'Fakes' a standard deviation.
      */
     Statistic(
             const T value
@@ -174,7 +161,8 @@ struct Statistic {
     void update(
             const Array<T>& data,
             const size_t beginning=0,
-            size_t end=std::numeric_limits<std::size_t>::max()
+            size_t end=std::numeric_limits<std::size_t>::max(),
+            const bool checkForOutliers = false
             )
     {
 
@@ -204,16 +192,18 @@ struct Statistic {
             currentVal = data[i];
 
             //check for outliers
-/*            if (stdev != 0) {
-                stdev = calcStdev();
-                if (currentVal > (mean + (stdev*5)) ||
-                    currentVal < (mean - (stdev*5))   ) {
-                    numDataPoints--;
-                    numNewDataPoints--;
-                    continue;
+            if (checkForOutliers) {
+                if (stdev != 0) {
+                    stdev = calcStdev();
+                    if (currentVal > (mean + (stdev*5)) ||
+                            currentVal < (mean - (stdev*5))   ) {
+                        numDataPoints--;
+                        numNewDataPoints--;
+                        continue;
+                    }
                 }
             }
-*/
+
             dataStore.push_back(currentVal);
 
             accumulator += currentVal;

@@ -32,7 +32,7 @@ public:
     struct DisagDataItem {
         size_t timestamp; /**< @brief UNIX timestamp for start time */
         size_t duration;
-        double energy; /**< @brief energy consumed */
+        double energy;    /**< @brief energy consumed */
         double confidence;
     };
 
@@ -165,17 +165,17 @@ private:
             boost::setS, boost::vecS, boost::bidirectionalS,
             DisagVertex,   // our custom vertex (node) type
             double          // our custom edge type (for storing probabilities)
-            > DisagGraph;
+            > DisagTree;
 
-    typedef boost::graph_traits<DisagGraph>::out_edge_iterator DAG_out_edge_iter;
-    typedef boost::graph_traits<DisagGraph>::edge_descriptor DAG_edge_desc;
+    typedef boost::graph_traits<DisagTree>::out_edge_iterator Disag_out_edge_iter;
+    typedef boost::graph_traits<DisagTree>::edge_descriptor Disag_edge_desc;
 
     /**
      * @brief used for write_graphviz for DisagGraph.
      */
     struct Disag_vertex_writer {
 
-            Disag_vertex_writer(DisagGraph& g_) : g (g_) {};
+            Disag_vertex_writer(DisagTree& g_) : g (g_) {};
 
             template <class Vertex>
             void operator()(std::ostream& out, Vertex e) {
@@ -185,7 +185,7 @@ private:
                         << "\"]";
             };
 
-            DisagGraph g;
+            DisagTree g;
     };
 
     /**
@@ -193,7 +193,7 @@ private:
      */
     struct Disag_edge_writer {
 
-            Disag_edge_writer(DisagGraph& g_) : g (g_) {};
+            Disag_edge_writer(DisagTree& g_) : g (g_) {};
 
             template <class Edge>
             void operator()(std::ostream& out, Edge e) {
@@ -202,7 +202,7 @@ private:
                         << "\"]";
             };
 
-            DisagGraph g;
+            DisagTree g;
     };
 
 
@@ -221,10 +221,24 @@ private:
 
     AggregateData const * aggData;
 
+    static const size_t EDGE_HISTORY_SIZE = 3;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
-    static const size_t EDGE_HISTORY_SIZE = 3;
+    /**
+     * @brief used by findBestPathThroughDisagTree
+     */
+    struct EnergyConfidence {
+        double energy;
+        double confidence;
+        size_t hops;
+        bool hitDeadEnd;
+
+        EnergyConfidence()
+        : energy(0), confidence(0), hops(0), hitDeadEnd(0)
+        {}
+    };
+
 
     /****************************
      * PRIVATE MEMBER FUNCTIONS *
@@ -265,8 +279,8 @@ private:
             ) const;
 
     void traceToEnd(
-            DisagGraph * disagGraph,
-            const DisagGraph::vertex_descriptor& startVertex
+            DisagTree * disagGraph,
+            const DisagTree::vertex_descriptor& startVertex
             ) const;
 
     void addItemToEdgeHistory(
@@ -279,8 +293,14 @@ private:
             ) const;
 
     std::list< PSGraph::edge_descriptor > getEdgeHistoryForVertex(
-            const DisagGraph& disagGraph,
-            const DisagGraph::vertex_descriptor& startVertex
+            const DisagTree& disagGraph,
+            const DisagTree::vertex_descriptor& startVertex
+            ) const;
+
+    EnergyConfidence findBestPathThroughDisagTree(
+            DisagDataItem * disagDataItem_p,
+            const DisagTree& disagTree,
+            const DisagTree::vertex_descriptor vertex
             ) const;
 
 };
