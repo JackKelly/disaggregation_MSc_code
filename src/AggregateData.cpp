@@ -123,7 +123,9 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
     // (if the statistic was created from a single value then stdev will
     //  already have been "faked" by the single-value constructor
     //  in Statistic.h )
-    const double stdev = spikeStats.stdev;
+    double stdev = spikeStats.stdev;
+    if (stdev < fabs(spikeStats.mean/10))
+        stdev = fabs(spikeStats.mean/10);
 
     boost::math::normal dist(spikeStats.mean, stdev);
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html

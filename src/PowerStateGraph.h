@@ -73,7 +73,6 @@ private:
                                   @todo remove if we're not using this. */
         std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                                 the previous few edges we've seen. */
-
     };
 
 
@@ -84,6 +83,23 @@ private:
     typedef boost::property_map<PSGraph, boost::vertex_index_t>::type PSG_vertex_index_map;
     typedef boost::property_map<PSGraph, boost::edge_index_t >::type PSG_edge_index_map;
 
+    struct PSG_vertex_writer {
+
+            PSG_vertex_writer(PSGraph& g_) : g (g_) {};
+
+            template <class Vertex>
+            void operator()(std::ostream& out, Vertex v) {
+                    out << " [label=\""
+                        << "min="  << g[v].min << " \\n"
+                        << "mean=" << g[v].mean << " \\n"
+                        << "max=" << g[v].max << " \\n"
+                        << "stdev=" << g[v].stdev << " \\n"
+                        << "\"]";
+            };
+
+            PSGraph g;
+    };
+
     struct PSG_edge_writer {
 
             PSG_edge_writer(PSGraph& g_) : g (g_) {};
@@ -93,11 +109,7 @@ private:
                     out << " [label=\""
                         << "dMean=" << g[e].delta.mean << " \\n"
                         << " dSD=" << g[e].delta.stdev << " \\n"
-//                        << " dMin=" << g[e].delta.min
-//                        << " dMax=" << g[e].delta.max
                         << " durMean=" << g[e].duration.mean;
-//                        << " durMin=" << g[e].duration.min
-//                        << " durMax=" << g[e].duration.max
 
                     for (std::list< PSGraph::edge_descriptor >::const_iterator
                             edge=g[e].edgeHistory.begin();
@@ -123,19 +135,22 @@ private:
         size_t timestamp; /**< @brief UNIX timestamp taken from AggregateData. */
         double meanPower; /**< @brief Mean power used between this and the previous vertex. */
         PSGraph::vertex_descriptor psgVertex; /**< @brief link to vertex in Power State Graph. */
-        bool deadEnd; /**< @todo remove this if I implement unwinding. */
+        PSGraph::edge_descriptor psgEdge; /**< @brief the PSG edge which got us to where we are. */
+        std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
+                                                                the previous few edges we've seen. */
+
 
         DisagVertex()
-        : timestamp(0), meanPower(0), psgVertex(0), deadEnd(0)
+        : timestamp(0), meanPower(0), psgVertex(0)
         {}
 
         DisagVertex(
                 const size_t _timestamp,
                 const double _meanPower,
                 const PSGraph::vertex_descriptor _psgVertex,
-                const bool _deadEnd = false
+                const PSGraph::edge_descriptor _psgEdge
                 )
-        : timestamp(_timestamp), meanPower(_meanPower), psgVertex(_psgVertex), deadEnd(_deadEnd)
+        : timestamp(_timestamp), meanPower(_meanPower), psgVertex(_psgVertex), psgEdge(_psgEdge)
         {}
     };
 
@@ -147,7 +162,7 @@ private:
      * Implemented using the Boost Graph Library.
      */
     typedef boost::adjacency_list<
-            boost::setS, boost::vecS, boost::directedS,
+            boost::setS, boost::vecS, boost::bidirectionalS,
             DisagVertex,   // our custom vertex (node) type
             double          // our custom edge type (for storing probabilities)
             > DisagGraph;
@@ -209,6 +224,8 @@ private:
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
+    static const size_t EDGE_HISTORY_SIZE = 3;
+
     /****************************
      * PRIVATE MEMBER FUNCTIONS *
      ****************************/
@@ -249,7 +266,7 @@ private:
 
     void traceToEnd(
             DisagGraph * disagGraph,
-            DisagGraph::vertex_descriptor startVertex
+            const DisagGraph::vertex_descriptor& startVertex
             ) const;
 
     void addItemToEdgeHistory(
@@ -261,6 +278,10 @@ private:
             const std::list< PSGraph::edge_descriptor >& b
             ) const;
 
+    std::list< PSGraph::edge_descriptor > getEdgeHistoryForVertex(
+            const DisagGraph& disagGraph,
+            const DisagGraph::vertex_descriptor& startVertex
+            ) const;
 
 };
 

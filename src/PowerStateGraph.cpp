@@ -273,8 +273,9 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
  * @brief Update or Insert a new edge into powerStateGraph.
  *
  * - If an edge already exists between beforeVertex and afterVertex then
- *     - check if its history is the same as the current history. if so
- *         - update the existing edge's statistics
+ *     - check all out-edges from beforeVertex
+ *     - if any out-edge has the same history as the current history then
+ *         - update that edge's statistics
  *     - else
  *         - create a new edge.
  * - else
@@ -355,17 +356,28 @@ const bool PowerStateGraph::edgeListsAreEqual(
         const list< PSGraph::edge_descriptor >& b
         ) const
 {
+    cout << "************" << endl;
+    cout << "comparing lists:" << endl;
+
+    for (list< PSGraph::edge_descriptor >::const_iterator i=a.begin(); i!=a.end(); i++) {
+        cout << *i << endl;
+    }
+    cout << "----" << endl;
+    for (list< PSGraph::edge_descriptor >::const_iterator i=b.begin(); i!=b.end(); i++) {
+        cout << *i << endl;
+    }
+
     if (a.size() != b.size()) {
         cout << "sizes not equal" << endl;
         return false;
     }
 
+    cout << "************" << endl;
+
     list<PSGraph::edge_descriptor>::const_iterator a_i, b_i;
 
     a_i = a.begin();
     b_i = b.begin();
-
-    cout << "edgeListsAreEqual..." << endl;
 
     while (a_i != a.end() && b_i != b.end()) {
 
@@ -374,7 +386,7 @@ const bool PowerStateGraph::edgeListsAreEqual(
         if ( source(*a_i, powerStateGraph) != source(*b_i, powerStateGraph) &&
              target(*a_i, powerStateGraph) != target(*b_i, powerStateGraph)   ) {
 
-            cout << "not equal" << endl << endl;
+            cout << "edge list are not equal" << endl << endl;
             return false;
         }
 
@@ -493,51 +505,12 @@ void PowerStateGraph::updateEdges( const Signature& sig )
 
 void PowerStateGraph::writeGraphViz(ostream& out)
 {
-
-    char * str = 0;
-    size_t i = 0;
-
-    // generate names for vertices
-    const char* vertexName[ num_vertices(powerStateGraph) ];
-    PowerStateGraph::PSG_vertex_index_map vertexIndex = boost::get(boost::vertex_index, powerStateGraph);
-    std::pair<PowerStateGraph::PSG_vertex_iter, PowerStateGraph::PSG_vertex_iter> vp;
-    for (vp = boost::vertices(powerStateGraph); vp.first != vp.second; ++vp.first) {
-        str = new char[30];
-        sprintf(str, "min%d mean%d max%d sd%d",
-                Utils::roundToNearestInt(powerStateGraph[*vp.first].min),
-                Utils::roundToNearestInt(powerStateGraph[*vp.first].mean),
-                Utils::roundToNearestInt(powerStateGraph[*vp.first].max),
-                Utils::roundToNearestInt(powerStateGraph[*vp.first].stdev)
-                );
-        vertexName[i++] = str;
-    }
-
-    // generate names for edges
-    const char* edgeName[ num_edges(powerStateGraph) ];
-    i=0;
-    PowerStateGraph::PSG_edge_index_map edgeIndex = boost::get(boost::edge_index, powerStateGraph);
-    std::pair<PowerStateGraph::PSG_edge_iter, PowerStateGraph::PSG_edge_iter> ep;
-    for (ep = boost::edges(powerStateGraph); ep.first != ep.second; ++ep.first) {
-        str = new char[30];
-/*        sprintf(str, "delta%d dur%d c%d",
-                Utils::roundToNearestInt(graph[*ep.first].delta.mean ),
-                Utils::roundToNearestInt(graph[*ep.first].duration.mean ),
-                (int)graph[*ep.first].count
-                );
-                */
-
-        edgeName[i++] = str;
-    }
-
-    write_graphviz(out, powerStateGraph, boost::make_label_writer(vertexName), PSG_edge_writer(powerStateGraph));
-
-    // now delete the dynamically allocated strings
-    for (i = 0; i<num_vertices(powerStateGraph); i++) {
-        delete [] vertexName[i];
-    }
-    for (i = 0; i<num_edges(powerStateGraph); i++) {
-        delete [] edgeName[i];
-    }
+    write_graphviz(
+            out,
+            powerStateGraph,
+            PSG_vertex_writer(powerStateGraph),
+            PSG_edge_writer(powerStateGraph)
+            );
 }
 
 /**
@@ -643,6 +616,8 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     disagGraph[firstVertex].timestamp = spike.timestamp;
     disagGraph[firstVertex].meanPower = powerStateGraph[*v_i].mean;
     disagGraph[firstVertex].psgVertex = *v_i;
+    disagGraph[firstVertex].psgEdge   = *out_i;
+    disagGraph[firstVertex].edgeHistory.push_back(*out_i);
 
     // add an edge between disagOffVertex and firstVertex
     DisagGraph::edge_descriptor edge;
@@ -663,11 +638,11 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
  * Trace from startVertex to the off state in PSGraph
  */
 void PowerStateGraph::traceToEnd(
-        PowerStateGraph::DisagGraph * disagGraph_p, /**< input and output parameter */
-        PowerStateGraph::DisagGraph::vertex_descriptor startVertex
+        DisagGraph * disagGraph_p, /**< input and output parameter */
+        const DisagGraph::vertex_descriptor& startVertex
         ) const
 {
-    const double STDEV_MULT = 1; // higher = more permissive.
+    const double STDEV_MULT = 5; // higher = more permissive.
 
     list<AggregateData::FoundSpike> foundSpikes;
 
@@ -687,6 +662,15 @@ void PowerStateGraph::traceToEnd(
 
     for (; psg_out_i!=psg_out_end; psg_out_i++ ) {
 
+        std::list< PSGraph::edge_descriptor > eHistory = getEdgeHistoryForVertex(disagGraph, startVertex);
+
+        if ( ! edgeListsAreEqual(
+//                eHistory,
+                disagGraph[startVertex].edgeHistory,
+                powerStateGraph[*psg_out_i].edgeHistory ) ) {
+            cout << "edge histories not equal" << endl;
+            continue;
+        }
 
         //***************************************//
         // Calculate beginning of search window  //
@@ -720,7 +704,7 @@ void PowerStateGraph::traceToEnd(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
                 endOfSearchWindow,
-                4
+                9.5
                 );
 
 
@@ -765,14 +749,45 @@ void PowerStateGraph::traceToEnd(
             disagGraph[newVertex].timestamp = spike->timestamp;
             // get vertex that *pst_out_i points to
             disagGraph[newVertex].psgVertex = target(*psg_out_i, powerStateGraph);
+            disagGraph[newVertex].psgEdge   = *psg_out_i;
             disagGraph[newVertex].meanPower =
                     powerStateGraph[disagGraph[newVertex].psgVertex].mean;
+            disagGraph[newVertex].edgeHistory = disagGraph[startVertex].edgeHistory;
+            disagGraph[newVertex].edgeHistory.push_back(*psg_out_i);
+            if (disagGraph[newVertex].edgeHistory.size() > EDGE_HISTORY_SIZE) {
+                disagGraph[newVertex].edgeHistory.erase( disagGraph[newVertex].edgeHistory.begin() );
+            }
+
 
             // recursively trace to end.
             traceToEnd(disagGraph_p, newVertex);
         }
     }
 }
+
+/**
+ * Trace the disagGraph backwards
+ */
+list< PowerStateGraph::PSGraph::edge_descriptor > PowerStateGraph::getEdgeHistoryForVertex(
+        const DisagGraph& disagGraph,
+        const DisagGraph::vertex_descriptor& startVertex
+        ) const
+{
+    const size_t SIZE_OF_HISTORY = 3; /** @todo should be static const */
+    list< PSGraph::edge_descriptor > eHistory;
+    DisagGraph::vertex_descriptor disagVertex = startVertex;
+
+    DisagGraph::in_edge_iterator in_e_i, in_e_end;
+
+    while (disagGraph[disagVertex].psgVertex != offVertex && eHistory.size() < SIZE_OF_HISTORY) {
+        eHistory.push_front( disagGraph[disagVertex].psgEdge );
+        tie(in_e_i, in_e_end) = in_edges(disagVertex, disagGraph);
+        disagVertex = source( *in_e_i, disagGraph ); // the vertex upstream from in_e_i
+    }
+
+    return eHistory;
+}
+
 
 std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )
 {
