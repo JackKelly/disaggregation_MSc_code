@@ -60,9 +60,9 @@ void PowerStateGraph::update(
     PSGraph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 100) {
+    if (spikes.size() > 10) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 100 );
+        advance( it, 10 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -744,7 +744,7 @@ void PowerStateGraph::traceToEnd(
         const bool verbose
         ) const
 {
-    const double STDEV_MULT = 2; // higher = more permissive. (time) needs to be 7 to allow Washer1 to find Washer2
+    const double STDEV_MULT = 1.5; // higher = more permissive. (time) needs to be 7 to allow Washer1 to find Washer2
 
     list<AggregateData::FoundSpike> foundSpikes;
 
@@ -811,7 +811,7 @@ void PowerStateGraph::traceToEnd(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
                 endOfSearchWindow,
-                8.3  // was 8
+                8  // was 8
                 );
 
 

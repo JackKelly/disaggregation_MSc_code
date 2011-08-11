@@ -29,6 +29,7 @@ void powerStateGraphTest()
     Signature sig( "data/input/watts_up/washer.csv", 1, "washer", 1, 1, 2530 );
     psg.update( sig );
 
+
     Signature sig2( "data/input/watts_up/washer2.csv", 1, "washer2", 1,1, 2000 );
     psg.update( sig2 );
 
