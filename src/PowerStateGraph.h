@@ -319,6 +319,11 @@ private:
             const bool verbose = false
             );
 
+    void removeOverlapping(
+            std::list<DisagDataItem> * disagList /**< Input and output parameter */
+            );
+
+
 };
 
 #endif /* POWERSTATEGRAPH_H_ */

@@ -583,12 +583,50 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
         }
     }
 
-    /**
-     * @todo if two or more candidateDisagDataItems overlap then
-     * remove all but the one with the highest confidence.
-     */
+    if (REMOVE_OVERLAPPING) {
+        removeOverlapping( &disagList );
+    }
+
+    for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
+        cout << "candidate found at " << disagItem->timestamp << " confidence=" << disagItem->confidence << endl;
+    }
 
     return disagList;
+}
+
+/**
+ * Remove any overlapping list entries and leave the one with the highest confidence
+ */
+void PowerStateGraph::removeOverlapping(
+        list<DisagDataItem> * disagList /**< Input and output parameter */
+        )
+{
+    list<DisagDataItem>::iterator currentDisagItem, prevDisagItem;
+    currentDisagItem = prevDisagItem = disagList->begin();
+    advance( currentDisagItem, 1 );
+    while ( currentDisagItem != disagList->end() ) {
+
+        // check to see whether the two disag items overlap
+        if ( (prevDisagItem->timestamp + prevDisagItem->duration) >= currentDisagItem->timestamp ) {
+
+            cout << "Overlap detected between items with start timestamps "
+                    << prevDisagItem->timestamp << " and " << currentDisagItem->timestamp << " ...";
+
+            // they overlap.  so find which needs to be replaced
+            if (prevDisagItem->confidence < currentDisagItem->confidence) {
+                cout << "erasing item with timestamp " << prevDisagItem->timestamp << endl;
+                disagList->erase( prevDisagItem );
+                prevDisagItem = currentDisagItem++;
+            } else {
+                cout << "erasing item with timestamp " << currentDisagItem->timestamp << endl;
+                disagList->erase( currentDisagItem++ );
+                // don't change prevDisagItem
+            }
+
+        } else {
+            prevDisagItem = currentDisagItem++;
+        }
+    }
 }
 
 /**
