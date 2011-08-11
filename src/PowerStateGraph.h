@@ -109,7 +109,12 @@ private:
                     out << " [label=\""
                         << "dMean=" << g[e].delta.mean << " \\n"
                         << " dSD=" << g[e].delta.stdev << " \\n"
-                        << " durMean=" << g[e].duration.mean;
+                        << " dMin=" << g[e].delta.min << " \\n"
+                        << " dMax=" << g[e].delta.max << " \\n"
+                        << " durMean=" << g[e].duration.mean << " \\n"
+                        << " durSD=" << g[e].duration.stdev << " \\n"
+                        << " durMin=" << g[e].duration.min << " \\n"
+                        << " durMax=" << g[e].duration.max << " \\n" ;
 
                     for (std::list< PSGraph::edge_descriptor >::const_iterator
                             edge=g[e].edgeHistory.begin();
@@ -221,7 +226,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 3;
+    static const size_t EDGE_HISTORY_SIZE = 5;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
@@ -269,19 +274,22 @@ private:
             const PSGraph::vertex_descriptor& before,
             const PSGraph::vertex_descriptor& after,
             const size_t sampleSinceLastSpike,
-            const double spikeDelta
+            const double spikeDelta,
+            const bool verbose = false
             );
 
     void updateEdges( const Signature& sig );
 
     const DisagDataItem initTraceToEnd(
             const AggregateData::FoundSpike& spike,
-            const size_t deviceStart
+            const size_t deviceStart,
+            const bool verbose = false //
             );
 
     void traceToEnd(
             DisagTree * disagGraph,
-            const DisagTree::vertex_descriptor& startVertex
+            const DisagTree::vertex_descriptor& startVertex,
+            const bool verbose = false
             ) const;
 
     void addItemToEdgeHistory(
@@ -290,11 +298,12 @@ private:
 
     const bool edgeListsAreEqual(
             const std::list< PSGraph::edge_descriptor >& a,
-            const std::list< PSGraph::edge_descriptor >& b
+            const std::list< PSGraph::edge_descriptor >& b,
+            const bool verbose = false
             ) const;
 
     std::list< PSGraph::edge_descriptor > getEdgeHistoryForVertex(
-            const DisagTree& disagGraph,
+            const DisagTree& disagTree,
             const DisagTree::vertex_descriptor& startVertex
             ) const;
 
@@ -302,6 +311,12 @@ private:
             const DisagTree& disagTree,
             const DisagTree::vertex_descriptor vertex,
             std::list<ConfidenceAndVertex> path = std::list<ConfidenceAndVertex>(0)
+            );
+
+    const DisagDataItem findBestPath(
+            const DisagTree& disagTree,
+            const size_t deviceStart,
+            const bool verbose = false
             );
 
 };

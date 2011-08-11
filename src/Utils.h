@@ -39,6 +39,21 @@ const double& largest(
         const double& b
         );
 
+const double& smallest(
+        const double& a,
+        const double& b
+        );
+
+const size_t& largest(
+        const size_t& a,
+        const size_t& b
+        );
+
+const size_t& smallest(
+        const size_t& a,
+        const size_t& b
+        );
+
 const bool within(
         const double a,
         const double b,

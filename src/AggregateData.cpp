@@ -123,6 +123,26 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
     if (stdev < fabs(spikeStats.mean/10))
         stdev = fabs(spikeStats.mean/10);
 
+    // should we use the stdev of max-min as the range?
+    double upperLimit, lowerLimit;
+/*    if ((stdev*2*stdevMultiplier) > fabs(spikeStats.max-spikeStats.min)) {
+        lowerLimit = spikeStats.mean-(stdev*stdevMultiplier);
+        upperLimit = spikeStats.mean+(stdev*stdevMultiplier);
+    } else {
+        cout << "yes" << endl;
+        lowerLimit = spikeStats.min;// - (fabs(spikeStats.min)*0.1);
+        upperLimit = spikeStats.max;// + (fabs(spikeStats.max)*0.1);
+    }
+*/
+    lowerLimit = Utils::smallest(
+            spikeStats.mean - ( stdev*stdevMultiplier ),
+            spikeStats.min  - stdev
+            );
+    upperLimit = Utils::largest(
+            spikeStats.mean + (stdev*stdevMultiplier),
+            spikeStats.max  + stdev
+            );
+
     boost::math::normal dist(spikeStats.mean, stdev);
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html
 
@@ -130,7 +150,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
     while (time < endTime && i < size) {
 
         // Are spikeStats.mean and aggDelta(i) within stdev*stdevMultiplier of eachother?
-        if ( Utils::within(aggDelta(i), spikeStats.mean, stdev*stdevMultiplier) ) {
+        if ( Utils::between(lowerLimit, upperLimit, aggDelta(i)) ) {
 
             foundSpikes.push_back(
                     FoundSpike(

@@ -281,33 +281,39 @@ void PowerStateGraph::updateOrInsertEdge(
         const PSGraph::vertex_descriptor& beforeVertex,
         const PSGraph::vertex_descriptor& afterVertex,
         const size_t sampleSinceLastSpike,
-        const double spikeDelta
+        const double spikeDelta,
+        const bool verbose
         )
 {
     totalCount++;
 
-    cout << "-------------------" << endl;
+    if (verbose) cout << "-------------------" << endl;
 
     PSGraph::edge_descriptor existingEdge, newEdge;
     bool edgeExistsAlready;
     tie(existingEdge, edgeExistsAlready) = boost::edge(beforeVertex, afterVertex, powerStateGraph);
 
-    if ( edgeExistsAlready )
-        cout << "edgeExistsAlready" << endl;
-    else
-        cout << "edge does not Exist Already" << endl;
+    if (verbose) {
+        if ( edgeExistsAlready ) {
+            cout << "edgeExistsAlready" << endl;
+        } else {
+            cout << "edge does not Exist Already" << endl;
+        }
+    }
 
     if ( edgeExistsAlready ) {
 
-        for (list<PSGraph::edge_descriptor>::iterator edge=edgeHistory.begin(); edge!=edgeHistory.end(); edge++) {
-            cout << "                              edgeHistory = " << *edge << endl;
-        }
-        for (list<PSGraph::edge_descriptor>::iterator edge=powerStateGraph[existingEdge].edgeHistory.begin();
-                edge!=powerStateGraph[existingEdge].edgeHistory.end(); edge++) {
-            cout << "powerStateGraph[existingEdge].edgeHistory = " << *edge << endl;
+        if (verbose) {
+            for (list<PSGraph::edge_descriptor>::iterator edge=edgeHistory.begin(); edge!=edgeHistory.end(); edge++) {
+                cout << "                              edgeHistory = " << *edge << endl;
+            }
+            for (list<PSGraph::edge_descriptor>::iterator edge=powerStateGraph[existingEdge].edgeHistory.begin();
+                    edge!=powerStateGraph[existingEdge].edgeHistory.end(); edge++) {
+                cout << "powerStateGraph[existingEdge].edgeHistory = " << *edge << endl;
+            }
         }
 
-        cout << endl;
+         if (verbose) cout << endl;
 
         // check if any of the out edges from beforeVertex have the same
         // history as our current history... if so, update that edge.
@@ -316,7 +322,7 @@ void PowerStateGraph::updateOrInsertEdge(
         for (; out_e_i != out_e_end; out_e_i++) {
             // check if the edge has the same history as out current history
             if ( edgeListsAreEqual(powerStateGraph[*out_e_i].edgeHistory, edgeHistory) ) {
-                cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
+                if (verbose) cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
 
                 // update existing edge's stats
                 powerStateGraph[*out_e_i].delta.update( spikeDelta );
@@ -342,33 +348,36 @@ void PowerStateGraph::updateOrInsertEdge(
     powerStateGraph[newEdge].count    = 1;
     powerStateGraph[newEdge].edgeHistory = edgeHistory;
 
-    cout << "adding new edge" << newEdge << " " << powerStateGraph[newEdge].delta << endl;
+    if (verbose) cout << "adding new edge" << newEdge << " " << powerStateGraph[newEdge].delta << endl;
 
     addItemToEdgeHistory( newEdge );
 }
 
 const bool PowerStateGraph::edgeListsAreEqual(
         const list< PSGraph::edge_descriptor >& a,
-        const list< PSGraph::edge_descriptor >& b
+        const list< PSGraph::edge_descriptor >& b,
+        const bool verbose
         ) const
 {
-    cout << "************" << endl;
-    cout << "comparing lists:" << endl;
+    if (verbose ) {
+        cout << "************" << endl
+                << "comparing lists:" << endl;
 
-    for (list< PSGraph::edge_descriptor >::const_iterator i=a.begin(); i!=a.end(); i++) {
-        cout << *i << endl;
-    }
-    cout << "----" << endl;
-    for (list< PSGraph::edge_descriptor >::const_iterator i=b.begin(); i!=b.end(); i++) {
-        cout << *i << endl;
+        for (list< PSGraph::edge_descriptor >::const_iterator i=a.begin(); i!=a.end(); i++) {
+            cout << *i << endl;
+        }
+        cout << "----" << endl;
+        for (list< PSGraph::edge_descriptor >::const_iterator i=b.begin(); i!=b.end(); i++) {
+            cout << *i << endl;
+        }
     }
 
     if (a.size() != b.size()) {
-        cout << "sizes not equal" << endl;
+        if (verbose) cout << "sizes not equal" << endl;
         return false;
     }
 
-    cout << "************" << endl;
+    if (verbose) cout << "************" << endl;
 
     list<PSGraph::edge_descriptor>::const_iterator a_i, b_i;
 
@@ -377,12 +386,12 @@ const bool PowerStateGraph::edgeListsAreEqual(
 
     while (a_i != a.end() && b_i != b.end()) {
 
-        cout << "*a_i=" << *a_i << " *b_i=" << *b_i << endl;
+        if (verbose) cout << "*a_i=" << *a_i << " *b_i=" << *b_i << endl;
 
         if ( source(*a_i, powerStateGraph) != source(*b_i, powerStateGraph) &&
              target(*a_i, powerStateGraph) != target(*b_i, powerStateGraph)   ) {
 
-            cout << "edge list are not equal" << endl << endl;
+            if (verbose) cout << "edge list are not equal" << endl << endl;
             return false;
         }
 
@@ -552,7 +561,7 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
     PowerStateEdge firstEdgeStats = powerStateGraph[*out_i];
 
     list<AggregateData::FoundSpike> foundSpikes
-    = aggregateData.findSpike(firstEdgeStats.delta);
+        = aggregateData.findSpike(firstEdgeStats.delta);
 
     // for each spike which might possibly be the start of
     // the device signature in the aggregate reading,
@@ -567,14 +576,17 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
                 );
 
         if ( candidateDisagDataItem.confidence != -1 ) {
+            cout << "candidate found at " << ( spike->timestamp - firstEdgeStats.duration.mean ) - 1310252400 /** @todo IMPORTANT remove this hard-coded timecode! */
+                    << " confidence=" << candidateDisagDataItem.confidence
+                    << " duration=" << candidateDisagDataItem.duration << endl;
             disagList.push_back( candidateDisagDataItem );
         }
-
-        /**
-         * @todo if two or more candidateDisagDataItems overlap then
-         * remove all but the one with the highest confidence.
-         */
     }
+
+    /**
+     * @todo if two or more candidateDisagDataItems overlap then
+     * remove all but the one with the highest confidence.
+     */
 
     return disagList;
 }
@@ -586,11 +598,11 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
  */
 const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
         const AggregateData::FoundSpike& spike,
-        const size_t deviceStart /**< The possible time the device started. */
+        const size_t deviceStart, /**< The possible time the device started. */
+        const bool verbose
         )
 {
     DisagTree disagTree;
-    listOfPaths.clear();
 
     // make the first vertex (which represents "off")
     DisagTree::vertex_descriptor disagOffVertex = add_vertex(disagTree);
@@ -623,16 +635,12 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     // now recursively trace from this edge to the end
     traceToEnd( &disagTree, firstVertex );
 
-    write_graphviz(cout, disagTree,
+    if (verbose) {
+        write_graphviz(cout, disagTree,
             Disag_vertex_writer(disagTree), Disag_edge_writer(disagTree));
+    }
 
     // find route through the tree with highest average edge probabilities
-    DisagDataItem disagDataItem;
-    disagDataItem.timestamp  = deviceStart;
-    disagDataItem.confidence = 0;
-    disagDataItem.energy     = 0;
-    disagDataItem.duration   = 0;
-
     listOfPaths.clear();
 
     findListOfPathsThroughDisagTree(
@@ -640,17 +648,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
             disagOffVertex
             );
 
-    cout << "path dump:" << endl;
-
-    for (list< list<ConfidenceAndVertex> >::const_iterator path=listOfPaths.begin();
-            path!=listOfPaths.end(); path++){
-        for (list<PowerStateGraph::ConfidenceAndVertex>::const_iterator it=path->begin(); it!=path->end(); it++ ) {
-            cout << "vertex=" << it->vertex << " conf=" << it->confidence << ", ";
-        }
-        cout << endl << endl;
-    }
-
-//    return findBest;
+    return findBestPath( disagTree, deviceStart );
 
 }
 
@@ -701,10 +699,11 @@ void PowerStateGraph::findListOfPathsThroughDisagTree(
  */
 void PowerStateGraph::traceToEnd(
         DisagTree * disagGraph_p, /**< input and output parameter */
-        const DisagTree::vertex_descriptor& startVertex
+        const DisagTree::vertex_descriptor& startVertex,
+        const bool verbose
         ) const
 {
-    const double STDEV_MULT = 5; // higher = more permissive. (time)
+    const double STDEV_MULT = 2; // higher = more permissive. (time) needs to be 7 to allow Washer1 to find Washer2
 
     list<AggregateData::FoundSpike> foundSpikes;
 
@@ -730,33 +729,36 @@ void PowerStateGraph::traceToEnd(
 //                eHistory,
                 disagGraph[startVertex].edgeHistory,
                 powerStateGraph[*psg_out_i].edgeHistory ) ) {
-            cout << "edge histories not equal" << endl;
+            if (verbose) cout << "edge histories not equal" << endl;
             continue;
         }
 
-        //***************************************//
-        // Calculate beginning of search window  //
 
-        size_t begOfSearchWindow = disagGraph[startVertex].timestamp
-                + powerStateGraph[*psg_out_i].duration.mean -
-                (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT);
+        // see if stdev*STDEV_MULT*2 is bigger than max-min and then
+        // use the larger gap
+        size_t begOfSearchWindow, endOfSearchWindow;
+
+        begOfSearchWindow = disagGraph[startVertex].timestamp +
+                Utils::smallest(
+                  (size_t)(powerStateGraph[*psg_out_i].duration.min),
+                  (size_t)(powerStateGraph[*psg_out_i].duration.mean -
+                                    (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
+
+        endOfSearchWindow = disagGraph[startVertex].timestamp +
+                Utils::largest(
+                  (size_t)(powerStateGraph[*psg_out_i].duration.max),
+                  (size_t)(powerStateGraph[*psg_out_i].duration.mean +
+                                    (size_t)(powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
+
+
+
         // ensure we're not looking backwards in time
         if (begOfSearchWindow < disagGraph[startVertex].timestamp)
             begOfSearchWindow = disagGraph[startVertex].timestamp;
 
-
-        //***************************************//
-        //    Calculate end of search window     //
-
-        size_t endOfSearchWindow = disagGraph[startVertex].timestamp +
-                powerStateGraph[*psg_out_i].duration.mean;
-
         // check that we're not looking past the end of aggData
         if (endOfSearchWindow > (*aggData)[ (*aggData).getSize() - 1 ].timestamp )
             continue;
-
-        // add on stdev*STDEV_MULT
-        endOfSearchWindow += powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT;
 
 
         //************************************************************//
@@ -766,7 +768,7 @@ void PowerStateGraph::traceToEnd(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
                 endOfSearchWindow,
-                9.5
+                8  // was 8
                 );
 
 
@@ -789,13 +791,8 @@ void PowerStateGraph::traceToEnd(
                     );
 
             // create an average probability
-            double avPdf = (pdf_for_time + spike->pdf) / 2;
+            double weightedAvPdf = (pdf_for_time + (4*spike->pdf)) / 5; // weight the average in favour of the spike PDF
 
-            /** @todo experiment with weighting the avPdf in favour of the spike->pdf. */
-
-            // check avPdf isn't too low
-            if (avPdf < 0.00097)
-                continue;
 
             // create new vertex
             DisagTree::vertex_descriptor newVertex=add_vertex(disagGraph);
@@ -804,7 +801,7 @@ void PowerStateGraph::traceToEnd(
             DisagTree::edge_descriptor newEdge;
             bool existingEdge;
             tie(newEdge, existingEdge) =
-                    add_edge(startVertex, newVertex, avPdf, disagGraph);
+                    add_edge(startVertex, newVertex, weightedAvPdf, disagGraph);
 
 
             // add details to newVertex
@@ -828,10 +825,58 @@ void PowerStateGraph::traceToEnd(
 }
 
 /**
+ * @brief To be called after @c listOfPaths has been populated by findListOfPathsThroughDisagTree.
+ *
+ * @return details of the best list.  Confidence is set to -1 if no paths are available
+ */
+const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
+        const DisagTree& disagTree,
+        const size_t deviceStart,
+        const bool verbose
+        )
+{
+    DisagDataItem ddi;
+    ddi.timestamp = deviceStart;
+
+    // first check that listOfPaths is populated
+    if ( listOfPaths.empty() ) {
+        ddi.confidence = -1; // error code
+        return ddi;
+    }
+
+    ddi.confidence = 0;
+
+    if (verbose) cout << "path dump:" << endl;
+
+    double confidenceAccumulator, avConfidence;
+
+    for (list< list<ConfidenceAndVertex> >::const_iterator path=listOfPaths.begin();
+            path!=listOfPaths.end(); path++){
+
+        confidenceAccumulator = 0;
+        for (list<PowerStateGraph::ConfidenceAndVertex>::const_iterator it=path->begin(); it!=path->end(); it++ ) {
+            if (verbose) cout << "vertex=" << it->vertex << " conf=" << it->confidence << ", ";
+            confidenceAccumulator += it->confidence;
+        }
+        avConfidence = confidenceAccumulator / path->size();
+        if ( avConfidence > ddi.confidence ) {
+            ddi.confidence = avConfidence;
+            ddi.duration = disagTree[path->back().vertex].timestamp + // timestamp of start of last power state
+                    powerStateGraph[ disagTree[path->back().vertex].psgEdge ].duration.mean // duration of last power state
+                    - deviceStart;
+        }
+
+        if (verbose) cout << endl << endl;
+    }
+
+    return ddi;
+}
+
+/**
  * Trace the disagGraph backwards
  */
 list< PowerStateGraph::PSGraph::edge_descriptor > PowerStateGraph::getEdgeHistoryForVertex(
-        const DisagTree& disagGraph,
+        const DisagTree& disagTree,
         const DisagTree::vertex_descriptor& startVertex
         ) const
 {
@@ -840,10 +885,10 @@ list< PowerStateGraph::PSGraph::edge_descriptor > PowerStateGraph::getEdgeHistor
 
     DisagTree::in_edge_iterator in_e_i, in_e_end;
 
-    while (disagGraph[disagVertex].psgVertex != offVertex && eHistory.size() < EDGE_HISTORY_SIZE) {
-        eHistory.push_front( disagGraph[disagVertex].psgEdge );
-        tie(in_e_i, in_e_end) = in_edges(disagVertex, disagGraph);
-        disagVertex = source( *in_e_i, disagGraph ); // the vertex upstream from in_e_i
+    while (disagTree[disagVertex].psgVertex != offVertex && eHistory.size() < EDGE_HISTORY_SIZE) {
+        eHistory.push_front( disagTree[disagVertex].psgEdge );
+        tie(in_e_i, in_e_end) = in_edges(disagVertex, disagTree);
+        disagVertex = source( *in_e_i, disagTree ); // the vertex upstream from in_e_i
     }
 
     return eHistory;

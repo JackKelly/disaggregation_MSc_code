@@ -118,6 +118,44 @@ const double& Utils::largest(
         return b;
 }
 
+const double& Utils::smallest(
+        const double& a,
+        const double& b
+        )
+{
+    if ( a < b )
+        return a;
+    else
+        return b;
+}
+
+/**
+ * @return the larger of the two values
+ */
+const size_t& Utils::largest(
+        const size_t& a,
+        const size_t& b
+        )
+{
+    if ( a > b )
+        return a;
+    else
+        return b;
+}
+
+const size_t& Utils::smallest(
+        const size_t& a,
+        const size_t& b
+        )
+{
+    if ( a < b )
+        return a;
+    else
+        return b;
+}
+
+
+
 /**
  * @return true if @c a and @b and within @c diff of each other.
  */
