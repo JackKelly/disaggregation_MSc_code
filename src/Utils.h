@@ -13,7 +13,9 @@
 
 namespace Utils {
 
-int  roundToNearestInt( const double input );
+const int  roundToNearestInt( const double input );
+
+const size_t roundToNearestSizeT( const double input );
 
 const char * todaysDateAndTime();
 

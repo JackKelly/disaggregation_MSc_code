@@ -740,17 +740,16 @@ void PowerStateGraph::traceToEnd(
 
         begOfSearchWindow = disagGraph[startVertex].timestamp +
                 Utils::smallest(
-                  (size_t)(powerStateGraph[*psg_out_i].duration.min),
-                  (size_t)(powerStateGraph[*psg_out_i].duration.mean -
+                  (size_t)powerStateGraph[*psg_out_i].duration.min,
+                  Utils::roundToNearestSizeT(
+                          powerStateGraph[*psg_out_i].duration.mean -
                                     (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
 
         endOfSearchWindow = disagGraph[startVertex].timestamp +
                 Utils::largest(
                   (size_t)(powerStateGraph[*psg_out_i].duration.max),
-                  (size_t)(powerStateGraph[*psg_out_i].duration.mean +
-                                    (size_t)(powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
-
-
+                  Utils::roundToNearestSizeT(powerStateGraph[*psg_out_i].duration.mean +
+                                    (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
 
         // ensure we're not looking backwards in time
         if (begOfSearchWindow < disagGraph[startVertex].timestamp)

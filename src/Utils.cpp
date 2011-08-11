@@ -11,9 +11,20 @@
 #include <time.h>
 #include <fstream>
 #include <glog/logging.h>
+#include <iostream>
 
-int Utils::roundToNearestInt( const double input )
+const int Utils::roundToNearestInt( const double input )
 {
+    return floor( input + 0.5 );
+}
+
+const size_t Utils::roundToNearestSizeT( const double input )
+{
+    if (input < 0) {
+        std::cout << "WARNING: input to roundToNearestSizeT is negative." << std::endl;
+        return 0;
+    }
+
     return floor( input + 0.5 );
 }
 
