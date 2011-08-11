@@ -60,9 +60,9 @@ void PowerStateGraph::update(
     PSGraph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 10) {
+    if (spikes.size() > 100) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 10 );
+        advance( it, 100 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -588,7 +588,10 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
     }
 
     for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
-        cout << "candidate found at " << disagItem->timestamp << " confidence=" << disagItem->confidence << endl;
+        cout << "candidate found at "
+                << disagItem->timestamp   - 1310252400
+                << " confidence=" << disagItem->confidence
+                << " duration=" << disagItem->duration << endl;
     }
 
     return disagList;
@@ -775,27 +778,30 @@ void PowerStateGraph::traceToEnd(
         // see if stdev*STDEV_MULT*2 is bigger than max-min and then
         // use the larger gap
         size_t begOfSearchWindow, endOfSearchWindow;
+        const size_t WINDOW_FRAME = 18; // number of seconds to widen window by
 
-        begOfSearchWindow = disagGraph[startVertex].timestamp +
+        begOfSearchWindow = disagGraph[startVertex].timestamp - WINDOW_FRAME +
                 Utils::smallest(
-                  (size_t)powerStateGraph[*psg_out_i].duration.min,
+                  powerStateGraph[*psg_out_i].duration.min,
                   Utils::roundToNearestSizeT(
                           powerStateGraph[*psg_out_i].duration.mean -
                                     (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
 
-        endOfSearchWindow = disagGraph[startVertex].timestamp +
+        endOfSearchWindow = disagGraph[startVertex].timestamp + WINDOW_FRAME +
                 Utils::largest(
-                  (size_t)(powerStateGraph[*psg_out_i].duration.max),
+                  powerStateGraph[*psg_out_i].duration.max,
                   Utils::roundToNearestSizeT(powerStateGraph[*psg_out_i].duration.mean +
                                     (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
 
         // ensure we're not looking backwards in time
-        if (begOfSearchWindow < disagGraph[startVertex].timestamp)
+        if (begOfSearchWindow < disagGraph[startVertex].timestamp) {
             begOfSearchWindow = disagGraph[startVertex].timestamp;
+        }
 
         // check that we're not looking past the end of aggData
-        if (endOfSearchWindow > (*aggData)[ (*aggData).getSize() - 1 ].timestamp )
-            continue;
+        if (endOfSearchWindow > (*aggData)[ (*aggData).getSize() - 1 ].timestamp ) {
+            continue; // we can't process this if we're trying to look past the end of the aggData
+        }
 
 
         //************************************************************//
@@ -805,7 +811,7 @@ void PowerStateGraph::traceToEnd(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
                 endOfSearchWindow,
-                8  // was 8
+                8.3  // was 8
                 );
 
 
@@ -820,7 +826,8 @@ void PowerStateGraph::traceToEnd(
             // calculate probability density function for the time at which the spike was found
             boost::math::normal dist(
                     powerStateGraph[*psg_out_i].duration.mean,
-                    powerStateGraph[*psg_out_i].duration.stdev
+                    powerStateGraph[*psg_out_i].duration.mean/10 // powerStateGraph[*psg_out_i].duration.stdev
+                    /** @todo should PDF stdev be hard-coded more elegantly? */
                     );
             double pdf_for_time = boost::math::pdf(
                     dist,
@@ -828,7 +835,7 @@ void PowerStateGraph::traceToEnd(
                     );
 
             // create an average probability
-            double weightedAvPdf = (pdf_for_time + (4*spike->pdf)) / 5; // weight the average in favour of the spike PDF
+            double weightedAvPdf = (pdf_for_time + (spike->pdf*1)) / 2; // weight the average in favour of the spike PDF
 
 
             // create new vertex

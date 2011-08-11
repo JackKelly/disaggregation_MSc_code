@@ -21,7 +21,7 @@ const int Utils::roundToNearestInt( const double input )
 const size_t Utils::roundToNearestSizeT( const double input )
 {
     if (input < 0) {
-        std::cout << "WARNING: input to roundToNearestSizeT is negative." << std::endl;
+//        std::cout << "WARNING: input to roundToNearestSizeT is negative." << std::endl;
         return 0;
     }
 

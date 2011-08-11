@@ -226,7 +226,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 5;
+    static const size_t EDGE_HISTORY_SIZE = 7;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 

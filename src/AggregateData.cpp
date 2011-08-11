@@ -143,7 +143,8 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
             spikeStats.max  + stdev
             );
 
-    boost::math::normal dist(spikeStats.mean, stdev);
+    /** @todo this is an ugly hack at the moment setting stdef to mean/10 */
+    boost::math::normal dist(spikeStats.mean, fabs(spikeStats.mean/10));// stdev);
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html
 
     size_t time = startTime;
