@@ -590,6 +590,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
         )
 {
     DisagTree disagTree;
+    listOfPaths.clear();
 
     // make the first vertex (which represents "off")
     DisagTree::vertex_descriptor disagOffVertex = add_vertex(disagTree);
@@ -634,8 +635,10 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
 
     listOfPaths.clear();
 
-    bool hitDeadEnd;
-    findListOfPathsThroughDisagTree( disagTree, disagOffVertex, &hitDeadEnd );
+    findListOfPathsThroughDisagTree(
+            disagTree,
+            disagOffVertex
+            );
 
     cout << "path dump:" << endl;
 
@@ -644,10 +647,10 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
         for (list<PowerStateGraph::ConfidenceAndVertex>::const_iterator it=path->begin(); it!=path->end(); it++ ) {
             cout << "vertex=" << it->vertex << " conf=" << it->confidence << ", ";
         }
-        cout << endl;
+        cout << endl << endl;
     }
 
-//    return disagDataItem;
+//    return findBest;
 
 }
 
@@ -658,25 +661,20 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
  *
  * Traces the tree downwards.
  */
-list<PowerStateGraph::ConfidenceAndVertex> PowerStateGraph::findListOfPathsThroughDisagTree(
+void PowerStateGraph::findListOfPathsThroughDisagTree(
         const DisagTree& disagTree,
         const DisagTree::vertex_descriptor vertex,
-        bool * hitDeadEnd
+        list<PowerStateGraph::ConfidenceAndVertex> path /**< Deliberately called-by-value because we want a copy. */
         )
 {
-    list<PowerStateGraph::ConfidenceAndVertex> path;
+    // base case = we're at the end
+    if ( vertex != 0 && // check we're not at the first vertex
+            disagTree[ vertex ].meanPower == 0 ) {
+        listOfPaths.push_back( path );
+        return;
+    }
 
     ConfidenceAndVertex cav;
-
-    // base case = we're at the end
-    if ( vertex != 0 && disagTree[ vertex ].meanPower == 0 ) {
-        cout << " we're at the finish node" << endl;
-        *hitDeadEnd = false;
-        cav.vertex = vertex;
-        cav.confidence = 0;
-        path.push_back( cav );
-        return path;
-    }
 
     // iterate through each out-edge
     Disag_out_edge_iter out_e_i, out_e_end;
@@ -684,34 +682,17 @@ list<PowerStateGraph::ConfidenceAndVertex> PowerStateGraph::findListOfPathsThrou
     for (; out_e_i!=out_e_end; out_e_i++) {
 
         DisagTree::vertex_descriptor downstreamVertex = target(*out_e_i, disagTree);
+        cav.vertex = downstreamVertex;
         cav.confidence = disagTree[*out_e_i];
-        cav.vertex     = vertex;
+        path.push_back( cav );
 
         // we haven't hit the end yet so recursively follow tree downwards.
-        bool downstreamHitDeadEnd;
-        path = findListOfPathsThroughDisagTree(
+        findListOfPathsThroughDisagTree(
                 disagTree,
                 downstreamVertex,
-                &downstreamHitDeadEnd );
+                path );
 
-        if ( ! downstreamHitDeadEnd ) {
-            *hitDeadEnd = false;
-            path.push_front(cav);
-
-            // check if this is a complete path (and hence needs to be added to listOfPaths)
-            if ( ( path.size() > 1 ) &&
-                    ( disagTree[ path.front().vertex ].meanPower == 0 ) &&
-                    ( disagTree[ path.back().vertex ].meanPower == 0 )) {
-                cout << "adding to listOfPAths" << endl;
-                listOfPaths.push_back( path );
-            }
-
-            return path;
-        }
     }
-
-    *hitDeadEnd = true;
-    return path;
 }
 
 

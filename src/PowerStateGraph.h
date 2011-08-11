@@ -228,6 +228,14 @@ private:
     struct ConfidenceAndVertex {
         double confidence;
         DisagTree::vertex_descriptor vertex;
+
+        ConfidenceAndVertex()
+        : confidence(0), vertex(0)
+        {}
+
+        ConfidenceAndVertex(const DisagTree::vertex_descriptor& _vertex)
+        : confidence(0), vertex(_vertex)
+        {}
     };
 
 
@@ -290,10 +298,10 @@ private:
             const DisagTree::vertex_descriptor& startVertex
             ) const;
 
-    std::list<ConfidenceAndVertex> findListOfPathsThroughDisagTree(
+    void findListOfPathsThroughDisagTree(
             const DisagTree& disagTree,
             const DisagTree::vertex_descriptor vertex,
-            bool * hitDeadEnd
+            std::list<ConfidenceAndVertex> path = std::list<ConfidenceAndVertex>(0)
             );
 
 };
