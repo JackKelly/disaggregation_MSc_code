@@ -34,11 +34,20 @@ public:
         size_t duration;
         double energy;    /**< @brief energy consumed */
         double confidence;
+
+        friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
+            o << "timestamp=" << ddi.timestamp << std::endl
+              << " confidence=" << ddi.confidence << std::endl
+              << " duration=" << ddi.duration << std::endl
+              << " energy=" << ddi.energy << " Joules"
+              << " equivalent to " << ddi.energy / 3600000 << " kWh";
+            return o;
+        }
     };
 
     const std::list<DisagDataItem> getStartTimes(
             const AggregateData& aggregateData, /**< A populated array of AggregateData */
-            const bool verbose = true
+            const bool verbose = false
             );
 
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
@@ -226,7 +235,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 3;
+    static const size_t EDGE_HISTORY_SIZE = 4;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
