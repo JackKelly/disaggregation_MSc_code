@@ -36,12 +36,12 @@ const bool roughlyEqual(
         const double tolerance
         );
 
-const double& largest(
+const double& highest(
         const double& a,
         const double& b
         );
 
-const double& smallest(
+const double& lowest(
         const double& a,
         const double& b
         );

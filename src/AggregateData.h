@@ -63,7 +63,8 @@ public:
             const Statistic<Sample_t>& spikeStats,
             size_t startTime = 0 ,
             size_t endTime = 0,
-            double stdevMultiplier = 1
+            double stdevMultiplier = 2,
+            const bool verbose = true
             ) const;
 
     const size_t findNear(

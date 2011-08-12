@@ -16,22 +16,32 @@
 #include <glog/logging.h>
 #include <fstream>
 
+using namespace std;
+
 void powerStateGraphTest()
 {
     AggregateData aggData;
     aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+//    aggData.loadCurrentCostData( "data/input/current_cost/test.csv" );
+
+//    for (size_t i=0; i<aggData.getSize(); i++) {
+//        cout << aggData.aggDelta(i) << endl;
+//    }
 
     PowerStateGraph psg;
 //    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
 //    Signature sig( "data/input/watts_up/toaster.csv", 1, "toaster" );
 //    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble", 1, 1, 6600 );
 
-    Signature sig( "data/input/watts_up/washer.csv", 1, "washer", 1, 1, 2530 );
-    psg.update( sig );
-
+//    Signature sig( "data/input/watts_up/test.csv", 1, "test" );
+//    psg.update( sig );
 
     Signature sig2( "data/input/watts_up/washer2.csv", 1, "washer2", 1,1, 2000 );
     psg.update( sig2 );
+
+
+    Signature sig( "data/input/watts_up/washer.csv", 1, "washer", 1, 1, 2530 );
+    psg.update( sig );
 
 
     std::cout << psg << std::endl;
@@ -82,8 +92,8 @@ int main(int argc, char * argv[])
 //    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
 //    washer.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
 
-    AggregateData aggData;
-    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+//    AggregateData aggData;
+//    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
 //      washer.getStartTimes( aggData );
 
 
