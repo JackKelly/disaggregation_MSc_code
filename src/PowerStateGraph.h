@@ -283,12 +283,13 @@ private:
     const DisagDataItem initTraceToEnd(
             const AggregateData::FoundSpike& spike,
             const size_t deviceStart,
-            const bool verbose = false //
+            const bool verbose = false // set true to see graphviz output of trees
             );
 
     void traceToEnd(
             DisagTree * disagGraph,
             const DisagTree::vertex_descriptor& startVertex,
+            const size_t prevTimestamp,
             const bool verbose = false
             ) const;
 
@@ -310,17 +311,19 @@ private:
     void findListOfPathsThroughDisagTree(
             const DisagTree& disagTree,
             const DisagTree::vertex_descriptor vertex,
+            const ConfidenceAndVertex cav,
             std::list<ConfidenceAndVertex> path = std::list<ConfidenceAndVertex>(0)
             );
 
     const DisagDataItem findBestPath(
             const DisagTree& disagTree,
             const size_t deviceStart,
-            const bool verbose = false
+            const bool verbose = false //
             );
 
     void removeOverlapping(
-            std::list<DisagDataItem> * disagList /**< Input and output parameter */
+            std::list<DisagDataItem> * disagList, /**< Input and output parameter */
+            const bool verbose = false
             );
 
 

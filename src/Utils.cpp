@@ -118,7 +118,7 @@ const bool Utils::roughlyEqual(
 /**
  * @return the larger of the two values
  */
-const double& Utils::largest(
+const double& Utils::highest(
         const double& a,
         const double& b
         )
@@ -129,7 +129,7 @@ const double& Utils::largest(
         return b;
 }
 
-const double& Utils::smallest(
+const double& Utils::lowest(
         const double& a,
         const double& b
         )

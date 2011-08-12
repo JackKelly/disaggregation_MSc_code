@@ -53,9 +53,9 @@ BOOST_AUTO_TEST_CASE( largestSizeTTest )
 BOOST_AUTO_TEST_CASE( largestDoubleTest )
 {
     std::cout << "Running largestTest case..." << std::endl;
-    BOOST_CHECK_EQUAL( largest(  4.0,   5.0),   5.0 );
-    BOOST_CHECK_EQUAL( largest(-10.2,  50.1),  50.1 );
-    BOOST_CHECK_EQUAL( largest(-10.9, 100.4), 100.4);
+    BOOST_CHECK_EQUAL( highest(  4.0,   5.0),   5.0 );
+    BOOST_CHECK_EQUAL( highest(-10.2,  50.1),  50.1 );
+    BOOST_CHECK_EQUAL( highest(-10.9, 100.4), 100.4);
 }
 
 BOOST_AUTO_TEST_CASE( smallestSizeTTest )
@@ -69,9 +69,9 @@ BOOST_AUTO_TEST_CASE( smallestSizeTTest )
 BOOST_AUTO_TEST_CASE( smallestDoubleTest )
 {
     std::cout << "Running smallestTest case..." << std::endl;
-    BOOST_CHECK_EQUAL( smallest(  4.0,   5.0),   4.0 );
-    BOOST_CHECK_EQUAL( smallest(-10.2,  50.1), -10.2 );
-    BOOST_CHECK_EQUAL( smallest(-10.9, 100.4), -10.9 );
+    BOOST_CHECK_EQUAL( lowest(  4.0,   5.0),   4.0 );
+    BOOST_CHECK_EQUAL( lowest(-10.2,  50.1), -10.2 );
+    BOOST_CHECK_EQUAL( lowest(-10.9, 100.4), -10.9 );
 }
 
 BOOST_AUTO_TEST_CASE( betweenTest )

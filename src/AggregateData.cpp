@@ -15,7 +15,8 @@ void AggregateData::loadCurrentCostData(
         const std::string& filename /**< including path and suffix. */
     )
 {
-    std::cout << "Loading CurrentCost data " << filename << " ...";
+    cout << "Loading CurrentCost data " << filename << " ...";
+    cout.flush();
 
     samplePeriod = 6;
 
@@ -37,7 +38,7 @@ void AggregateData::loadCurrentCostData(
     }
     LOG(INFO) << "Entered " << count << " ints into data array.";
 
-    std::cout << "... done." << std::endl;
+    cout << "... done." << std::endl;
 }
 
 const size_t AggregateData::secondsSinceFirstSample(
@@ -88,9 +89,12 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         const Statistic<Sample_t>& spikeStats,
         size_t startTime,
         size_t endTime,
-        double stdevMultiplier /**< Higher = more permissive */
+        double stdevMultiplier, /**< Higher = more permissive */
+        const bool verbose
         ) const
 {
+    if (verbose) cout << "startTime = " << startTime << " endTime = " << endTime << endl;
+
     size_t i;
     list<AggregateData::FoundSpike> foundSpikes;
 
@@ -134,14 +138,26 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         upperLimit = spikeStats.max;// + (fabs(spikeStats.max)*0.1);
     }
 */
-    lowerLimit = Utils::smallest(
+
+/*
+    lowerLimit = Utils::lowest(
             spikeStats.mean - ( stdev*stdevMultiplier ),
             spikeStats.min  - stdev
             );
-    upperLimit = Utils::largest(
+    upperLimit = Utils::highest(
             spikeStats.mean + (stdev*stdevMultiplier),
             spikeStats.max  + stdev
             );
+  */
+
+    const double e = (fabs(spikeStats.mean)/2);
+    lowerLimit = spikeStats.mean - e;
+    upperLimit = spikeStats.mean + e;
+
+    if (verbose) {
+        cout << "Looking for spike with mean " << spikeStats.mean << " between vals " << lowerLimit
+                << " to " << upperLimit << " and times " << startTime << " - " << endTime << endl;
+    }
 
     /** @todo this is an ugly hack at the moment setting stdef to mean/10 */
     boost::math::normal dist(spikeStats.mean, fabs(spikeStats.mean/10));// stdev);
@@ -159,6 +175,8 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
                             aggDelta(i),
                             boost::math::pdf(dist, aggDelta(i))
                             ) );
+
+            cout << "Spike found with delta " << aggDelta(i) << " expected " << spikeStats.mean << endl;
         }
 
         time = data[++i].timestamp;
