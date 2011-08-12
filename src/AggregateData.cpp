@@ -176,7 +176,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
                             boost::math::pdf(dist, aggDelta(i))
                             ) );
 
-            cout << "Spike found with delta " << aggDelta(i) << " expected " << spikeStats.mean << endl;
+            if (verbose) cout << "Spike found with delta " << aggDelta(i) << " expected " << spikeStats.mean << endl;
         }
 
         time = data[++i].timestamp;

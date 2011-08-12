@@ -547,7 +547,9 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
         const bool verbose
         )
 {
-    cout << "Getting start times..." << endl;
+    cout << "Getting start times...";
+    cout.flush();
+
     list<DisagDataItem> disagList; // what we return
 
     // Store a pointer to aggregateData for use later.
@@ -564,6 +566,8 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
     list<AggregateData::FoundSpike> foundSpikes
         = aggregateData.findSpike(firstEdgeStats.delta);
 
+    cout << " found " << foundSpikes.size() << " possible start deltas. Following through... " << endl;
+
     // for each spike which might possibly be the start of
     // the device signature in the aggregate reading,
     // attempt to find all the subsequent state changes.
@@ -577,20 +581,26 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
                 );
 
         if ( candidateDisagDataItem.confidence != -1 ) {
-            cout << "candidate found at " << ( spike->timestamp - firstEdgeStats.duration.mean ) - 1310252400 /** @todo IMPORTANT remove this hard-coded timecode! */
-                    << candidateDisagDataItem
-                    << endl;
             disagList.push_back( candidateDisagDataItem );
+            if (verbose)
+                cout << endl << "candidate found at " << endl << candidateDisagDataItem << endl;
+            else {
+                cout << ".";
+                cout.flush();
+            }
         }
     }
+
+    cout << endl;
 
     if (REMOVE_OVERLAPPING) {
         removeOverlapping( &disagList );
     }
 
     for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
-        cout << "candidate found: " << *disagItem << endl;
+        cout << endl << "candidate found: " << endl << *disagItem << endl;
     }
+    cout << endl;
 
     return disagList;
 }
@@ -762,7 +772,7 @@ void PowerStateGraph::traceToEnd(
         ) const
 {
 
-    cout << "***traceToEnd... prevTimestamp=" << prevTimestamp << " DisagTree startVertex=" << startVertex << endl;
+    if (verbose) cout << "***traceToEnd... prevTimestamp=" << prevTimestamp << " DisagTree startVertex=" << startVertex << endl;
     const double STDEV_MULT = 3; // higher = more permissive. (time) needs to be 7 to allow Washer1 to find Washer2
 
     list<AggregateData::FoundSpike> foundSpikes;
@@ -816,7 +826,7 @@ void PowerStateGraph::traceToEnd(
         const size_t e =
                 Utils::roundToNearestSizeT( powerStateGraph[*psg_out_i].duration.mean/3 ) ;
 
-        cout << "disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp << endl;
+        if (verbose)  cout << "disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp << endl;
 
         begOfSearchWindow = (disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.min)
                 - WINDOW_FRAME - e;
@@ -876,11 +886,13 @@ void PowerStateGraph::traceToEnd(
                     ((int)spike->timestamp -
                             ((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean) )
                     );
-            cout << "Spike " << spike->delta << " found at " << spike->timestamp
+            if (verbose) {
+                cout << "Spike " << spike->delta << " found at " << spike->timestamp
                     << ", expected at " << (size_t)((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean)
-                    << ", diff = " << ((int)spike->timestamp - ((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean) ) << endl;
+                    << ", diff = " << ((int)spike->timestamp - ((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean) )
+                    << "pdf_for_time=" << pdf_for_time << endl;
+            }
 
-            cout << "pdf_for_time=" << pdf_for_time << endl;
             // create an average probability
             double weightedAvPdf = (pdf_for_time + (spike->pdf*1)) / 2; // weight the average in favour of the spike PDF
 
