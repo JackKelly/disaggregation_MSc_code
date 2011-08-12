@@ -34,6 +34,15 @@ public:
         size_t duration;
         double energy;    /**< @brief energy consumed */
         double confidence;
+
+        friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
+            o << "timestamp=" << ddi.timestamp
+              << " confidence=" << ddi.confidence
+              << " duration=" << ddi.duration
+              << " energy=" << ddi.energy << " J"
+              << " = " << ddi.energy / 3600000 << " kWh";
+            return o;
+        }
     };
 
     const std::list<DisagDataItem> getStartTimes(

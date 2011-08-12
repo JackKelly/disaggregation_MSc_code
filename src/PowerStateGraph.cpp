@@ -578,8 +578,8 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
 
         if ( candidateDisagDataItem.confidence != -1 ) {
             cout << "candidate found at " << ( spike->timestamp - firstEdgeStats.duration.mean ) - 1310252400 /** @todo IMPORTANT remove this hard-coded timecode! */
-                    << " confidence=" << candidateDisagDataItem.confidence
-                    << " duration=" << candidateDisagDataItem.duration << endl;
+                    << candidateDisagDataItem
+                    << endl;
             disagList.push_back( candidateDisagDataItem );
         }
     }
@@ -589,10 +589,7 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
     }
 
     for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
-        cout << "candidate found at "
-                << disagItem->timestamp   - 1310252400
-                << " confidence=" << disagItem->confidence
-                << " duration=" << disagItem->duration << endl;
+        cout << "candidate found: " << *disagItem << endl;
     }
 
     return disagList;
@@ -606,13 +603,20 @@ void PowerStateGraph::removeOverlapping(
         const bool verbose
         )
 {
+    cout << "Removing overlapping items...";
+    cout.flush();
+
     list<DisagDataItem>::iterator currentDisagItem, prevDisagItem;
+    size_t count = 0;
+
     currentDisagItem = prevDisagItem = disagList->begin();
     advance( currentDisagItem, 1 );
     while ( currentDisagItem != disagList->end() ) {
 
         // check to see whether the two disag items overlap
         if ( (prevDisagItem->timestamp + prevDisagItem->duration) >= currentDisagItem->timestamp ) {
+
+            count++;
 
             if (verbose) {
                 cout << "Overlap detected between items with start timestamps "
@@ -634,6 +638,8 @@ void PowerStateGraph::removeOverlapping(
             prevDisagItem = currentDisagItem++;
         }
     }
+
+    cout << " removed " << count << " overlapping items." << endl;
 }
 
 /**
@@ -697,18 +703,13 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
             disagOffVertex,
             nextCav);
 
-
-
     return findBestPath( disagTree, deviceStart );
 
 }
 
 /**
  * @brief Trace the tree downwards from @c vertex recursively finding
- * the path with the highest average confidence and the corresponding
- * values for @c DisagDataItem.
- *
- * Traces the tree downwards.
+ * every path which successfully completes (i.e. reaches an off state).
  */
 void PowerStateGraph::findListOfPathsThroughDisagTree(
         const DisagTree& disagTree,
@@ -907,7 +908,6 @@ void PowerStateGraph::traceToEnd(
                 disagGraph[newVertex].edgeHistory.erase( disagGraph[newVertex].edgeHistory.begin() );
             }
 
-
             // recursively trace to end.
             traceToEnd(disagGraph_p, newVertex, disagGraph[startVertex].timestamp);
         }
@@ -915,9 +915,12 @@ void PowerStateGraph::traceToEnd(
 }
 
 /**
- * @brief To be called after @c listOfPaths has been populated by findListOfPathsThroughDisagTree.
+ * @brief Iterates through each path in @c listOfPaths
+ *        to find the one with the highest confidence.
  *
- * @return details of the best list.  Confidence is set to -1 if no paths are available
+ * To be called after @c listOfPaths has been populated by findListOfPathsThroughDisagTree().
+ *
+ * @return details of the best path.  Confidence is set to -1 if no paths are available.
  */
 const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
         const DisagTree& disagTree,
@@ -930,38 +933,54 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
 
     // first check that listOfPaths is populated
     if ( listOfPaths.empty() ) {
-        ddi.confidence = -1; // error code
+        ddi.confidence = -1; // return error code
         return ddi;
     }
 
     ddi.confidence = 0;
 
+    list< list<ConfidenceAndVertex> >::const_iterator path_i, bestPath_i;
+    list< ConfidenceAndVertex >::const_iterator cav_i;
+
     if (verbose) cout << "path dump:" << endl;
 
     double confidenceAccumulator, avConfidence;
 
-    for (list< list<ConfidenceAndVertex> >::const_iterator path=listOfPaths.begin();
-            path!=listOfPaths.end(); path++){
+    // iterate through each path to find the one with the highest confidence
+    for (path_i=listOfPaths.begin(); path_i!=listOfPaths.end(); path_i++) {
 
         confidenceAccumulator = 0;
-        for (list<PowerStateGraph::ConfidenceAndVertex>::const_iterator it=path->begin();
-                it!=path->end(); it++ ) {
-
-            if (verbose) cout << "vertex=" << it->vertex << " conf=" << it->confidence << ", ";
-
-            confidenceAccumulator += it->confidence;
+        for ( cav_i=path_i->begin(); cav_i!=path_i->end(); cav_i++ ) {
+            if (verbose) cout << "vertex=" << cav_i->vertex << " conf=" << cav_i->confidence << ", ";
+            confidenceAccumulator += cav_i->confidence;
         }
 
-        avConfidence = confidenceAccumulator / path->size();
+        avConfidence = confidenceAccumulator / path_i->size();
 
+        // if this is the most confident path we've seen yet then record its details.
         if ( avConfidence > ddi.confidence ) {
             ddi.confidence = avConfidence;
-            ddi.duration = disagTree[path->back().vertex].timestamp + // timestamp of start of last power state
-                    powerStateGraph[ disagTree[path->back().vertex].psgEdge ].duration.mean // duration of last power state
+            bestPath_i = path_i;
+            ddi.duration = disagTree[path_i->back().vertex].timestamp + // timestamp of start of last power state
+                    powerStateGraph[ disagTree[path_i->back().vertex].psgEdge ].duration.mean // duration of last power state
                     - deviceStart;
         }
 
         if (verbose) cout << endl << endl;
+    }
+
+    // now get energy usage from bestPath_i
+    size_t prevTimestamp, duration;
+
+    ddi.energy = 0;
+    prevTimestamp = deviceStart;
+    for (cav_i=bestPath_i->begin(); cav_i != bestPath_i->end(); cav_i++) {
+
+        duration = disagTree[ cav_i->vertex ].timestamp - prevTimestamp;
+
+        ddi.energy += disagTree[ cav_i->vertex ].meanPower * duration;
+
+        prevTimestamp = disagTree[ cav_i->vertex ].timestamp;
     }
 
     return ddi;
