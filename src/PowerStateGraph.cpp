@@ -60,9 +60,9 @@ void PowerStateGraph::update(
     PSGraph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 10) {
+    if (spikes.size() > 100) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 10 );
+        advance( it, 100 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -320,7 +320,7 @@ void PowerStateGraph::updateOrInsertEdge(
         PSGraph::out_edge_iterator out_e_i, out_e_end;
         tie(out_e_i, out_e_end) = out_edges(beforeVertex, powerStateGraph);
         for (; out_e_i != out_e_end; out_e_i++) {
-            // check if the edge has the same history and same sign as out current history
+            // check if the edge has the same history and same sign delta
             if ( edgeListsAreEqual(powerStateGraph[*out_e_i].edgeHistory, edgeHistory) &&
                     Utils::sameSign(powerStateGraph[*out_e_i].delta.mean, spikeDelta ) ) {
                 if (verbose) cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
@@ -824,8 +824,8 @@ void PowerStateGraph::traceToEnd(
                   Utils::roundToNearestSizeT(powerStateGraph[*psg_out_i].duration.mean +
                                     (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
 */
-        const size_t e =
-                 Utils::roundToNearestSizeT( powerStateGraph[*psg_out_i].duration.mean/10 ) ;
+        const size_t e = powerStateGraph[*psg_out_i].duration.stdev;
+                // Utils::roundToNearestSizeT( powerStateGraph[*psg_out_i].duration.mean/10 ) ;
 
         if (verbose)  cout << "disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp << endl;
 
