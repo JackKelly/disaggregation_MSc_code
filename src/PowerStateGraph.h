@@ -12,6 +12,7 @@
 #include <vector>
 #include <list>
 #include <ostream>
+#include <time.h>
 #include "Statistic.h"
 #include "Common.h"    // for Sample_t
 #include "Signature.h"
@@ -36,10 +37,13 @@ public:
         double confidence;
 
         friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
-            o << "timestamp=" << ddi.timestamp << std::endl
-              << " confidence=" << ddi.confidence << std::endl
-              << " duration=" << ddi.duration << std::endl
-              << " energy=" << ddi.energy << " Joules"
+
+            o << "timestamp   = " << ddi.timestamp << std::endl
+              << "date        = " << ctime( (time_t*)(&ddi.timestamp) )
+              << "confidence  = " << ddi.confidence << std::endl
+              << "duration    = " << ddi.duration << " seconds"
+              << " (" << Utils::secondsToTime(ddi.duration) << ")" << std::endl
+              << "energy      = " << ddi.energy << " Joules"
               << " equivalent to " << ddi.energy / 3600000 << " kWh";
             return o;
         }
@@ -235,7 +239,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 4;
+    static const size_t EDGE_HISTORY_SIZE = 5;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 

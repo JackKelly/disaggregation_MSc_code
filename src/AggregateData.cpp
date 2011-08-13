@@ -120,47 +120,31 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
 
     assert( endTime > startTime );
 
-    // (if the statistic was created from a single value then stdev will
-    //  already have been "faked" by the single-value constructor
-    //  in Statistic.h )
+    // Make sure the stdev isn't so small that it'll not provide
+    // sufficient headroom when trying to find deltas in the
+    // noisy aggregate data.
     double stdev = spikeStats.stdev;
     if (stdev < fabs(spikeStats.mean/10))
         stdev = fabs(spikeStats.mean/10);
 
-    // should we use the stdev of max-min as the range?
-    double upperLimit, lowerLimit;
-/*    if ((stdev*2*stdevMultiplier) > fabs(spikeStats.max-spikeStats.min)) {
-        lowerLimit = spikeStats.mean-(stdev*stdevMultiplier);
-        upperLimit = spikeStats.mean+(stdev*stdevMultiplier);
-    } else {
-        cout << "yes" << endl;
-        lowerLimit = spikeStats.min;// - (fabs(spikeStats.min)*0.1);
-        upperLimit = spikeStats.max;// + (fabs(spikeStats.max)*0.1);
-    }
-*/
+    const double e = stdev * stdevMultiplier;
+    double lowerLimit = spikeStats.min - e;
+    double upperLimit = spikeStats.max + e;
 
-/*
-    lowerLimit = Utils::lowest(
-            spikeStats.mean - ( stdev*stdevMultiplier ),
-            spikeStats.min  - stdev
-            );
-    upperLimit = Utils::highest(
-            spikeStats.mean + (stdev*stdevMultiplier),
-            spikeStats.max  + stdev
-            );
-  */
-
-    const double e = (fabs(spikeStats.mean)/2);
-    lowerLimit = spikeStats.mean - e;
-    upperLimit = spikeStats.mean + e;
+    // make sure we're at least looking for a spike of the correct sign
+    if ( ! Utils::sameSign(lowerLimit, spikeStats.mean) )
+        lowerLimit = 0;
+    if ( ! Utils::sameSign(upperLimit, spikeStats.mean) )
+        upperLimit = 0;
 
     if (verbose) {
-        cout << "Looking for spike with mean " << spikeStats.mean << " between vals " << lowerLimit
-                << " to " << upperLimit << " and times " << startTime << " - " << endTime << endl;
+        cout << "Looking for spike with mean " << spikeStats.mean
+             << " between vals " << lowerLimit
+             << " to " << upperLimit << " and times "
+             << startTime << " - " << endTime << endl;
     }
 
-    /** @todo this is an ugly hack at the moment setting stdef to mean/10 */
-    boost::math::normal dist(spikeStats.mean, fabs(spikeStats.mean/10));// stdev);
+    boost::math::normal dist(spikeStats.mean, spikeStats.stdev);
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html
 
     size_t time = startTime;

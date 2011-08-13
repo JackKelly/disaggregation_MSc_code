@@ -99,3 +99,15 @@ BOOST_AUTO_TEST_CASE( withinTest )
     BOOST_CHECK( within( -4, -5, 1) );
     BOOST_CHECK( !within( -4, -5, 0.9) );
 }
+
+BOOST_AUTO_TEST_CASE( sameSignTest )
+{
+    std::cout << "Running sameSignTest..." << std::endl;
+    BOOST_CHECK(  sameSign(  0,  0) );
+    BOOST_CHECK(  sameSign(  1,  0) );
+    BOOST_CHECK(  sameSign(  0,  1) );
+    BOOST_CHECK(  sameSign( -1, -1) );
+    BOOST_CHECK( !sameSign( -1,  0) );
+    BOOST_CHECK( !sameSign(  0, -1) );
+    BOOST_CHECK( !sameSign(  1, -1) );
+}

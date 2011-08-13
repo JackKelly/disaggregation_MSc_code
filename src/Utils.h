@@ -68,6 +68,15 @@ const bool between(
         const double sample
         );
 
+const std::string secondsToTime(
+        const size_t seconds
+        );
+
+const bool sameSign(
+        const double& a,
+        const double& b
+        );
+
 } /* namespace Utils */
 
 #endif /* UTILS_H_ */

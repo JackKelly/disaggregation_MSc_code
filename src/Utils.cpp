@@ -204,3 +204,26 @@ const bool Utils::between(
     else
         return false;
 }
+
+const std::string Utils::secondsToTime(
+        const size_t seconds
+        )
+{
+    std::string formattedTime =
+            size_t_to_s(seconds / 3600)    + "h " +
+            size_t_to_s((seconds%3600)/60) + "m " +
+            size_t_to_s((seconds%3600)%60) + "s";
+
+    return formattedTime;
+}
+
+/**
+ * @brief Returns true if @c a and @c b are the same sign. Zero is assumed to be positive.
+ */
+const bool Utils::sameSign(
+        const double& a,
+        const double& b
+        )
+{
+    return (a < 0 && b < 0) || (a >= 0 && b >= 0);
+}
