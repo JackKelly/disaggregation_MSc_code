@@ -29,10 +29,10 @@ void powerStateGraphTest()
 //    }
 
     PowerStateGraph psg;
-    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
-    Signature sig2( "data/input/watts_up/kettle2.csv", 1, "kettle2" );
+//    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
+//    Signature sig2( "data/input/watts_up/kettle2.csv", 1, "kettle2" );
 //    Signature sig( "data/input/watts_up/toaster.csv", 1, "toaster" );
-//    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble", 1, 1, 6600 );
+    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble", 1, 1, 6600 );
 
 //    Signature sig( "data/input/watts_up/test.csv", 1, "test" );
 
@@ -40,7 +40,7 @@ void powerStateGraphTest()
 
 //    Signature sig( "data/input/watts_up/washer.csv", 1, "washer", 1, 1, 2530 );
 
-    psg.update( sig2 );
+//    psg.update( sig2 );
     psg.update( sig );
 
     std::cout << psg << std::endl;

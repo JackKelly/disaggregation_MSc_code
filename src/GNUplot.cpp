@@ -31,8 +31,8 @@ using namespace std;
  * @todo add path from config option DATA_OUTPUT_PATH.
  */
 void GNUplot::plot(
-        PlotVars& plotVars /*!< Variables for insertion into the template.
-                                'inFilename' will be changed if config/'inFilename'.template.gnu exists.
+        PlotVars& plotVars /**< Variables for insertion into the template.
+                                @c 'inFilename' will be changed if config/'inFilename'.template.gnu exists.
                                 Strings will be sanitised. */
     )
 {

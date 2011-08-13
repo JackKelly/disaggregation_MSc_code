@@ -600,20 +600,53 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
 
     cout << endl;
 
-    if (REMOVE_OVERLAPPING) {
-        removeOverlapping( &disagList );
+    if ( disagList.empty() ) {
+        cout << "No signatures found." << endl;
+    } else {
+        if (REMOVE_OVERLAPPING) {
+            removeOverlapping( &disagList );
+        }
+
+        displayAndPlotDisagList( disagList );
     }
 
-    if (REMOVE_WRONG_ENERGY) {
-        removeWrongEnergy( &disagList );
-    }
+    return disagList;
+}
 
-    for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
+void PowerStateGraph::displayAndPlotDisagList(
+        const list< DisagDataItem >& disagList
+        ) const
+{
+    cout << "Expected energy consumption = "
+            << energyConsumption.mean / J_PER_KWH << " kWh" << endl;
+
+    fstream fs;
+    Utils::openFile(fs, DATA_OUTPUT_PATH + "disagg.dat", fstream::out);
+    list<DisagDataItem>::const_iterator disagItem;
+    for (disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
         cout << endl << "candidate found: " << endl << *disagItem << endl;
+
+        for (list<TimeAndPower>::const_iterator tap_i=disagItem->timeAndPower.begin();
+                tap_i!=disagItem->timeAndPower.end(); tap_i++) {
+            fs << tap_i->timestamp << "\t" << tap_i->meanPower << endl;
+        }
     }
     cout << endl;
 
-    return disagList;
+    const size_t BORDER = 120;
+    GNUplot::PlotVars pv;
+    pv.inFilename  = "disagg";
+    pv.outFilename = "disagg";
+    pv.title       = "Disaggregated signal";
+    pv.xlabel      = "time";
+    pv.ylabel      = "power (Watts)";
+    pv.plotArgs    = "[\"" + Utils::size_t_to_s( disagList.front().timestamp - BORDER + 3600) + "\":\""
+            + Utils::size_t_to_s( disagList.back().timestamp + disagList.back().duration + BORDER + 3600) + "\"]";
+    pv.data.push_back(
+            GNUplot::Data(
+                    "disagg", "", "DISAGG")
+    );
+    GNUplot::plot( pv );
 }
 
 /**
@@ -662,16 +695,6 @@ void PowerStateGraph::removeOverlapping(
 
     cout << " removed " << count << " overlapping items." << endl;
 }
-
-void PowerStateGraph::removeWrongEnergy(
-        list<DisagDataItem> * disagList /**< Input and output parameter */
-        ) const
-{
-    cout << "Removing items with incorrect energy estimate... expected energy consumption = "
-         << energyConsumption.mean / J_PER_KWH << " kWh" << endl;
-
-}
-
 
 /**
  *
@@ -989,7 +1012,21 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
     ddi.duration = 0;
     duration = 0;
     prevTimestamp = deviceStart;
+    size_t count = 0;
     for (cav_i=bestPath_i->begin(); cav_i != bestPath_i->end(); cav_i++) {
+
+        // Add to timeAndPower list for read-out later when we plot the power states
+        if ( cav_i != bestPath_i->begin() ) {
+            ddi.timeAndPower.push_back( TimeAndPower(
+                    disagTree[ cav_i->vertex ].timestamp-1 ,
+                    (count==1 ? 0 : prevMeanPower)
+            ) );
+            ddi.timeAndPower.push_back( TimeAndPower(
+                    disagTree[ cav_i->vertex ].timestamp,
+                    disagTree[ cav_i->vertex ].meanPower) );
+        }
+
+        // Now calculate duration and energy consumption
         duration = disagTree[ cav_i->vertex ].timestamp - prevTimestamp;
         ddi.energy += prevMeanPower * duration;
 
@@ -997,6 +1034,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
 
         prevTimestamp = disagTree[ cav_i->vertex ].timestamp;
         prevMeanPower = disagTree[ cav_i->vertex ].meanPower;
+        count++;
     }
 
     // now update ddi.confidence with the PDF of our energy consumption
@@ -1008,7 +1046,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
 }
 
 /**
- * Trace the disagGraph backwards
+ * @brief Trace the disagGraph backwards.
  */
 list< PowerStateGraph::PSGraph::edge_descriptor > PowerStateGraph::getEdgeHistoryForVertex(
         const DisagTree& disagTree,
