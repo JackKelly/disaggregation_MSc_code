@@ -204,3 +204,15 @@ const bool Utils::between(
     else
         return false;
 }
+
+const std::string Utils::secondsToTime(
+        const size_t seconds
+        )
+{
+    std::string formattedTime =
+            size_t_to_s(seconds / 3600) + ":" +
+            size_t_to_s((seconds%3600)/60) + ":" +
+            size_t_to_s((seconds%3600)%60);
+
+    return formattedTime;
+}

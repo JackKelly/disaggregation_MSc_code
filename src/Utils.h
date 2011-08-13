@@ -68,6 +68,10 @@ const bool between(
         const double sample
         );
 
+const std::string secondsToTime(
+        const size_t seconds
+        );
+
 } /* namespace Utils */
 
 #endif /* UTILS_H_ */
