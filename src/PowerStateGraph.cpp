@@ -271,7 +271,8 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
  * - If an edge already exists between beforeVertex and afterVertex then
  *     - check all out-edges from beforeVertex
  *     - if any out-edge has the same history as the current history
- *           and the same sign delta then:
+ *           and the same sign delta then
+ *           and and is within 3 stdevs of the existing delta then:
  *         - update that edge's statistics
  *     - else
  *         - create a new edge.
@@ -320,9 +321,12 @@ void PowerStateGraph::updateOrInsertEdge(
         PSGraph::out_edge_iterator out_e_i, out_e_end;
         tie(out_e_i, out_e_end) = out_edges(beforeVertex, powerStateGraph);
         for (; out_e_i != out_e_end; out_e_i++) {
-            // check if the edge has the same history and same sign delta
+            // check if the edge has the same history and same sign delta and is within 3 stdevs of the existing delta
             if ( edgeListsAreEqual(powerStateGraph[*out_e_i].edgeHistory, edgeHistory) &&
-                    Utils::sameSign(powerStateGraph[*out_e_i].delta.mean, spikeDelta ) ) {
+                    Utils::sameSign(powerStateGraph[*out_e_i].delta.mean, spikeDelta ) &&
+                    Utils::within(powerStateGraph[*out_e_i].delta.mean,
+                            spikeDelta, powerStateGraph[*out_e_i].delta.stdev*3 )) {
+
                 if (verbose) cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
 
                 // update existing edge's stats
