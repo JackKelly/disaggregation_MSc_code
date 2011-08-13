@@ -350,8 +350,8 @@ private:
             const bool verbose = false
             );
 
-    void removeWrongEnergy(
-            std::list<DisagDataItem> * disagList
+    void displayAndPlotDisagList(
+            const std::list< DisagDataItem >& disagList
             ) const;
 
 
