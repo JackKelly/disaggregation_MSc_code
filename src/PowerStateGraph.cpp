@@ -49,6 +49,8 @@ void PowerStateGraph::update(
         const bool verbose
         )
 {
+    energyConsumption.update( sig.getEnergyConsumption() );
+
     Statistic<Sample_t> powerState;
 
     edgeHistory.clear();
@@ -602,6 +604,10 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
         removeOverlapping( &disagList );
     }
 
+    if (REMOVE_WRONG_ENERGY) {
+        removeWrongEnergy( &disagList );
+    }
+
     for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
         cout << endl << "candidate found: " << endl << *disagItem << endl;
     }
@@ -656,6 +662,16 @@ void PowerStateGraph::removeOverlapping(
 
     cout << " removed " << count << " overlapping items." << endl;
 }
+
+void PowerStateGraph::removeWrongEnergy(
+        list<DisagDataItem> * disagList /**< Input and output parameter */
+        ) const
+{
+    cout << "Removing items with incorrect energy estimate... expected energy consumption = "
+         << energyConsumption.mean / J_PER_KWH << " kWh" << endl;
+
+}
+
 
 /**
  *
@@ -979,26 +995,31 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
         if ( avConfidence > ddi.confidence ) {
             ddi.confidence = avConfidence;
             bestPath_i = path_i;
-            ddi.duration = disagTree[path_i->back().vertex].timestamp + // timestamp of start of last power state
-                    powerStateGraph[ disagTree[path_i->back().vertex].psgEdge ].duration.mean // duration of last power state
-                    - deviceStart;
         }
 
         if (verbose) cout << endl << endl;
     }
 
-    // now get energy usage from bestPath_i
+    // now get energy usage and duration from bestPath_i
     size_t prevTimestamp, duration;
+    double prevMeanPower = 0;
 
     ddi.energy = 0;
+    ddi.duration = 0;
+    duration = 0;
     prevTimestamp = deviceStart;
     for (cav_i=bestPath_i->begin(); cav_i != bestPath_i->end(); cav_i++) {
 
         duration = disagTree[ cav_i->vertex ].timestamp - prevTimestamp;
+        ddi.energy += prevMeanPower * duration;
 
-        ddi.energy += disagTree[ cav_i->vertex ].meanPower * duration;
+//        cout << "duration = " << duration << ", meanPower = " << prevMeanPower
+//                << ", energy = " << prevMeanPower * duration << endl;
+
+        ddi.duration += duration;
 
         prevTimestamp = disagTree[ cav_i->vertex ].timestamp;
+        prevMeanPower = disagTree[ cav_i->vertex ].meanPower;
     }
 
     return ddi;

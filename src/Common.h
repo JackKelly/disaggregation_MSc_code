@@ -30,7 +30,9 @@ typedef double  Histogram_t;  /**< @brief An individual histogram entry */
 
 const int EXIT_ERROR = 1;
 const size_t MAX_WATTAGE = 3500;
+const int J_PER_KWH = 3600000; /**< @brief Joules per kWh */
 const std::string DATA_OUTPUT_PATH = "data/output/"; /**< @deprecated Will be replaced with config option */
 const bool REMOVE_OVERLAPPING = true;
+const bool REMOVE_WRONG_ENERGY = true;
 
 #endif /* COMMON_H_ */

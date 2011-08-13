@@ -82,6 +82,8 @@ public:
     const std::list<Spike> getGradientSpikesInOrder(
             const size_t LOOK_AHEAD = 20
         ) const;
+
+    const double getEnergyConsumption() const;
     ///@}
 
     /************************/

@@ -248,11 +248,15 @@ struct Statistic {
         numDataPoints = numExistingDataPoints + 1;
         double prevMean = mean;
 
-        if ( datum > max )
-            max = datum;
+        if (numExistingDataPoints == 0) {
+            max = min = datum;
+        } else {
+            if ( datum > max )
+                max = datum;
 
-        if ( datum < min )
-            min = datum;
+            if ( datum < min )
+                min = datum;
+        }
 
         mean = (prevMean * ((double)numExistingDataPoints/numDataPoints))
                 + (datum * ((double)1.0/numDataPoints) );

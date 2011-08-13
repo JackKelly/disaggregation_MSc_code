@@ -543,3 +543,16 @@ const size_t Signature::getSamplePeriod() const
 {
     return samplePeriod;
 }
+
+/**
+ * @brief Determine how many Joules of energy have been consumed.
+ */
+const double Signature::getEnergyConsumption() const
+{
+    double accumulator = 0;
+    for (size_t i=0; i<size; i++) {
+        accumulator += data[i];
+    }
+
+    return accumulator * samplePeriod;
+}
