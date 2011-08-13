@@ -49,6 +49,8 @@ void PowerStateGraph::update(
         const bool verbose
         )
 {
+    energyConsumption.update( sig.getEnergyConsumption() );
+
     Statistic<Sample_t> powerState;
 
     edgeHistory.clear();
@@ -145,8 +147,8 @@ const bool PowerStateGraph::rejectSpike(
 {
     // if either 'before' or 'after' has a stdev greater than
     // its mean then reject
-    if ( (before.stdev > (before.mean)) ||
-         ( after.stdev > ( after.mean))   ) {
+    if ( (before.stdev > before.mean) ||
+         ( after.stdev >  after.mean)   ) {
         if (verbose) cout << "stdev too big";
         return true;
     }
@@ -271,7 +273,8 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
  * - If an edge already exists between beforeVertex and afterVertex then
  *     - check all out-edges from beforeVertex
  *     - if any out-edge has the same history as the current history
- *           and the same sign delta then:
+ *           and the same sign delta then
+ *           and and is within 3 stdevs of the existing delta then:
  *         - update that edge's statistics
  *     - else
  *         - create a new edge.
@@ -320,9 +323,12 @@ void PowerStateGraph::updateOrInsertEdge(
         PSGraph::out_edge_iterator out_e_i, out_e_end;
         tie(out_e_i, out_e_end) = out_edges(beforeVertex, powerStateGraph);
         for (; out_e_i != out_e_end; out_e_i++) {
-            // check if the edge has the same history and same sign delta
+            // check if the edge has the same history and same sign delta and is within 3 stdevs of the existing delta
             if ( edgeListsAreEqual(powerStateGraph[*out_e_i].edgeHistory, edgeHistory) &&
-                    Utils::sameSign(powerStateGraph[*out_e_i].delta.mean, spikeDelta ) ) {
+                    Utils::sameSign(powerStateGraph[*out_e_i].delta.mean, spikeDelta ) &&
+                    Utils::within(powerStateGraph[*out_e_i].delta.mean,
+                            spikeDelta, powerStateGraph[*out_e_i].delta.nonZeroStdev()*3 )) {
+
                 if (verbose) cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
 
                 // update existing edge's stats
@@ -598,6 +604,10 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
         removeOverlapping( &disagList );
     }
 
+    if (REMOVE_WRONG_ENERGY) {
+        removeWrongEnergy( &disagList );
+    }
+
     for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
         cout << endl << "candidate found: " << endl << *disagItem << endl;
     }
@@ -652,6 +662,16 @@ void PowerStateGraph::removeOverlapping(
 
     cout << " removed " << count << " overlapping items." << endl;
 }
+
+void PowerStateGraph::removeWrongEnergy(
+        list<DisagDataItem> * disagList /**< Input and output parameter */
+        ) const
+{
+    cout << "Removing items with incorrect energy estimate... expected energy consumption = "
+         << energyConsumption.mean / J_PER_KWH << " kWh" << endl;
+
+}
+
 
 /**
  *
@@ -808,24 +828,9 @@ void PowerStateGraph::traceToEnd(
         // see if stdev*STDEV_MULT*2 is bigger than max-min and then
         // use the larger gap
         size_t begOfSearchWindow, endOfSearchWindow;
-        const size_t WINDOW_FRAME = 18; // number of seconds to widen window by
+        const size_t WINDOW_FRAME = 8; // number of seconds to widen window by
 
- /*       begOfSearchWindow = (disagGraph[startVertex].timestamp - WINDOW_FRAME) +
-                Utils::smallest(
-                  powerStateGraph[*psg_out_i].duration.min,
-                  Utils::roundToNearestSizeT(
-                          powerStateGraph[*psg_out_i].duration.mean -
-                                    (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
-*/
-
-/*        endOfSearchWindow = (disagGraph[startVertex].timestamp + WINDOW_FRAME) +
-                Utils::largest(
-                        powerStateGraph[*psg_out_i].duration.max,
-                  Utils::roundToNearestSizeT(powerStateGraph[*psg_out_i].duration.mean +
-                                    (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
-*/
-        const size_t e = powerStateGraph[*psg_out_i].duration.stdev;
-                // Utils::roundToNearestSizeT( powerStateGraph[*psg_out_i].duration.mean/10 ) ;
+        size_t e = powerStateGraph[*psg_out_i].duration.nonZeroStdev();
 
         if (verbose)  cout << "disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp << endl;
 
@@ -863,8 +868,7 @@ void PowerStateGraph::traceToEnd(
         foundSpikes = (*aggData).findSpike(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
-                endOfSearchWindow,
-                5  // was 8
+                endOfSearchWindow
                 );
 
 
@@ -879,9 +883,7 @@ void PowerStateGraph::traceToEnd(
             // calculate probability density function for the time at which the spike was found
             boost::math::normal dist(
                     0.0,
-                    // powerStateGraph[*psg_out_i].duration.mean/10
-                    powerStateGraph[*psg_out_i].duration.stdev
-                    /** @todo should PDF stdev be hard-coded more elegantly? */
+                    powerStateGraph[*psg_out_i].duration.nonZeroStdev()
                     );
             double pdf_for_time = boost::math::pdf(
                     dist,
@@ -897,7 +899,6 @@ void PowerStateGraph::traceToEnd(
 
             // create an average probability
             double weightedAvPdf = (pdf_for_time + (spike->pdf*1)) / 2; // weight the average in favour of the spike PDF
-
 
             // create new vertex
             DisagTree::vertex_descriptor newVertex=add_vertex(disagGraph);
@@ -972,30 +973,36 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
         avConfidence = confidenceAccumulator / path_i->size();
 
         // if this is the most confident path we've seen yet then record its details.
-        if ( avConfidence > ddi.confidence ) {
+        if ( avConfidence >= ddi.confidence ) {
             ddi.confidence = avConfidence;
             bestPath_i = path_i;
-            ddi.duration = disagTree[path_i->back().vertex].timestamp + // timestamp of start of last power state
-                    powerStateGraph[ disagTree[path_i->back().vertex].psgEdge ].duration.mean // duration of last power state
-                    - deviceStart;
         }
 
         if (verbose) cout << endl << endl;
     }
 
-    // now get energy usage from bestPath_i
+    // now get energy usage and duration from bestPath_i
     size_t prevTimestamp, duration;
+    double prevMeanPower = 0;
 
     ddi.energy = 0;
+    ddi.duration = 0;
+    duration = 0;
     prevTimestamp = deviceStart;
     for (cav_i=bestPath_i->begin(); cav_i != bestPath_i->end(); cav_i++) {
-
         duration = disagTree[ cav_i->vertex ].timestamp - prevTimestamp;
+        ddi.energy += prevMeanPower * duration;
 
-        ddi.energy += disagTree[ cav_i->vertex ].meanPower * duration;
+        ddi.duration += duration;
 
         prevTimestamp = disagTree[ cav_i->vertex ].timestamp;
+        prevMeanPower = disagTree[ cav_i->vertex ].meanPower;
     }
+
+    // now update ddi.confidence with the PDF of our energy consumption
+    boost::math::normal dist(energyConsumption.mean, energyConsumption.nonZeroStdev());
+    double pdf_for_energy = boost::math::pdf(dist, ddi.energy);
+    ddi.confidence = ((4*ddi.confidence) + pdf_for_energy) / 5;
 
     return ddi;
 }

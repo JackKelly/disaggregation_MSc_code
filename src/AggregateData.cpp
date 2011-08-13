@@ -89,7 +89,6 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         const Statistic<Sample_t>& spikeStats,
         size_t startTime,
         size_t endTime,
-        double stdevMultiplier, /**< Higher = more permissive */
         const bool verbose
         ) const
 {
@@ -123,44 +122,65 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
     // Make sure the stdev isn't so small that it'll not provide
     // sufficient headroom when trying to find deltas in the
     // noisy aggregate data.
-    double stdev = spikeStats.stdev;
-    if (stdev < fabs(spikeStats.mean/10))
-        stdev = fabs(spikeStats.mean/10);
+    double fakedStdev = spikeStats.stdev;
+    if (spikeStats.mean < 500) {
+        fakedStdev = fabs(spikeStats.mean/5);
+    } else if (spikeStats.mean < 1000) {
+        fakedStdev = fabs(spikeStats.mean/10);
+    } else {
+        // spikeStats.mean > 1000
+        fakedStdev = fabs(spikeStats.mean/17);
+    }
 
-    const double e = stdev * stdevMultiplier;
-    double lowerLimit = spikeStats.min - e;
-    double upperLimit = spikeStats.max + e;
+    const double e = fakedStdev * 5;
+    double wideLowerLimit = spikeStats.min - e;
+    double wideUpperLimit = spikeStats.max + e;
+    double narrowLowerLimit = spikeStats.min - (fakedStdev*1.5);
+    double narrowUpperLimit = spikeStats.max + (fakedStdev*1.5);
 
     // make sure we're at least looking for a spike of the correct sign
-    if ( ! Utils::sameSign(lowerLimit, spikeStats.mean) )
-        lowerLimit = 0;
-    if ( ! Utils::sameSign(upperLimit, spikeStats.mean) )
-        upperLimit = 0;
+    if ( ! Utils::sameSign(wideLowerLimit, spikeStats.mean) )
+        wideLowerLimit = 0;
+    if ( ! Utils::sameSign(wideUpperLimit, spikeStats.mean) )
+        wideUpperLimit = 0;
 
     if (verbose) {
         cout << "Looking for spike with mean " << spikeStats.mean
-             << " between vals " << lowerLimit
-             << " to " << upperLimit << " and times "
+             << " between vals " << wideLowerLimit
+             << " to " << wideUpperLimit << " and times "
              << startTime << " - " << endTime << endl;
     }
 
-    boost::math::normal dist(spikeStats.mean, spikeStats.stdev);
+    boost::math::normal dist(spikeStats.mean, spikeStats.stdev + numeric_limits<double>::min());
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html
 
     size_t time = startTime;
+    int variations[4]; // used for trying aggDelta(i), aggDelta(i)+aggDelta(i+1), aggDelta(i)+aggDelta(i-1), aD(i-1)+aD(i)+aD(i+1)
     while (time < endTime && i < size) {
 
-        // Are spikeStats.mean and aggDelta(i) within stdev*stdevMultiplier of eachother?
-        if ( Utils::between(lowerLimit, upperLimit, aggDelta(i)) ) {
+        variations[0] = aggDelta(i);
 
-            foundSpikes.push_back(
-                    FoundSpike(
-                            time,
-                            aggDelta(i),
-                            boost::math::pdf(dist, aggDelta(i))
+        if ( Utils::between(wideLowerLimit, wideUpperLimit, variations[0]) ) {
+
+            variations[1] = variations[0] + aggDelta(i+1);
+            variations[2] = variations[0] + aggDelta(i-1);
+            variations[3] = variations[0] + aggDelta(i+1) + aggDelta(i-1);
+
+            for (size_t var_i=0; var_i<4; var_i++) {
+                if ( Utils::between(narrowLowerLimit, narrowUpperLimit, variations[var_i]) ) {
+
+                    foundSpikes.push_back(
+                            FoundSpike(
+                                    time,
+                                    variations[var_i],
+                                    boost::math::pdf(dist, variations[var_i])
                             ) );
 
-            if (verbose) cout << "Spike found with delta " << aggDelta(i) << " expected " << spikeStats.mean << endl;
+                    if (verbose) cout << "Spike found with delta " << variations[var_i] << " expected " << spikeStats.mean << endl;
+
+                    break;
+                }
+            }
         }
 
         time = data[++i].timestamp;

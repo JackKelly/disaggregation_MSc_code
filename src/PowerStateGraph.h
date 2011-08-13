@@ -44,7 +44,7 @@ public:
               << "duration    = " << ddi.duration << " seconds"
               << " (" << Utils::secondsToTime(ddi.duration) << ")" << std::endl
               << "energy      = " << ddi.energy << " Joules"
-              << " equivalent to " << ddi.energy / 3600000 << " kWh";
+              << " equivalent to " << ddi.energy / J_PER_KWH << " kWh";
             return o;
         }
     };
@@ -239,7 +239,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 5;
+    static const size_t EDGE_HISTORY_SIZE = 100;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
@@ -256,8 +256,10 @@ private:
         {}
     };
 
-
     std::list< std::list<ConfidenceAndVertex> > listOfPaths;
+
+    Statistic< double > energyConsumption; /**< @brief Energy consumption in Joules
+                                                obtained from training signatures */
 
     /****************************
      * PRIVATE MEMBER FUNCTIONS *
@@ -338,6 +340,10 @@ private:
             std::list<DisagDataItem> * disagList, /**< Input and output parameter */
             const bool verbose = false
             );
+
+    void removeWrongEnergy(
+            std::list<DisagDataItem> * disagList
+            ) const;
 
 
 };
