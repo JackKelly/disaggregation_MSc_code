@@ -62,9 +62,9 @@ void PowerStateGraph::update(
     PSGraph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 100) {
+    if (spikes.size() > 10) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 100 );
+        advance( it, 10 );
         spikes.erase( it, spikes.end() );
     }
 
