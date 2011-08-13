@@ -210,9 +210,9 @@ const std::string Utils::secondsToTime(
         )
 {
     std::string formattedTime =
-            size_t_to_s(seconds / 3600) + ":" +
-            size_t_to_s((seconds%3600)/60) + ":" +
-            size_t_to_s((seconds%3600)%60);
+            size_t_to_s(seconds / 3600)    + "h " +
+            size_t_to_s((seconds%3600)/60) + "m " +
+            size_t_to_s((seconds%3600)%60) + "s";
 
     return formattedTime;
 }
