@@ -608,8 +608,18 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
         removeWrongEnergy( &disagList );
     }
 
+
+    fstream fs;
+    Utils::openFile(fs, DATA_OUTPUT_PATH + "disagg.dat", fstream::out);
+
     for (list<DisagDataItem>::const_iterator disagItem=disagList.begin(); disagItem!=disagList.end(); disagItem++) {
         cout << endl << "candidate found: " << endl << *disagItem << endl;
+
+        for (list<TimeAndPower>::const_iterator tap_i=disagItem->timeAndPower.begin();
+                tap_i!=disagItem->timeAndPower.end(); tap_i++) {
+            fs << tap_i->timestamp << "\t" << tap_i->meanPower << endl;
+        }
+
     }
     cout << endl;
 
@@ -989,7 +999,21 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
     ddi.duration = 0;
     duration = 0;
     prevTimestamp = deviceStart;
+    size_t count = 0;
     for (cav_i=bestPath_i->begin(); cav_i != bestPath_i->end(); cav_i++) {
+
+        // Add to timeAndPower list for read-out later when we plot the power states
+        if ( cav_i != bestPath_i->begin() ) {
+            ddi.timeAndPower.push_back( TimeAndPower(
+                    disagTree[ cav_i->vertex ].timestamp-1 ,
+                    (count==1 ? 0 : prevMeanPower)
+            ) );
+            ddi.timeAndPower.push_back( TimeAndPower(
+                    disagTree[ cav_i->vertex ].timestamp,
+                    disagTree[ cav_i->vertex ].meanPower) );
+        }
+
+        // Now calculate duration and energy consumption
         duration = disagTree[ cav_i->vertex ].timestamp - prevTimestamp;
         ddi.energy += prevMeanPower * duration;
 
@@ -997,6 +1021,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
 
         prevTimestamp = disagTree[ cav_i->vertex ].timestamp;
         prevMeanPower = disagTree[ cav_i->vertex ].meanPower;
+        count++;
     }
 
     // now update ddi.confidence with the PDF of our energy consumption
@@ -1008,7 +1033,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
 }
 
 /**
- * Trace the disagGraph backwards
+ * @brief Trace the disagGraph backwards.
  */
 list< PowerStateGraph::PSGraph::edge_descriptor > PowerStateGraph::getEdgeHistoryForVertex(
         const DisagTree& disagTree,

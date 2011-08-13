@@ -19,6 +19,14 @@
 #include "AggregateData.h"
 
 class PowerStateGraph {
+private:
+    struct TimeAndPower {
+        size_t timestamp;
+        double meanPower;
+        TimeAndPower( const size_t _timestamp, const double _meanPower )
+        : timestamp(_timestamp), meanPower(_meanPower)
+        {}
+    };
 public:
     PowerStateGraph();
     virtual ~PowerStateGraph();
@@ -35,6 +43,7 @@ public:
         size_t duration;
         double energy;    /**< @brief energy consumed */
         double confidence;
+        std::list< TimeAndPower > timeAndPower;
 
         friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
 
