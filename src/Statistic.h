@@ -51,7 +51,7 @@ struct Statistic {
     Statistic(
             const T value
             )
-    : mean(value), stdev(fabs(value*0.1)), min(value), max(value), numDataPoints(1)
+    : mean(value), stdev(0), min(value), max(value), numDataPoints(1)
     {
         dataStore.push_back(value);
     }
@@ -227,7 +227,7 @@ struct Statistic {
 
     const double calcStdev() const
     {
-        if (numDataPoints > 0) {
+        if (numDataPoints > 1) {
             double stdevAccumulator = 0;
             for (typename std::list<T>::const_iterator i=dataStore.begin(); i!=dataStore.end(); i++) {
                 stdevAccumulator += pow( ( *i - mean ), 2 );
@@ -235,7 +235,6 @@ struct Statistic {
             return sqrt(stdevAccumulator / (numDataPoints-1));
         } else
             return 0;
-
     }
 
     /**
@@ -329,7 +328,15 @@ struct Statistic {
         return q;
     }
 
-
+    /**
+     * @brief Returns stdev if stdev > mean/10, else returns mean/10
+     */
+    const double nonZeroStdev() const {
+        if (stdev < mean/10)
+            return mean/10;
+        else
+            return stdev;
+    }
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {
