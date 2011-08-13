@@ -270,7 +270,8 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
  *
  * - If an edge already exists between beforeVertex and afterVertex then
  *     - check all out-edges from beforeVertex
- *     - if any out-edge has the same history as the current history then
+ *     - if any out-edge has the same history as the current history
+ *           and the same sign delta then:
  *         - update that edge's statistics
  *     - else
  *         - create a new edge.
@@ -312,16 +313,16 @@ void PowerStateGraph::updateOrInsertEdge(
                 cout << "powerStateGraph[existingEdge].edgeHistory = " << *edge << endl;
             }
         }
-
-         if (verbose) cout << endl;
+        if (verbose) cout << endl;
 
         // check if any of the out edges from beforeVertex have the same
         // history as our current history... if so, update that edge.
         PSGraph::out_edge_iterator out_e_i, out_e_end;
         tie(out_e_i, out_e_end) = out_edges(beforeVertex, powerStateGraph);
         for (; out_e_i != out_e_end; out_e_i++) {
-            // check if the edge has the same history as out current history
-            if ( edgeListsAreEqual(powerStateGraph[*out_e_i].edgeHistory, edgeHistory) ) {
+            // check if the edge has the same history and same sign as out current history
+            if ( edgeListsAreEqual(powerStateGraph[*out_e_i].edgeHistory, edgeHistory) &&
+                    Utils::sameSign(powerStateGraph[*out_e_i].delta.mean, spikeDelta ) ) {
                 if (verbose) cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
 
                 // update existing edge's stats
@@ -824,7 +825,7 @@ void PowerStateGraph::traceToEnd(
                                     (powerStateGraph[*psg_out_i].duration.stdev*STDEV_MULT)));
 */
         const size_t e =
-                Utils::roundToNearestSizeT( powerStateGraph[*psg_out_i].duration.mean/3 ) ;
+                 Utils::roundToNearestSizeT( powerStateGraph[*psg_out_i].duration.mean/10 ) ;
 
         if (verbose)  cout << "disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp << endl;
 
@@ -878,7 +879,8 @@ void PowerStateGraph::traceToEnd(
             // calculate probability density function for the time at which the spike was found
             boost::math::normal dist(
                     0.0,
-                    powerStateGraph[*psg_out_i].duration.mean/10 // powerStateGraph[*psg_out_i].duration.stdev
+                    // powerStateGraph[*psg_out_i].duration.mean/10
+                    powerStateGraph[*psg_out_i].duration.stdev
                     /** @todo should PDF stdev be hard-coded more elegantly? */
                     );
             double pdf_for_time = boost::math::pdf(

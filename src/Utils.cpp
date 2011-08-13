@@ -216,3 +216,14 @@ const std::string Utils::secondsToTime(
 
     return formattedTime;
 }
+
+/**
+ * @brief Returns true if @c a and @c b are the same sign. Zero is assumed to be positive.
+ */
+const bool Utils::sameSign(
+        const double& a,
+        const double& b
+        )
+{
+    return (a < 0 && b < 0) || (a >= 0 && b >= 0);
+}

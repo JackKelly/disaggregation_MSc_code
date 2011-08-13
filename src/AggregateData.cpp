@@ -151,16 +151,27 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
   */
 
     const double e = (fabs(spikeStats.mean)/2);
-    lowerLimit = spikeStats.mean - e;
-    upperLimit = spikeStats.mean + e;
+//    const double e = stdev * stdevMultiplier;
+    lowerLimit = spikeStats.min - e;
+    upperLimit = spikeStats.max + e;
 
+    // make sure we're at least looking for a spike of the correct sign
+/*    if ((lowerLimit < 0 && spikeStats.mean > 0) || (lowerLimit > 0 && spikeStats.mean < 0)) {
+        lowerLimit = 0;
+    }
+    if ((upperLimit < 0 && spikeStats.mean > 0) || (upperLimit > 0 && spikeStats.mean < 0)) {
+        upperLimit = 0;
+    }
+*/
     if (verbose) {
-        cout << "Looking for spike with mean " << spikeStats.mean << " between vals " << lowerLimit
-                << " to " << upperLimit << " and times " << startTime << " - " << endTime << endl;
+        cout << "Looking for spike with mean " << spikeStats.mean
+             << " between vals " << lowerLimit
+             << " to " << upperLimit << " and times "
+             << startTime << " - " << endTime << endl;
     }
 
     /** @todo this is an ugly hack at the moment setting stdef to mean/10 */
-    boost::math::normal dist(spikeStats.mean, fabs(spikeStats.mean/10));// stdev);
+    boost::math::normal dist(spikeStats.mean, stdev);// fabs(spikeStats.mean/10));
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html
 
     size_t time = startTime;

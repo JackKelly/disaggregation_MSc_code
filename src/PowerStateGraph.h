@@ -38,8 +38,6 @@ public:
 
         friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
 
-//            struct tm * t = localtime( &ddi.timestamp );
-
             o << "timestamp   = " << ddi.timestamp << std::endl
               << "date        = " << ctime( (time_t*)(&ddi.timestamp) )
               << "confidence  = " << ddi.confidence << std::endl
