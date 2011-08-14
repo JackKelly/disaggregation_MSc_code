@@ -12,7 +12,7 @@ ifeq ($(origin CXX), undefined)
 endif
 
 ifeq ($(origin LDFLAGS), undefined)
-	LDFLAGS = -g -Wall -O3 -std=c++0x # -lserial -lglog 
+	LDFLAGS = -g -Wall -O3 -std=c++0x -lboost_program_options # -lserial -lglog -L/usr/local/lib  
 endif
 
 ifeq ($(origin CXXFLAGS), undefined)

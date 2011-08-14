@@ -7,6 +7,10 @@
  *      Author: jack
  */
 
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+
 #include "Array.h"
 #include "Signature.h"
 #include "Statistic.h"
@@ -14,8 +18,18 @@
 #include "PowerStateGraph.h"
 #include <iostream>
 #include <fstream>
+#include <iterator>
 
 using namespace std;
+
+void program_options_setup()
+{
+    // Declare the supported options
+    po::options_description desc("Allowed options");
+    desc.add_options()
+            ("help", "produce help message")
+            ("aggdata", po::value<string>(), "aggregate data file");
+}
 
 void powerStateGraphTest()
 {

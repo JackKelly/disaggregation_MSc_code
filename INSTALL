@@ -1,6 +1,19 @@
 DEPENDENCIES:
-
-Boost (developed against Boost version 1.42.0.1 )
-  * boost::algorithm
-  * The Boost Graph Library
-  * Boost Unit Test Framework
+   * Doxygen (developed against version 1.7.3)
+   * Boost   (developed against version 1.42.0.1)
+   
+      * Boost String Algorithms Library
+           http://www.boost.org/doc/libs/1_42_0/doc/html/string_algo.html
+           
+      * Boost Graph Library
+           http://www.boost.org/doc/libs/1_42_0/libs/graph/doc/index.html
+           
+      * Boost Unit Test Framework
+           http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/index.html
+           
+      * Boost Program Options
+           http://www.boost.org/doc/libs/1_42_0/doc/html/program_options/
+           Must be compiled from source and explicitly linked to.
+           Details:
+              http://www.boost.org/doc/libs/1_42_0/more/getting_started/unix-variants.html#easy-build-and-install
+              http://www.boost.org/doc/libs/1_42_0/more/getting_started/unix-variants.html#link-your-program-to-a-boost-library
