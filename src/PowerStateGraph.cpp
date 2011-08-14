@@ -847,9 +847,6 @@ void PowerStateGraph::traceToEnd(
             continue;
         }
 
-
-        // see if stdev*STDEV_MULT*2 is bigger than max-min and then
-        // use the larger gap
         size_t begOfSearchWindow, endOfSearchWindow;
         const size_t WINDOW_FRAME = 8; // number of seconds to widen window by
 
@@ -863,15 +860,15 @@ void PowerStateGraph::traceToEnd(
         endOfSearchWindow = (disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.max)
                 + WINDOW_FRAME + e;
 
-
-
-   /*     cout << "endOfSearchWindow=" << endOfSearchWindow
-                << " disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp
-                << " powerStateGraph[*psg_out_i].duration.max=" << powerStateGraph[*psg_out_i].duration.max
-                << " powerStateGraph[*psg_out_i].duration.mean=" << powerStateGraph[*psg_out_i].duration.mean
-                << " powerStateGraph[*psg_out_i].duration.stdev=" << powerStateGraph[*psg_out_i].duration.stdev
-                << endl;
-*/
+        //********************** DIAGNOSTICS *************************
+        if (verbose) {
+            cout << "endOfSearchWindow=" << endOfSearchWindow
+                    << " disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp
+                    << " powerStateGraph[*psg_out_i].duration.max=" << powerStateGraph[*psg_out_i].duration.max
+                    << " powerStateGraph[*psg_out_i].duration.mean=" << powerStateGraph[*psg_out_i].duration.mean
+                    << " powerStateGraph[*psg_out_i].duration.stdev=" << powerStateGraph[*psg_out_i].duration.stdev
+                    << endl;
+        }//__________________________________________________________
 
         // ensure we're not looking backwards in time
         if (begOfSearchWindow <= disagGraph[startVertex].timestamp) {
@@ -883,9 +880,8 @@ void PowerStateGraph::traceToEnd(
             continue; // we can't process this if we're trying to look past the end of the aggData
         }
 
-
         //************************************************************//
-        // get a list of candidate spikes matching this PSG out edge  //
+        // get a list of candidate spikes matching this PSG-out-edge  //
 
         foundSpikes.clear();
         foundSpikes = (*aggData).findSpike(
@@ -904,24 +900,26 @@ void PowerStateGraph::traceToEnd(
                 spike++) {
 
             // calculate probability density function for the time at which the spike was found
-            boost::math::normal dist(
-                    0.0,
-                    powerStateGraph[*psg_out_i].duration.nonZeroStdev()
-                    );
-            double pdf_for_time = boost::math::pdf(
-                    dist,
-                    ((int)spike->timestamp -
-                            ((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean) )
-                    );
+            boost::math::normal
+                dist( 0.0, powerStateGraph[*psg_out_i].duration.nonZeroStdev() );
+
+            double timeSpikeExpected =
+                    (int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean;
+
+            double difference = (int)spike->timestamp - timeSpikeExpected;
+
+            double pdf_for_time = boost::math::pdf( dist, difference );
+
+            //******************** DIAGNOSTICS **************************
             if (verbose) {
                 cout << "Spike " << spike->delta << " found at " << spike->timestamp
-                    << ", expected at " << (size_t)((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean)
-                    << ", diff = " << ((int)spike->timestamp - ((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean) )
+                    << ", expected at " << Utils::roundToNearestSizeT( timeSpikeExpected )
+                    << ", diff = " << difference
                     << "pdf_for_time=" << pdf_for_time << endl;
-            }
+            }//_________________________________________________________
 
             // create an average probability
-            double weightedAvPdf = (pdf_for_time + (spike->pdf*1)) / 2; // weight the average in favour of the spike PDF
+            double avPdf = (pdf_for_time + spike->pdf) / 2;
 
             // create new vertex
             DisagTree::vertex_descriptor newVertex=add_vertex(disagGraph);
@@ -930,7 +928,7 @@ void PowerStateGraph::traceToEnd(
             DisagTree::edge_descriptor newEdge;
             bool existingEdge;
             tie(newEdge, existingEdge) =
-                    add_edge(startVertex, newVertex, weightedAvPdf, disagGraph);
+                    add_edge(startVertex, newVertex, avPdf, disagGraph);
 
 
             // add details to newVertex
