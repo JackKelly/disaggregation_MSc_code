@@ -74,11 +74,22 @@ public:
 
     const size_t findTime(
             const size_t time
-    ) const;
+            ) const;
+
+    const bool readingGoesBelowPowerState(
+            const size_t startTime,
+            const size_t endTime,
+            const Statistic<Sample_t>& powerState
+            ) const;
 
 private:
 
     size_t samplePeriod; /**< @brief in seconds. */
+
+    const size_t checkStartAndEndTimes(
+            size_t * startTime,
+            size_t * endTime
+            ) const;
 
 };
 

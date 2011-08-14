@@ -147,8 +147,8 @@ const bool PowerStateGraph::rejectSpike(
 {
     // if either 'before' or 'after' has a stdev greater than
     // its mean then reject
-    if ( (before.stdev > before.mean) ||
-         ( after.stdev >  after.mean)   ) {
+    if ( (before.stdev > fabs(before.mean*2)) ||
+         ( after.stdev > fabs(after.mean*2))   ) {
         if (verbose) cout << "stdev too big";
         return true;
     }
@@ -441,9 +441,9 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 10) {
+    if (spikes.size() > 100) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 10 );
+        advance( it, 100 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -633,18 +633,18 @@ void PowerStateGraph::displayAndPlotDisagList(
     }
     cout << endl;
 
-    const size_t BORDER = 120;
+    const size_t BORDER = 1000;
     GNUplot::PlotVars pv;
     pv.inFilename  = "disagg";
     pv.outFilename = "disagg";
-    pv.title       = "Disaggregated signal";
+    pv.title       = "Automatic disaggregation for kettle";
     pv.xlabel      = "time";
     pv.ylabel      = "power (Watts)";
     pv.plotArgs    = "[\"" + Utils::size_t_to_s( disagList.front().timestamp - BORDER + 3600) + "\":\""
             + Utils::size_t_to_s( disagList.back().timestamp + disagList.back().duration + BORDER + 3600) + "\"]";
     pv.data.push_back(
             GNUplot::Data(
-                    "disagg", "", "DISAGG")
+                    "disagg", "Automatically determined device signature", "DISAGG")
     );
     GNUplot::plot( pv );
 }
@@ -872,7 +872,10 @@ void PowerStateGraph::traceToEnd(
 
         // ensure we're not looking backwards in time
         if (begOfSearchWindow <= disagGraph[startVertex].timestamp) {
-            begOfSearchWindow = disagGraph[startVertex].timestamp+1;
+            begOfSearchWindow =
+                    disagGraph[startVertex].timestamp
+                    + powerStateGraph[*psg_out_i].duration.min
+                    - (powerStateGraph[*psg_out_i].duration.min / 10);
         }
 
         // check that we're not looking past the end of aggData
@@ -880,11 +883,17 @@ void PowerStateGraph::traceToEnd(
             continue; // we can't process this if we're trying to look past the end of the aggData
         }
 
+        if (endOfSearchWindow <= begOfSearchWindow) {
+            cout << "#";
+            cout.flush();
+            continue;
+        }
+
         //************************************************************//
         // get a list of candidate spikes matching this PSG-out-edge  //
 
         foundSpikes.clear();
-        foundSpikes = (*aggData).findSpike(
+        foundSpikes = aggData->findSpike(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
                 endOfSearchWindow
@@ -898,6 +907,19 @@ void PowerStateGraph::traceToEnd(
         for (list<AggregateData::FoundSpike>::const_iterator spike=foundSpikes.begin();
                 spike!=foundSpikes.end();
                 spike++) {
+
+            // ensure that the absolute value of the aggregate data signal
+            // does not drop below the minimum for our current power state
+            if (aggData->readingGoesBelowPowerState(
+                    disagGraph[startVertex].timestamp,
+                    spike->timestamp,
+                    powerStateGraph[ disagGraph[startVertex].psgVertex ]
+                                     ) ) {
+                cout << ", start=" << disagGraph[startVertex].timestamp
+                     << ", end= " << spike->timestamp
+                     << endl;
+                continue;
+            }
 
             // calculate probability density function for the time at which the spike was found
             boost::math::normal
@@ -918,7 +940,7 @@ void PowerStateGraph::traceToEnd(
                     << "pdf_for_time=" << pdf_for_time << endl;
             }//_________________________________________________________
 
-            // create an average probability
+            // merge probability for time and for spike delta
             double avPdf = (pdf_for_time + spike->pdf) / 2;
 
             // create new vertex
@@ -929,7 +951,6 @@ void PowerStateGraph::traceToEnd(
             bool existingEdge;
             tie(newEdge, existingEdge) =
                     add_edge(startVertex, newVertex, avPdf, disagGraph);
-
 
             // add details to newVertex
             disagGraph[newVertex].timestamp = spike->timestamp;

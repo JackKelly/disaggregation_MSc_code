@@ -85,6 +85,71 @@ const size_t AggregateData::findNear(
     return 0;
 }
 
+const size_t AggregateData::checkStartAndEndTimes(
+        size_t * startTime,
+        size_t * endTime
+        ) const
+{
+    size_t i=0;
+    // lots of range checking and default parameter setting
+    if (*endTime == 0) { // default parameter used
+        *endTime = data[size-1].timestamp;
+    }
+    else if (*endTime > data[size-1].timestamp) {
+        *endTime = data[size-1].timestamp;
+    }
+
+    if (*startTime == 0) { // default parameter used
+        *startTime = data[0].timestamp;
+        i = 0;
+    }
+    else if (*startTime < data[0].timestamp) {
+        *startTime = data[0].timestamp;
+        i = 0;
+    }
+    else {
+        i = findTime(*startTime);
+    }
+
+    assert( (*endTime) > (*startTime) );
+
+    return i;
+}
+
+/**
+ * @brief Run through the raw aggregate data from
+ *        @c startTime to @c endTime to make sure
+ *        that no agg data sample has a lower value
+ *        than @c powerState.min.
+ *
+ * @return if no sample between @c startTime and @c endTime
+ *         is lower than @c powerState.min then return false
+ *         else return true.
+ */
+const bool AggregateData::readingGoesBelowPowerState(
+        size_t startTime,
+        size_t endTime,
+        const Statistic<Sample_t>& powerState
+        ) const
+{
+    size_t i = findTime( startTime );
+    i++;
+    size_t time = data[i].timestamp;
+
+    while (time < endTime && i < size) {
+
+        if ( data[i].reading < powerState.min ) {
+            cout << "time=" << time << ", reading=" << data[i].reading << ", powerState.min=" << powerState.min;
+            return true;
+        }
+
+        time = data[++i].timestamp;
+    }
+
+    return false;
+}
+
+
 list<AggregateData::FoundSpike> AggregateData::findSpike(
         const Statistic<Sample_t>& spikeStats,
         size_t startTime,
@@ -94,30 +159,8 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
 {
     if (verbose) cout << "startTime = " << startTime << " endTime = " << endTime << endl;
 
-    size_t i;
+    size_t i = checkStartAndEndTimes( &startTime, &endTime );
     list<AggregateData::FoundSpike> foundSpikes;
-
-    // lots of range checking and default parameter setting
-    if (endTime == 0) { // default parameter used
-        endTime = data[size-1].timestamp;
-    }
-    else if (endTime > data[size-1].timestamp) {
-        endTime = data[size-1].timestamp;
-    }
-
-    if (startTime == 0) { // default parameter used
-        startTime = data[0].timestamp;
-        i = 0;
-    }
-    else if (startTime < data[0].timestamp) {
-        startTime = data[0].timestamp;
-        i = 0;
-    }
-    else {
-        i = findTime(startTime);
-    }
-
-    assert( endTime > startTime );
 
     // Make sure the stdev isn't so small that it'll not provide
     // sufficient headroom when trying to find deltas in the
@@ -194,6 +237,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
  * If precise time cannot be found, returns the index to the
  * sample immediately prior.
  * Terminates program if time is out of range (as this is always fatal).
+ * Should probably be re-written as a hash-function.
  *
  * @return the index at which @time is located.
  */
