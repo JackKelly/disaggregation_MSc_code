@@ -19,17 +19,10 @@ namespace po = boost::program_options;
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include <string>
 
 using namespace std;
 
-void program_options_setup()
-{
-    // Declare the supported options
-    po::options_description desc("Allowed options");
-    desc.add_options()
-            ("help", "produce help message")
-            ("aggdata", po::value<string>(), "aggregate data file");
-}
 
 void powerStateGraphTest()
 {
@@ -74,8 +67,59 @@ void powerStateGraphTest()
 
 }
 
+void printHelp(const po::options_description& desc)
+{
+    cout << desc << endl
+         << "Example usage:" << endl
+         << "   ./disaggregate dataCroppedToKettleToasterWasherTumble -s kettle -s kettle2" << endl << endl;
+}
+
 int main(int argc, char * argv[])
 {
+    string aggData;
+
+    cout << endl << "SMART METER DISAGGREGATION TOOL" << endl;
+
+    // Declare the supported options
+    po::positional_options_description p;
+    p.add("aggdata", -1);
+
+    po::options_description desc("Allowed options");
+    desc.add_options()
+            ("help,h",
+                    "produce help message\n")
+            ("aggdata,a",
+                    po::value<string>(&aggData)->default_value("dataCroppedToKettleToasterWasherTumble"),
+                    "aggregate data file (without path or suffix).\n")
+            ("signatures,s",
+                    po::value< vector<string> >(),
+                    "device signature file(s) (without path or suffix).\n");
+
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).options( desc ).positional(p).run() , vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        cout << endl << desc << endl << endl;
+        exit(1);
+    }
+
+    if (vm.count("signatures")) {
+        cout << "Signatures set to:" << endl;
+        for (vector<string>::const_iterator s=vm["signatures"].as< vector<string> >().begin();
+                s!=vm["signatures"].as< vector<string> >().end(); s++) {
+            cout << *s << endl;
+        }
+    } else {
+        cout << endl << "Signature file(s) must be specified using the --signatures option." << endl << endl;
+        printHelp( desc );
+        exit(1);
+    }
+
+    if (vm.count("aggdata")) {
+        cout << "Aggregate data set to " << vm["aggdata"].as< string >() << endl;
+    }
+
     /*
     Signature sig( "washer.csv", 1 );
     Histogram ha;
