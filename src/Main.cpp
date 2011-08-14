@@ -22,6 +22,7 @@ void powerStateGraphTest()
 {
     AggregateData aggData;
     aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+//    aggData.loadCurrentCostData( "data/input/watts_up/washer2-timestamped.csv" );
 //    aggData.loadCurrentCostData( "data/input/current_cost/test.csv" );
 
 //    for (size_t i=0; i<aggData.getSize(); i++) {

@@ -222,8 +222,27 @@ struct Statistic {
             stdev = calcStdev();
 
         }
-
     }
+
+
+    /**
+     * @brief Update an existing Statistic with data from an existing statistic.
+     */
+    void update(
+            const Statistic<T>& otherStat
+            )
+    {
+        Array<T> otherStatArray( otherStat.dataStore.size() );
+
+        size_t count = 0;
+        typename std::list<T>::const_iterator it;
+        for (it=otherStat.dataStore.begin(); it!=otherStat.dataStore.end(); it++) {
+            otherStatArray[count++] = *it;
+        }
+
+        update( otherStatArray ); // re-use the existing update() function which expects an array
+    }
+
 
     const double calcStdev() const
     {
@@ -236,6 +255,7 @@ struct Statistic {
         } else
             return 0;
     }
+
 
     /**
      * @brief Update an existing Statistic with a single new data point.
