@@ -13,7 +13,6 @@
 #include <iostream>
 #include <boost/algorithm/string/replace.hpp>
 #include <list>
-#include <glog/logging.h>
 
 using namespace std;
 
@@ -51,7 +50,6 @@ void GNUplot::plot(
     const string plotCommand = "gnuplot " + gnuPlotScriptFilename;
 
     cout << "Plotting gnuplot script " << gnuPlotScriptFilename << endl;
-    LOG(INFO) << plotCommand;
     system( plotCommand.c_str() );
 }
 
@@ -153,6 +151,5 @@ void GNUplot::instantiateTemplate(
 
     cout << "Instantiating GNUplot template \"config/" + plotVars.inFilename + ".template.gnu\""
             " and outputting instantiated template to " << DATA_OUTPUT_PATH << plotVars.outFilename << ".gnu" << endl;
-    LOG(INFO) << sedCommand;
     system( sedCommand.c_str() ) ;
 }

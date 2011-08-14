@@ -10,7 +10,6 @@
 #include <cmath> // floor()
 #include <time.h>
 #include <fstream>
-#include <glog/logging.h>
 #include <iostream>
 
 const int Utils::roundToNearestInt( const double input )
@@ -62,10 +61,9 @@ void Utils::openFile(
     fs.open( filename.c_str(), openmode );
 
     if ( ! fs.good() ) {
-        LOG(ERROR) << "Failed to open " << filename << " for reading.";
-        exit(EXIT_ERROR);
+        fatalError("Failed to open " + filename + " for reading.");
     }
-    LOG(INFO) << "Successfully opened " << filename;
+    std::cout << "Successfully opened " << filename << std::endl;
 }
 
 /**
@@ -85,7 +83,7 @@ const size_t Utils::countDataPoints( std::fstream& fs )
         }
     }
 
-    LOG(INFO) << "Found " << count << " data points in file.";
+    std::cout << "Found " << count << " data points in file." << std::endl;
 
     // Return the read pointer to the beginning of the file
     fs.clear();
@@ -226,4 +224,12 @@ const bool Utils::sameSign(
         )
 {
     return (a < 0 && b < 0) || (a >= 0 && b >= 0);
+}
+
+void Utils::fatalError(
+        const std::string& message
+        )
+{
+    std::cerr << message << std::endl;
+    exit(EXIT_ERROR);
 }

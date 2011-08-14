@@ -13,7 +13,6 @@
 #include "Device.h"
 #include "PowerStateGraph.h"
 #include <iostream>
-#include <glog/logging.h>
 #include <fstream>
 
 using namespace std;
@@ -53,9 +52,6 @@ void powerStateGraphTest()
 
 int main(int argc, char * argv[])
 {
-    google::InitGoogleLogging( argv[0] );
-    google::LogToStderr();
-
     /*
     Signature sig( "washer.csv", 1 );
     Histogram ha;
@@ -111,7 +107,5 @@ int main(int argc, char * argv[])
     raTest.rollingAv(&raArray,7);
     std::cout << raArray << std::endl;*/
 
-    LOG(INFO) << "Shutting down...";
-    google::ShutdownGoogleLogging();
     return 0;
 }

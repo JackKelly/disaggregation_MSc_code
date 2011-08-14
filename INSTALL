@@ -1,11 +1,6 @@
 DEPENDENCIES:
 
-COMPILING:
-
 Boost (developed against Boost version 1.42.0.1 )
-  boost::algorithm
-  
-  
-  
-TESTING:
-Boost Unit Test Framework
+  * boost::algorithm
+  * The Boost Graph Library
+  * Boost Unit Test Framework

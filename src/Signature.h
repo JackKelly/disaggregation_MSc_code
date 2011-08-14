@@ -100,7 +100,11 @@ public:
     /** @name Smoothing */
     ///@{
 
-    void downSample( Array<Sample_t> * output, const size_t newPeriod ) const;
+    void downSample(
+            Array<Sample_t> * output,
+            const size_t newPeriod,
+            const bool verbose = false
+            ) const;
 
     ///@}
 
@@ -126,7 +130,8 @@ private:
     const std::string getStateBarsBaseFilename() const;
 
     void fillGapsInPowerStates(
-            const Histogram& hist
+            const Histogram& hist,
+            const bool verbose = false
             );
 
     ///@}

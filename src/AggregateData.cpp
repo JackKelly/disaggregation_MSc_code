@@ -36,7 +36,6 @@ void AggregateData::loadCurrentCostData(
         }
         fs.ignore( 255, '\n' );  // skip to next line
     }
-    LOG(INFO) << "Entered " << count << " ints into data array.";
 
     cout << "... done." << std::endl;
 }
@@ -246,7 +245,7 @@ const size_t AggregateData::findTime(
     ) const
 {
     if (time > data[size-1].timestamp || time < data[0].timestamp) {
-        LOG(FATAL) << "Timestamp is out of range.  Fatal error.";
+        Utils::fatalError("Timestamp is out of range.  Fatal error.");
     }
 
     if (data[size-1].timestamp == time)
