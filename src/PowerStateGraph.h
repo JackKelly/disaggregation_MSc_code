@@ -72,6 +72,16 @@ private:
      ***********************************/
     struct PowerStateEdge; // forward declared to fix interdependency introduced by edgeHistory
 
+    struct PowerStateVertex {
+        Statistic<Sample_t> betweenSpikes; /**< @brief Stats taken for the entire
+                                                period between spikes. Used for estimating
+                                                energy consumption. */
+        Statistic<Sample_t> postSpike; /**< @brief Stats taken for a
+                                            few samples immediately after the spike. Used
+                                            for determining vertices during training. */
+    };
+
+
     /**
      * @brief A graph where each vertex(node) is a @c Statistic<Sample_t>
      *        and each edge is a @c PowerStateEdge .
@@ -79,11 +89,9 @@ private:
      * See <a href="http://www.boost.org/doc/libs/1_47_0/libs/graph/doc/bundles.html">boost::graph bundles tutorial</a>
      */
     typedef boost::adjacency_list<
-//            boost::vecS, boost::vecS, boost::bidirectionalS,
-//            boost::setS, boost::vecS, boost::directedS, // setS means we can only have single edges
             boost::vecS, boost::vecS, boost::directedS,  // vecS allows multiple edges between vertices
-            Statistic<Sample_t>,   // our custom vertex (node) type
-            PowerStateEdge         // our custom edge type
+            PowerStateVertex, // our custom vertex (node) type
+            PowerStateEdge    // our custom edge type
             > PSGraph;
 
     struct PowerStateEdge {
@@ -112,10 +120,10 @@ private:
             template <class Vertex>
             void operator()(std::ostream& out, Vertex v) {
                     out << " [label=\""
-                        << "min="  << g[v].min << " \\n"
-                        << "mean=" << g[v].mean << " \\n"
-                        << "max=" << g[v].max << " \\n"
-                        << "stdev=" << g[v].stdev << " \\n"
+                        << "min="  << g[v].betweenSpikes.min << " \\n"
+                        << "mean=" << g[v].betweenSpikes.mean << " \\n"
+                        << "max=" << g[v].betweenSpikes.max << " \\n"
+                        << "stdev=" << g[v].betweenSpikes.stdev << " \\n"
                         << "\"]";
             };
 
@@ -248,7 +256,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 100;
+    static const size_t EDGE_HISTORY_SIZE = 5;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
@@ -275,10 +283,9 @@ private:
      ****************************/
 
     PSGraph::vertex_descriptor updateOrInsertVertex(
-            const Statistic<Sample_t>& stat,
             const Signature& sig,
-            const size_t start,
-            const size_t end,
+            const Statistic<Sample_t> postSpikePowerState,
+            const Statistic<Sample_t> betweenSpikesPowerState,
             const bool verbose = false
         );
 
@@ -294,12 +301,21 @@ private:
             const bool verbose = false
             ) const;
 
+    void printSpikeInfo(
+            const std::list<Signature::Spike>::iterator spike,
+            const size_t start,
+            const size_t end,
+            const Statistic<Sample_t>& before,
+            const Statistic<Sample_t>& after,
+            const Signature& sig
+            ) const;
+
     void updateOrInsertEdge(
             const PSGraph::vertex_descriptor& before,
             const PSGraph::vertex_descriptor& after,
             const size_t sampleSinceLastSpike,
             const double spikeDelta,
-            const bool verbose = false
+            const bool verbose = true
             );
 
     void updateEdges( const Signature& sig );
@@ -352,6 +368,12 @@ private:
 
     void displayAndPlotDisagList(
             const std::list< DisagDataItem >& disagList
+            ) const;
+
+    const size_t indexOfNextSpike(
+            const std::list<Signature::Spike>& spikes,
+            std::list<Signature::Spike>::iterator spike,
+            const Signature& sig
             ) const;
 
 

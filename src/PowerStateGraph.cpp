@@ -51,93 +51,122 @@ void PowerStateGraph::update(
 {
     energyConsumption.update( sig.getEnergyConsumption() );
 
-    Statistic<Sample_t> powerState;
-
     edgeHistory.clear();
 
     // get the gradient spikes for the signature
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
     list<Signature::Spike>::iterator spike;
+    PSGraph::vertex_descriptor targetVertex, sourceVertex=offVertex;
     size_t indexOfLastAcceptedSpike = 0;
-    PSGraph::vertex_descriptor afterVertex, prevAcceptedVertex=offVertex;
+    size_t start=0, end=0;
+
+    // for each spike, locate the samples immediately before and immediately after the spike
+    const size_t WINDOW = 8; // how far either side of the spike will we look?
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 100) {
+    if (spikes.size() > 10) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 100 );
+        advance( it, 10 );
         spikes.erase( it, spikes.end() );
     }
 
     // re-order by index (i.e. by time)
     spikes.sort( Signature::Spike::compareIndexAsc );
 
-    // for each spike, locate the samples immediately before and immediately after the spike
-    const size_t WINDOW = 8; // how far either side of the spike will we look?
     for (spike = spikes.begin(); spike!=spikes.end(); spike++) {
 
-        if (verbose) {
-            cout << "SPIKE: index=" << spike->index
-                 << ", delta=" << spike->delta
-                 << ", duration=" << spike->duration
-                 << endl;
-        }
-
         // calculate the start index for the window of signature data we'll examine
-        size_t start = ((spike->index > WINDOW) ?
-                (spike->index - WINDOW) : 0 );
+        start = ((spike->index > WINDOW) ? (spike->index - WINDOW) : 0 );
 
         // calculate the end index
-        size_t end = spike->index + WINDOW + spike->duration + 1;
+        end = spike->index + WINDOW + spike->duration + 1;
         if (end > sig.getSize())
             end = sig.getSize();
 
-        Statistic<Sample_t> before(sig, start, spike->index);
-        Statistic<Sample_t> after(sig, (spike->index + spike->duration + 1), end);
+        Statistic<Sample_t> preSpikePowerState(sig, start, spike->index);
+        Statistic<Sample_t> postSpikePowerState(sig, (spike->index + spike->duration + 1), end);
 
-        if (verbose) {
-            cout << "Before=" << before << endl
-                 << "After =" << after  << endl;
-        }
-
-        if (rejectSpike(before, after) ||
-            start < indexOfLastAcceptedSpike) {  // check the spikes aren't too close
-
+        // check to see if spikes needs to be rejected and that the spikes aren't too close
+        if (rejectSpike(preSpikePowerState, postSpikePowerState) || start < indexOfLastAcceptedSpike) {
             if (verbose) cout << " REJECT";
-
         } else {
-            // We're keeping this spike.
 
-            if (verbose) cout << " KEEP";
+            Statistic<Sample_t> betweenSpikesPowerState(
+                    sig,
+                    (spike->index + spike->duration + 1),
+                    indexOfNextSpike( spikes, spike, sig )
+                    );
 
-            afterVertex =
-                    updateOrInsertVertex(  after, sig, (spike->index + spike->duration + 1), end);
+            targetVertex =
+                    updateOrInsertVertex(
+                            sig,
+                            postSpikePowerState,
+                            betweenSpikesPowerState
+                            );
 
-            if (prevAcceptedVertex != afterVertex) {
-                updateOrInsertEdge( prevAcceptedVertex, afterVertex,
+            if (sourceVertex != targetVertex) {
+                updateOrInsertEdge( sourceVertex, targetVertex,
                         (spike->index - indexOfLastAcceptedSpike), spike->delta );
             }
 
-            prevAcceptedVertex = afterVertex;
-            indexOfLastAcceptedSpike = spike->index;
-        }
-        if (verbose) cout << endl;
+            if (verbose)
+                printSpikeInfo( spike, start, end, preSpikePowerState, postSpikePowerState, sig);
 
-        if (verbose) {
-            for (size_t i=start; i<end; i++ ) {
-                cout << i << "\t" << sig[i];
-                if (i < spike->index)
-                    cout << " before";
-                else if (i == spike->index)
-                    cout << " <--SPIKE";
-                else if (i < (spike->index + spike->duration))
-                    cout << " <--Spike continues";
-                else
-                    cout << " after";
-                cout << endl;
-            }
+            sourceVertex = targetVertex;
+            indexOfLastAcceptedSpike = spike->index;
+
         }
     }
 }
+
+void PowerStateGraph::printSpikeInfo(
+        const list<Signature::Spike>::iterator spike,
+        const size_t start,
+        const size_t end,
+        const Statistic<Sample_t>& preSpikePowerState,
+        const Statistic<Sample_t>& postSpikePowerState,
+        const Signature& sig
+        ) const
+{
+
+    cout << endl
+            << "SPIKE: index=" << spike->index
+            << ", delta=" << spike->delta
+            << ", duration=" << spike->duration
+            << endl
+            << " KEEP" << endl
+            << "Before=" << preSpikePowerState << endl
+            << "After =" << postSpikePowerState  << endl;
+
+    for (size_t i=start; i<end; i++ ) {
+        cout << i << "\t" << sig[i];
+        if (i < spike->index)
+            cout << " before";
+        else if (i == spike->index)
+            cout << " <--SPIKE";
+        else if (i < (spike->index + spike->duration))
+            cout << " <--Spike continues";
+        else
+            cout << " after";
+        cout << endl;
+    }
+
+}
+
+const size_t PowerStateGraph::indexOfNextSpike(
+        const list<Signature::Spike>& spikes,
+        list<Signature::Spike>::iterator spike,
+        const Signature& sig
+        ) const
+{
+    list<Signature::Spike>::iterator spikePlusOne = spike;
+    spikePlusOne++;
+    if (spikePlusOne != spikes.end())
+        return spikePlusOne->index;
+    else
+        return sig.getSize() - 1;
+}
+
 
 const bool PowerStateGraph::rejectSpike(
         const Statistic<Sample_t>& before,
@@ -145,15 +174,14 @@ const bool PowerStateGraph::rejectSpike(
         const bool verbose
         ) const
 {
-    // if either 'before' or 'after' has a stdev greater than
-    // its mean then reject
-    if ( (before.stdev > before.mean) ||
-         ( after.stdev >  after.mean)   ) {
+    // check the stdev isn't too large
+    if ( (before.stdev > fabs(before.mean)) ||
+         ( after.stdev > fabs(after.mean))   ) {
         if (verbose) cout << "stdev too big";
         return true;
     }
 
-
+    // check the means aren't too close
     if (Utils::within(before.mean, after.mean, Utils::highest(before.stdev, after.stdev)*2) ||
         Utils::within(before.mean, after.mean, Utils::highest(before.mean, after.mean)*0.2)     ) {
         if (verbose) cout << "means too close";
@@ -169,48 +197,48 @@ const bool PowerStateGraph::rejectSpike(
  * statistically similar to @c stat.  If an existing similar
  * vertex is found then the vertex's stats are updated
  * with the new data points. If a similar vertex is not found,
- * and new vertex is inserted.
+ * and new vertex is inserted.  Either way, a vertex_descriptor
+ * is returned to the new or existing similar vertex.
  */
 PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::updateOrInsertVertex(
-        const Statistic<Sample_t>& stat, /**< stat to find or insert in graph vertices */
         const Signature& sig, /**< source of the raw data */
-        const size_t start,   /**< start of data window */
-        const size_t end,      /**< end of data window */
+        const Statistic<Sample_t> postSpikePowerState,
+        const Statistic<Sample_t> betweenSpikesPowerState,
         const bool verbose  /**< cout debugging messages? */
     )
 {
-
     bool foundSimilar; // return param for mostSimilarVertex()
-
-    PSGraph::vertex_descriptor vertex = mostSimilarVertex( &foundSimilar, stat );
+    PSGraph::vertex_descriptor vertex = mostSimilarVertex( &foundSimilar, postSpikePowerState );
 
     if (verbose)
-        cout << " mostSimlar = " << powerStateGraph[vertex] << endl;
+        cout << " mostSimlar = " << powerStateGraph[vertex].postSpike << endl;
 
     if ( foundSimilar ) {
         if (vertex != offVertex) {
             if (verbose) {
                 cout << endl
                         << "Updating existing vertex: " << endl
-                        << "    start=" << start << ", end=" << end << endl
-                        << "    existing vertex = " << powerStateGraph[vertex] << endl
-                        << "    new stat        = " << stat << endl;
+                        << "    existing vertex = " << powerStateGraph[vertex].postSpike << endl
+                        << "    new stat        = " << postSpikePowerState << endl;
             }
-            powerStateGraph[vertex].update( sig, start, end );
+
+            powerStateGraph[vertex].postSpike.update( postSpikePowerState );
+            powerStateGraph[vertex].betweenSpikes.update( betweenSpikesPowerState );
+
             if (verbose)
-                cout << "    merged          = " << powerStateGraph[vertex] << endl;
+                cout << "    merged          = " << powerStateGraph[vertex].postSpike << endl;
         }
     } else {
         // then add a new vertex
         vertex = add_vertex(powerStateGraph);
-        powerStateGraph[vertex] = Statistic<Sample_t>( sig, start, end );
+        powerStateGraph[vertex].postSpike = postSpikePowerState;
+        powerStateGraph[vertex].betweenSpikes = betweenSpikesPowerState;
+
         if (verbose) {
             cout << endl
-                    << "Adding new vertex: " << endl
-                    << "    start=" << start << ", end=" << end << endl
-                    << "    vertex = " << powerStateGraph[vertex] << endl
-                    << "    stat   = " << stat << endl;
+                 << "Adding new vertex: " << powerStateGraph[vertex].postSpike << endl;
         }
+
     }
     return vertex;
 
@@ -244,7 +272,7 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
 */
         // Now compare means.  In the vast majority of the cases, comparing
         // means will produce the same best match as the tTest.
-        diff = fabs( powerStateGraph[*vp.first].mean - stat.mean );
+        diff = fabs( powerStateGraph[*vp.first].postSpike.mean - stat.mean );
         if (diff < lowestDiff) {
             lowestDiff = diff;
             vertex = *vp.first;
@@ -255,9 +283,9 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
     if ( (highestTTest > (ALPHA/2)) || // T-Test
          ( Utils::within
                  (
-                 powerStateGraph[vertex].mean,
+                 powerStateGraph[vertex].postSpike.mean,
                  stat.mean,
-                 (Utils::highest(powerStateGraph[vertex].mean, stat.mean) * 0.2)
+                 (Utils::highest(powerStateGraph[vertex].postSpike.mean, stat.mean) * 0.2)
                  ) // check if the means are within 20% of each other
          ))
         *success = true;
@@ -329,7 +357,10 @@ void PowerStateGraph::updateOrInsertEdge(
                     Utils::within(powerStateGraph[*out_e_i].delta.mean,
                             spikeDelta, powerStateGraph[*out_e_i].delta.nonZeroStdev()*3 )) {
 
-                if (verbose) cout << "edge histories the same. merging with" << *out_e_i << powerStateGraph[*out_e_i].delta << endl;
+                if (verbose) {
+                    cout << "edge histories the same. merging with" << *out_e_i
+                            << powerStateGraph[*out_e_i].delta << endl;
+                }
 
                 // update existing edge's stats
                 powerStateGraph[*out_e_i].delta.update( spikeDelta );
@@ -355,7 +386,11 @@ void PowerStateGraph::updateOrInsertEdge(
     powerStateGraph[newEdge].count    = 1;
     powerStateGraph[newEdge].edgeHistory = edgeHistory;
 
-    if (verbose) cout << "adding new edge" << newEdge << " " << powerStateGraph[newEdge].delta << endl;
+    if (verbose) {
+        cout << "adding new edge" << newEdge << endl
+            << "   delta stats    = " << powerStateGraph[newEdge].delta << endl
+            << "   duration stats = " << powerStateGraph[newEdge].duration << endl;
+    }
 
     addItemToEdgeHistory( newEdge );
 }
@@ -366,6 +401,7 @@ const bool PowerStateGraph::edgeListsAreEqual(
         const bool verbose
         ) const
 {
+    //******************* DIAGNOSTICS *******************
     if (verbose ) {
         cout << "************" << endl
                 << "comparing lists:" << endl;
@@ -377,7 +413,7 @@ const bool PowerStateGraph::edgeListsAreEqual(
         for (list< PSGraph::edge_descriptor >::const_iterator i=b.begin(); i!=b.end(); i++) {
             cout << *i << endl;
         }
-    }
+    }//___________________________________________________
 
     if (a.size() != b.size()) {
         if (verbose) cout << "sizes not equal" << endl;
@@ -399,6 +435,7 @@ const bool PowerStateGraph::edgeListsAreEqual(
              target(*a_i, powerStateGraph) != target(*b_i, powerStateGraph)   ) {
 
             if (verbose) cout << "edge list are not equal" << endl << endl;
+
             return false;
         }
 
@@ -441,9 +478,9 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 10) {
+    if (spikes.size() > 100) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 10 );
+        advance( it, 100 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -633,18 +670,18 @@ void PowerStateGraph::displayAndPlotDisagList(
     }
     cout << endl;
 
-    const size_t BORDER = 120;
+    const size_t BORDER = 1000;
     GNUplot::PlotVars pv;
     pv.inFilename  = "disagg";
     pv.outFilename = "disagg";
-    pv.title       = "Disaggregated signal";
+    pv.title       = "Automatic disaggregation for kettle";
     pv.xlabel      = "time";
     pv.ylabel      = "power (Watts)";
     pv.plotArgs    = "[\"" + Utils::size_t_to_s( disagList.front().timestamp - BORDER + 3600) + "\":\""
             + Utils::size_t_to_s( disagList.back().timestamp + disagList.back().duration + BORDER + 3600) + "\"]";
     pv.data.push_back(
             GNUplot::Data(
-                    "disagg", "", "DISAGG")
+                    "disagg", "Automatically determined device signature", "DISAGG")
     );
     GNUplot::plot( pv );
 }
@@ -719,18 +756,18 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     DisagTree::vertex_descriptor firstVertex = add_vertex(disagTree);
 
     // retrieve info for firstVertex and for edge between disagOffVertex and firstVertex
-    PSG_out_edge_iter out_i, out_end;
+    PSG_out_edge_iter out_e_i, out_e_end;
     PSG_vertex_iter v_i, v_end;
-    tie(out_i, out_end) = out_edges(offVertex, powerStateGraph);
-    PowerStateEdge firstEdgeStats = powerStateGraph[*out_i];
+    tie(out_e_i, out_e_end) = out_edges(offVertex, powerStateGraph);
+    PowerStateEdge firstEdgeStats = powerStateGraph[*out_e_i];
     tie(v_i, v_end) = vertices(powerStateGraph);
     v_i++;
 
     disagTree[firstVertex].timestamp = spike.timestamp;
-    disagTree[firstVertex].meanPower = powerStateGraph[*v_i].mean;
+    disagTree[firstVertex].meanPower = powerStateGraph[*v_i].betweenSpikes.mean;
     disagTree[firstVertex].psgVertex = *v_i;
-    disagTree[firstVertex].psgEdge   = *out_i;
-    disagTree[firstVertex].edgeHistory.push_back(*out_i);
+    disagTree[firstVertex].psgEdge   = *out_e_i;
+    disagTree[firstVertex].edgeHistory.push_back(*out_e_i);
 
     // add an edge between disagOffVertex and firstVertex
     DisagTree::edge_descriptor edge;
@@ -847,9 +884,6 @@ void PowerStateGraph::traceToEnd(
             continue;
         }
 
-
-        // see if stdev*STDEV_MULT*2 is bigger than max-min and then
-        // use the larger gap
         size_t begOfSearchWindow, endOfSearchWindow;
         const size_t WINDOW_FRAME = 8; // number of seconds to widen window by
 
@@ -863,19 +897,22 @@ void PowerStateGraph::traceToEnd(
         endOfSearchWindow = (disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.max)
                 + WINDOW_FRAME + e;
 
-
-
-   /*     cout << "endOfSearchWindow=" << endOfSearchWindow
-                << " disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp
-                << " powerStateGraph[*psg_out_i].duration.max=" << powerStateGraph[*psg_out_i].duration.max
-                << " powerStateGraph[*psg_out_i].duration.mean=" << powerStateGraph[*psg_out_i].duration.mean
-                << " powerStateGraph[*psg_out_i].duration.stdev=" << powerStateGraph[*psg_out_i].duration.stdev
-                << endl;
-*/
+        //********************** DIAGNOSTICS *************************
+        if (verbose) {
+            cout << "endOfSearchWindow=" << endOfSearchWindow
+                    << " disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp
+                    << " powerStateGraph[*psg_out_i].duration.max=" << powerStateGraph[*psg_out_i].duration.max
+                    << " powerStateGraph[*psg_out_i].duration.mean=" << powerStateGraph[*psg_out_i].duration.mean
+                    << " powerStateGraph[*psg_out_i].duration.stdev=" << powerStateGraph[*psg_out_i].duration.stdev
+                    << endl;
+        }//__________________________________________________________
 
         // ensure we're not looking backwards in time
         if (begOfSearchWindow <= disagGraph[startVertex].timestamp) {
-            begOfSearchWindow = disagGraph[startVertex].timestamp+1;
+            begOfSearchWindow =
+                    disagGraph[startVertex].timestamp
+                    + powerStateGraph[*psg_out_i].duration.min
+                    - (powerStateGraph[*psg_out_i].duration.min / 10);
         }
 
         // check that we're not looking past the end of aggData
@@ -883,12 +920,11 @@ void PowerStateGraph::traceToEnd(
             continue; // we can't process this if we're trying to look past the end of the aggData
         }
 
-
         //************************************************************//
-        // get a list of candidate spikes matching this PSG out edge  //
+        // get a list of candidate spikes matching this PSG-out-edge  //
 
         foundSpikes.clear();
-        foundSpikes = (*aggData).findSpike(
+        foundSpikes = aggData->findSpike(
                 powerStateGraph[*psg_out_i].delta,  // spike stats
                 begOfSearchWindow,
                 endOfSearchWindow
@@ -903,25 +939,37 @@ void PowerStateGraph::traceToEnd(
                 spike!=foundSpikes.end();
                 spike++) {
 
-            // calculate probability density function for the time at which the spike was found
-            boost::math::normal dist(
-                    0.0,
-                    powerStateGraph[*psg_out_i].duration.nonZeroStdev()
-                    );
-            double pdf_for_time = boost::math::pdf(
-                    dist,
-                    ((int)spike->timestamp -
-                            ((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean) )
-                    );
-            if (verbose) {
-                cout << "Spike " << spike->delta << " found at " << spike->timestamp
-                    << ", expected at " << (size_t)((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean)
-                    << ", diff = " << ((int)spike->timestamp - ((int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean) )
-                    << "pdf_for_time=" << pdf_for_time << endl;
+            // ensure that the absolute value of the aggregate data signal
+            // does not drop below the minimum for our current power state
+            if (aggData->readingGoesBelowPowerState(
+                    disagGraph[startVertex].timestamp,
+                    spike->timestamp,
+                    powerStateGraph[ disagGraph[startVertex].psgVertex ].betweenSpikes ) ) {
+
+                continue;
             }
 
-            // create an average probability
-            double weightedAvPdf = (pdf_for_time + (spike->pdf*1)) / 2; // weight the average in favour of the spike PDF
+            // calculate probability density function for the time at which the spike was found
+            boost::math::normal
+                dist( 0.0, powerStateGraph[*psg_out_i].duration.nonZeroStdev() );
+
+            double timeSpikeExpected =
+                    (int)disagGraph[startVertex].timestamp + powerStateGraph[*psg_out_i].duration.mean;
+
+            double difference = (int)spike->timestamp - timeSpikeExpected;
+
+            double pdf_for_time = boost::math::pdf( dist, difference );
+
+            //******************** DIAGNOSTICS **************************
+            if (verbose) {
+                cout << "Spike " << spike->delta << " found at " << spike->timestamp
+                    << ", expected at " << Utils::roundToNearestSizeT( timeSpikeExpected )
+                    << ", diff = " << difference
+                    << "pdf_for_time=" << pdf_for_time << endl;
+            }//_________________________________________________________
+
+            // merge probability for time and for spike delta
+            double avPdf = (pdf_for_time + spike->pdf) / 2;
 
             // create new vertex
             DisagTree::vertex_descriptor newVertex=add_vertex(disagGraph);
@@ -930,8 +978,7 @@ void PowerStateGraph::traceToEnd(
             DisagTree::edge_descriptor newEdge;
             bool existingEdge;
             tie(newEdge, existingEdge) =
-                    add_edge(startVertex, newVertex, weightedAvPdf, disagGraph);
-
+                    add_edge(startVertex, newVertex, avPdf, disagGraph);
 
             // add details to newVertex
             disagGraph[newVertex].timestamp = spike->timestamp;
@@ -939,7 +986,7 @@ void PowerStateGraph::traceToEnd(
             disagGraph[newVertex].psgVertex = target(*psg_out_i, powerStateGraph);
             disagGraph[newVertex].psgEdge   = *psg_out_i;
             disagGraph[newVertex].meanPower =
-                    powerStateGraph[disagGraph[newVertex].psgVertex].mean;
+                    powerStateGraph[disagGraph[newVertex].psgVertex].betweenSpikes.mean;
             disagGraph[newVertex].edgeHistory = disagGraph[startVertex].edgeHistory;
             disagGraph[newVertex].edgeHistory.push_back(*psg_out_i);
             if (disagGraph[newVertex].edgeHistory.size() > EDGE_HISTORY_SIZE) {
@@ -1075,7 +1122,7 @@ std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )
     o << "vertices(graph) = " << std::endl;
     std::pair<PowerStateGraph::PSG_vertex_iter, PowerStateGraph::PSG_vertex_iter> vp;
     for (vp = boost::vertices(psg.powerStateGraph); vp.first != vp.second; ++vp.first) {
-        o << "vertex" << index[*vp.first] << " = {" << psg.powerStateGraph[*vp.first] <<  "}";
+        o << "vertex" << index[*vp.first] << " = {" << psg.powerStateGraph[*vp.first].postSpike <<  "}";
         if ( *vp.first == psg.offVertex ) {
             o << " (offVertex)";
         }
