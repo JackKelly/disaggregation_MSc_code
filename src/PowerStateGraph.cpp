@@ -856,7 +856,6 @@ void PowerStateGraph::traceToEnd(
 {
 
     if (verbose) cout << "***traceToEnd... prevTimestamp=" << prevTimestamp << " DisagTree startVertex=" << startVertex << endl;
-    const double STDEV_MULT = 3; // higher = more permissive. (time) needs to be 7 to allow Washer1 to find Washer2
 
     list<AggregateData::FoundSpike> foundSpikes;
 
