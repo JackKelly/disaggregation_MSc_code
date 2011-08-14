@@ -10,7 +10,6 @@
 #include "Utils.h"
 #include "Statistic.h"
 #include "Device.h"
-#include <glog/logging.h>
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
@@ -142,9 +141,6 @@ const PowerStates_t& Signature::getPowerStates()
  */
 void Signature::updatePowerStates()
 {
-#ifdef DEBUG
-    LOG(INFO) << "Finding power states...DATA_SMOOTHING_BEFORE_HIST = " << PREPROCESSING_DATA_SMOOTHING;
-#endif
     assert ( size ); // make sure Signature is populated
 
     // Smooth raw data
@@ -195,7 +191,8 @@ const string Signature::getStateBarsBaseFilename() const
  * @deprecated not actually used.
  */
 void Signature::fillGapsInPowerStates(
-        const Histogram& hist
+        const Histogram& hist,
+        const bool verbose
         )
 {
     assert( ! powerStates.empty() );
@@ -212,7 +209,7 @@ void Signature::fillGapsInPowerStates(
             powerState->min != (prevPowerState->max + 1) ) {
             // 'prevPowerState' and this 'powerState' are not nose-to-tail so insert a new power state
 
-            LOG(INFO) << "Inserting new power state between " << prevPowerState->max << " and " << powerState->min;
+            if (verbose) cout << "Inserting new power state between " << prevPowerState->max << " and " << powerState->min << endl;
 
             // Insert new powerState before current powerState
             powerStates.insert( powerState,
@@ -277,10 +274,10 @@ void Signature::updatePowerStateSequence()
                         powerStateSequenceItem.endTime   = i*samplePeriod;
                         powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
 
-/*                        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
+/*                        cout << "Power state transition. start=" << powerStateSequenceItem.startTime
                                 << "\tendTime=" << powerStateSequenceItem.endTime
                                 << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
-                                << "\t" << *powerStateSequenceItem.powerState; */
+                                << "\t" << *powerStateSequenceItem.powerState << endl; */
 
                         if ( currentPowerState == powerStates.end() ) {
                             // We've entered an unrecognised state
@@ -307,10 +304,10 @@ void Signature::updatePowerStateSequence()
     if ( state == WITHIN_STATE ) {
         powerStateSequenceItem.endTime = RA.getSize()*samplePeriod;
         powerStateSequence.push_back( powerStateSequenceItem ); // save a copy
-//        LOG(INFO) << "Power state transition. start=" << powerStateSequenceItem.startTime
+//        cout << "Power state transition. start=" << powerStateSequenceItem.startTime
 //                << "\tendTime=" << powerStateSequenceItem.endTime
 //                << "\tduration=" << powerStateSequenceItem.endTime - powerStateSequenceItem.startTime
-//                << "\t" << *powerStateSequenceItem.powerState;
+//                << "\t" << *powerStateSequenceItem.powerState << endl;
     }
 
     cout << "...done getting power state sequence for " << deviceName << "." << endl;
@@ -482,13 +479,12 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
  */
 void Signature::downSample(
         Array<Sample_t> * output,
-        const size_t newPeriod
+        const size_t newPeriod,
+        const bool verbose
         ) const
 {
     size_t inner, inputIndex=0, outputIndex, outerLimit;
     Sample_t accumulator;
-
-    LOG(INFO) << "Resampling...";
 
     const size_t newSize = (int)ceil(size / ( (double)newPeriod / (double)samplePeriod ));
     output->setSize( newSize );
@@ -506,10 +502,11 @@ void Signature::downSample(
             outerLimit = newSize-1;
         }
 
-        LOG(INFO) << "old size=" << size << ", old period=" << samplePeriod
+        if (verbose) {
+            cout  << "old size=" << size << ", old period=" << samplePeriod
                   << ", new size=" << newSize << ", newPeriod=" << newPeriod
-                  << ", stepSize=" << stepSize << ", mod=" << mod << ", delta=" << delta << ",outerLimit=" << outerLimit;
-
+                  << ", stepSize=" << stepSize << ", mod=" << mod << ", delta=" << delta << ",outerLimit=" << outerLimit << endl;
+        }
 
         // Do the vast majority of the resampling
         for (outputIndex=0; outputIndex<outerLimit; outputIndex++) {
@@ -527,15 +524,13 @@ void Signature::downSample(
             size_t i;
             for (i=inputIndex; i<size; i++) {
                 accumulator += data[i];
-                LOG(INFO) << "i=" << i << ", data[i]=" << data[i];
             }
             (*output)[ newSize-1 ] = accumulator/(delta-1);
-            LOG(INFO) << "Filled remainder.  output[" << newSize-1 << "]=" << (*output)[newSize-1];
         }
 
     } else {
         // newPeriod%samplePeriod!=0 so interpolate
-        LOG(ERROR) << "resample() doesn't yet deal with fractional sample rate conversions";
+        cerr << "resample() doesn't yet deal with fractional sample rate conversions" << endl;
     }
 }
 

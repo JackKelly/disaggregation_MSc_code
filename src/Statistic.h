@@ -9,7 +9,6 @@
 #define STATISTIC_H_
 
 #include <string>
-#include <glog/logging.h>
 #include <cassert>
 #include <cmath>
 #include <iostream>

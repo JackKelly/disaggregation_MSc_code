@@ -12,7 +12,6 @@
 #include "Utils.h"
 #include "GNUplot.h"
 #include <iostream>
-#include <glog/logging.h>
 #include <iostream>
 #include <fstream>
 #include <cstdint>
@@ -131,16 +130,15 @@ public:
             return;
 
         size = _size;
-        LOG(INFO) << "Setting array size = " << size;
+
         try {
             if ( data!=0 ) { // check if this has already been used
-                LOG(INFO) << "Deleting existing Array struct to make way for a new one of size " << _size;
                 delete [] data;
                 data=0;
             }
             data = new T[size];
         } catch (std::bad_alloc& ba) {
-            LOG(FATAL) << "Failed to allocate memory: " << ba.what();
+            Utils::fatalError(std::string("Failed to allocate memory: ") + ba.what() );
         }
     }
 
@@ -202,7 +200,6 @@ public:
     void copyCrop(const Array<T>& source, const size_t cropFront, const size_t cropBack)
     {
         if ( source.size==0 || source.data==0 ) {
-            LOG(WARNING) << "Nothing to copy.";
             return;
         }
 
@@ -236,11 +233,10 @@ public:
             ) const
     {
         std::string fullFilename = DATA_OUTPUT_PATH + filename + ".dat";
-        LOG(INFO) << "Dumping Array to filename " << fullFilename;
         std::fstream fs;
         fs.open( fullFilename.c_str(), std::ifstream::out );
         if ( ! fs.good() ) {
-            LOG(FATAL) << "Can't open " << fullFilename;
+            Utils::fatalError("Can't open " + fullFilename);
         }
         fs << *this;
         fs.close();
@@ -306,7 +302,6 @@ public:
      */
     const size_t max(T* maxValue, const size_t start=0, size_t end=0) const
     {
-        LOG(INFO) << "max(start=" << start << ",end=" << end << ")";
         if (end==0)
             end = size;
 
@@ -348,7 +343,6 @@ public:
             ) const
     {
         if ( mask.empty() ) {
-            LOG(INFO) << "Mask is empty.";
             return max( maxValue, 0, size );
         }
 
@@ -356,10 +350,6 @@ public:
         assert( ( mask.size() % 2 )==0 );
 
         mask.sort();
-        for (std::list<size_t>::const_iterator it=mask.begin(); it!=mask.end(); it++) {
-            LOG(INFO) << *it;
-        }
-
 
         T maxSoFar=0, maxThisLoop=0;
         size_t indexOfMaxSoFar=0, indexOfMaxThisLoop=0, start=0, end;
@@ -509,7 +499,6 @@ public:
             std::list<size_t> * boundaries /**< output parameter */
             )
     {
-        LOG(INFO) << "findPeaks...";
         const bool STUPIDLY_VERBOSE_LOGGING = true;
         const double KNEE_GRAD_THRESHOLD = 0.00014;
         const double SHOULDER_GRAD_THRESHOLD = 0.00014;
@@ -533,7 +522,7 @@ public:
                     // when the gradient goes over a certain threshold, mark that as ASCENDING,
                     //    and record index in 'boundaries' and kneeHeight
                     state=ASCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << i;
+                    if (STUPIDLY_VERBOSE_LOGGING) std::cout << "ASCENDING " << i << std::endl;
                     boundaries->push_front( i );
                     kneeHeight = data[ i ];
                 }
@@ -543,7 +532,7 @@ public:
                 // when gradient drops to 0, state = PEAK, record peakHeight
                 if (smoothedGrad[i] < SHOULDER_GRAD_THRESHOLD) {
                     state=PEAK;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "PEAK " << i;
+                    if (STUPIDLY_VERBOSE_LOGGING) std::cout << "PEAK " << i << std::endl;
                     peakHeight = data[ i ];
                     ascent = peakHeight - kneeHeight;
                 }
@@ -552,11 +541,11 @@ public:
                 // when gradient goes below a certain threshold, state = DESCENDING
                 if (smoothedGrad[i] < -SHOULDER_GRAD_THRESHOLD) {
                     state=DESCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << i;
+                    if (STUPIDLY_VERBOSE_LOGGING) std::cout << "DESCENDING " << i << std::endl;
                 }
                 if (data[i] == 0) {
                     state=NO_MANS_LAND;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << i;
+                    if (STUPIDLY_VERBOSE_LOGGING) std::cout << "NO_MANS_LAND " << i << std::endl;
                     boundaries->push_front( i );
                 }
 
@@ -571,10 +560,10 @@ public:
 
                     if (descent < (0.3 * ascent)) {
                         state=UNSURE;
-                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "UNSURE " << i;
+                        if (STUPIDLY_VERBOSE_LOGGING) std::cout << "UNSURE " << i << std::endl;
                     } else {
                         state=NO_MANS_LAND;
-                        if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << i;
+                        if (STUPIDLY_VERBOSE_LOGGING) std::cout << "NO_MANS_LAND " << i << std::endl;
                         boundaries->push_front( i );
                     }
                 }
@@ -584,19 +573,19 @@ public:
                 // Find out if we're descending or ascending
                 if (smoothedGrad[i] < -SHOULDER_GRAD_THRESHOLD) {
                     state = DESCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "DESCENDING " << i;
+                    if (STUPIDLY_VERBOSE_LOGGING) std::cout << "DESCENDING " << i << std::endl;
                     break;
                 }
 
                 if (smoothedGrad[i] > KNEE_GRAD_THRESHOLD) {
                     state = ASCENDING;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "ASCENDING " << i;
+                    if (STUPIDLY_VERBOSE_LOGGING) std::cout << "ASCENDING " << i << std::endl;
                     break;
                 }
 
                 if (data[i]==0) {
                     state=NO_MANS_LAND;
-                    if (STUPIDLY_VERBOSE_LOGGING) LOG(INFO) << "NO_MANS_LAND " << i;
+                    if (STUPIDLY_VERBOSE_LOGGING) std::cout << "NO_MANS_LAND " << i << std::endl;
                     boundaries->push_front( i );
                     break;
                 }
@@ -672,7 +661,6 @@ public:
             }
             fs.ignore( 255, '\n' );  // skip to next line
         }
-        LOG(INFO) << "Entered " << count << " ints into data array.";
     }
 
     const size_t getNumLeadingZeros()

@@ -9,7 +9,6 @@
 #include "Signature.h"
 #include "Common.h"
 #include <list>
-#include <glog/logging.h>
 #include <cassert>
 #include <cstring>
 #include <cstdlib> // abs
@@ -18,7 +17,7 @@
 using namespace std;
 
 Device::Device(const string _name) : name(_name) {
-    LOG(INFO) << "Creating new Device: " << name;
+    cout << "Creating new Device: " << name << endl;
 }
 
 Device::~Device() {
@@ -131,7 +130,7 @@ const list<Signature::Spike> Device::getSalientSpikes() const
  *
  * @return a list of UNIX times when the device starts
  *
- * @deprecated ?
+ * @deprecated We now use the disaggregation functions in PowerStateGraph
  */
 const list<size_t> Device::getStartTimes(
         const AggregateData& aggregateData /**< A populated array of AggregateData */
@@ -195,7 +194,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
 {
     const double THRESHOLD = 250;
 
-    LOG(INFO) << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename;
+    cout << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename << endl;
 
     list<size_t> locations;
 
@@ -216,7 +215,7 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
         lms = LMDiff(i, aggregateData, sigArray, aggDataSamplePeriod);
         if ( lms < THRESHOLD ) {
             locations.push_back( i );
-            LOG(INFO) << name << " found at" << aggregateData[i].timestamp - aggregateData[0].timestamp << " lmS=" << lms;
+            cout << name << " found at" << aggregateData[i].timestamp - aggregateData[0].timestamp << " lmS=" << lms << endl;
         }
 
         if ( lms < min ) {
@@ -225,13 +224,13 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
         }
     }
 
-    LOG(INFO) << "aggregateData[0].timestamp=" << aggregateData[0].timestamp
-            << ", aggregateData[0].reading=" << aggregateData[0].reading;
-    LOG(INFO) << name << " found at " << foundAt << ", LMS=" << min;
+    cout << "aggregateData[0].timestamp=" << aggregateData[0].timestamp
+            << ", aggregateData[0].reading=" << aggregateData[0].reading << endl;
+    cout << name << " found at " << foundAt << ", LMS=" << min << endl;
 
-    LOG(INFO) << "length=" << i*aggDataSamplePeriod;
+    cout << "length=" << i*aggDataSamplePeriod << endl;
 
-    LOG(INFO) << "min=" << min;
+    cout << "min=" << min << endl;
 
     return locations;
 }
@@ -265,7 +264,7 @@ const double Device::LMDiff(
 //        }
 //        accumulator += pow( ( sigArray[(i*aggDataSamplePeriod)] - aggData[i+agOffset] ) ,2);
 //    }
-//    LOG(INFO) << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.getSize()=" << sigArray.getSize();
+//    cout << "i*aggDataSample=" << i*aggDataSamplePeriod << "sigArray.getSize()=" << sigArray.getSize() << endl;
 
     size_t aggIndex=aggOffset, sigIndex=0, count=0;
 
@@ -289,7 +288,7 @@ const double Device::LMDiff(
     }*/
 
     int levelDiff = accumulator/count; // -ve if sig is above aggregate
-//    LOG(INFO) << "levelDiff=" << levelDiff;
+//    cout << "levelDiff=" << levelDiff << endl;
 
     accumulator = 0;
     aggIndex=aggOffset;
@@ -305,7 +304,7 @@ const double Device::LMDiff(
             sigIndex += (aggData[aggIndex].timestamp - aggData[aggIndex-1].timestamp);
     }
 
-//    LOG(INFO) << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.getSize()/aggDataSamplePeriod);
+//    cout << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.getSize()/aggDataSamplePeriod) << endl;
 
     return accumulator / count; // average
 }

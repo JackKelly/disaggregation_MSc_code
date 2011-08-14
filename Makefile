@@ -12,7 +12,7 @@ ifeq ($(origin CXX), undefined)
 endif
 
 ifeq ($(origin LDFLAGS), undefined)
-	LDFLAGS = -g -Wall -lglog -O3 -std=c++0x # -lserial
+	LDFLAGS = -g -Wall -O3 -std=c++0x -lboost_program_options # -lserial -lglog -L/usr/local/lib  
 endif
 
 ifeq ($(origin CXXFLAGS), undefined)
@@ -52,7 +52,7 @@ DEPS := $(patsubst %.o,%.d,$(COMMONOBJS))
 -include $(DEPS)
 	
 # TESTING (it's best to do a 'make clean' when switching between testing and normal compiling because object files are compiled with different options)
-TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework -DGOOGLE_STRIP_LOG=4 -MD
+TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework -MD # -DGOOGLE_STRIP_LOG=4 
 
 testAll: ArrayTest GNUplotTest UtilsTest StatisticTest PowerStateGraphTest
 
@@ -77,7 +77,7 @@ StatisticTest: $(TEST)StatisticTest.cpp $(SRC)Statistic.h $(SRC)Array.h $(STOBJF
 	g++ $(CXXFLAGS) -o $(TEST)StatisticTest $(TEST)StatisticTest.cpp $(STOBJFILES)  && $(TEST)StatisticTest
 
 PSGTOBJFILES = $(SRC)PowerStateGraph.o $(SRC)Signature.o $(SRC)GNUplot.o $(SRC)Utils.o $(SRC)PowerStateSequence.o
-PowerStateGraphTest: CXXFLAGS = $(TESTCXXFLAGS) -Wno-deprecated -Wno-unused-result # -O2 PUT BACK AFTER TESTING
+PowerStateGraphTest: CXXFLAGS = $(TESTCXXFLAGS) -Wno-deprecated -Wno-unused-result -O3
 PowerStateGraphTest: $(TEST)PowerStateGraphTest.cpp $(SRC)Array.h $(PSGTOBJFILES)
 	g++ $(CXXFLAGS) -o $(TEST)PowerStateGraphTest $(PSGTOBJFILES) $(TEST)PowerStateGraphTest.cpp && $(TEST)PowerStateGraphTest
 

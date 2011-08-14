@@ -77,6 +77,11 @@ const bool sameSign(
         const double& b
         );
 
+void fatalError(
+        const std::string& message
+        );
+
+
 } /* namespace Utils */
 
 #endif /* UTILS_H_ */

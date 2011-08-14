@@ -7,16 +7,29 @@
  *      Author: jack
  */
 
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+
 #include "Array.h"
 #include "Signature.h"
 #include "Statistic.h"
 #include "Device.h"
 #include "PowerStateGraph.h"
 #include <iostream>
-#include <glog/logging.h>
 #include <fstream>
+#include <iterator>
 
 using namespace std;
+
+void program_options_setup()
+{
+    // Declare the supported options
+    po::options_description desc("Allowed options");
+    desc.add_options()
+            ("help", "produce help message")
+            ("aggdata", po::value<string>(), "aggregate data file");
+}
 
 void powerStateGraphTest()
 {
@@ -44,8 +57,18 @@ void powerStateGraphTest()
     psg.update( sig2 );
 //    psg.update( sig );
 
-    std::cout << psg << std::endl;
-    psg.writeGraphViz( std::cout );
+
+    cout << endl
+         << "Power State Graph vertices:" << endl
+         << psg << std::endl;
+
+    // output power state graph to file
+    fstream fs;
+    const string psgFilename = DATA_OUTPUT_PATH + "powerStateGraph.gv";
+    cout << "Outputting power state graph to " << psgFilename << endl;
+    Utils::openFile(fs, psgFilename, fstream::out);
+    psg.writeGraphViz( fs );
+    fs.close();
 
     psg.getStartTimes( aggData );
 
@@ -53,9 +76,6 @@ void powerStateGraphTest()
 
 int main(int argc, char * argv[])
 {
-    google::InitGoogleLogging( argv[0] );
-    google::LogToStderr();
-
     /*
     Signature sig( "washer.csv", 1 );
     Histogram ha;
@@ -111,7 +131,7 @@ int main(int argc, char * argv[])
     raTest.rollingAv(&raArray,7);
     std::cout << raArray << std::endl;*/
 
-    LOG(INFO) << "Shutting down...";
-    google::ShutdownGoogleLogging();
+    cout << endl << "Finished." << endl << endl;
+
     return 0;
 }

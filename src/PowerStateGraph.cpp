@@ -591,6 +591,7 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
         const bool verbose
         )
 {
+    cout << endl << "***** TRAINING FINISHED. DISAGGREGATION STARTING. *****" << endl << endl;
     cout << "Getting start times...";
     cout.flush();
 
@@ -655,7 +656,8 @@ void PowerStateGraph::displayAndPlotDisagList(
         ) const
 {
     cout << "Expected energy consumption = "
-            << energyConsumption.mean / J_PER_KWH << " kWh" << endl;
+         << energyConsumption.mean / J_PER_KWH << " kWh" << endl
+         << "Displaying disaggregation data and dumping to file for plotting. " << endl;
 
     fstream fs;
     Utils::openFile(fs, DATA_OUTPUT_PATH + "disagg.dat", fstream::out);
@@ -854,7 +856,6 @@ void PowerStateGraph::traceToEnd(
 {
 
     if (verbose) cout << "***traceToEnd... prevTimestamp=" << prevTimestamp << " DisagTree startVertex=" << startVertex << endl;
-    const double STDEV_MULT = 3; // higher = more permissive. (time) needs to be 7 to allow Washer1 to find Washer2
 
     list<AggregateData::FoundSpike> foundSpikes;
 
