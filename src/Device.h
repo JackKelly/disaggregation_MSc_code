@@ -56,6 +56,10 @@ private:
     PowerStates_t powerStates;
     std::vector<Signature*> signatures;
     PowerStateSequence powerStateSequence;
+    struct IndexAndDelta {
+        size_t index;
+        size_t delta;
+    };
 
 };
 

@@ -141,11 +141,7 @@ const list<size_t> Device::getStartTimes(
     /** @todo should be relative */
     const size_t DIFF_THRESHOLD = 50; // in Watts.  Difference between the size spike in the device signature and in the aggregate data.
 
-    struct IndexAndDelta {
-        size_t index;
-        size_t delta;
-    } indexAndDelta;
-
+    IndexAndDelta indexAndDelta;
     list<size_t> startTimes;
     list<IndexAndDelta> candidates;
 
