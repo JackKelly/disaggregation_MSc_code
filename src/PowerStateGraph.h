@@ -47,12 +47,12 @@ public:
 
         friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
 
-            o << "timestamp   = " << ddi.timestamp << std::endl
-              << "date        = " << ctime( (time_t*)(&ddi.timestamp) )
-              << "confidence  = " << ddi.confidence << std::endl
-              << "duration    = " << ddi.duration << " seconds"
+            o << "  timestamp   = " << ddi.timestamp << std::endl
+              << "  date        = " << ctime( (time_t*)(&ddi.timestamp) )
+              << "  confidence  = " << ddi.confidence << std::endl
+              << "  duration    = " << ddi.duration << " seconds"
               << " (" << Utils::secondsToTime(ddi.duration) << ")" << std::endl
-              << "energy      = " << ddi.energy << " Joules"
+              << "  energy      = " << ddi.energy << " Joules"
               << " equivalent to " << ddi.energy / J_PER_KWH << " kWh";
             return o;
         }
@@ -315,7 +315,7 @@ private:
             const PSGraph::vertex_descriptor& after,
             const size_t sampleSinceLastSpike,
             const double spikeDelta,
-            const bool verbose = true
+            const bool verbose = false
             );
 
     void updateEdges( const Signature& sig );
@@ -358,7 +358,7 @@ private:
     const DisagDataItem findBestPath(
             const DisagTree& disagTree,
             const size_t deviceStart,
-            const bool verbose = false //
+            const bool verbose = false
             );
 
     void removeOverlapping(

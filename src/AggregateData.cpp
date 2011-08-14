@@ -15,8 +15,7 @@ void AggregateData::loadCurrentCostData(
         const std::string& filename /**< including path and suffix. */
     )
 {
-    cout << "Loading CurrentCost data " << filename << " ...";
-    cout.flush();
+    cout << "Loading CurrentCost data " << filename << "..." << endl;
 
     samplePeriod = 6;
 
@@ -37,7 +36,7 @@ void AggregateData::loadCurrentCostData(
         fs.ignore( 255, '\n' );  // skip to next line
     }
 
-    cout << "... done." << std::endl;
+    cout << "... done loading Current Cost data." << std::endl;
 }
 
 const size_t AggregateData::secondsSinceFirstSample(
@@ -138,7 +137,6 @@ const bool AggregateData::readingGoesBelowPowerState(
     while (time < endTime && i < size) {
 
         if ( data[i].reading < powerState.min ) {
-            cout << "time=" << time << ", reading=" << data[i].reading << ", powerState.min=" << powerState.min;
             return true;
         }
 

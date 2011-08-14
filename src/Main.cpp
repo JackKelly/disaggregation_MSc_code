@@ -43,8 +43,18 @@ void powerStateGraphTest()
     psg.update( sig2 );
 //    psg.update( sig );
 
-    std::cout << psg << std::endl;
-    psg.writeGraphViz( std::cout );
+
+    cout << endl
+         << "Power State Graph vertices:" << endl
+         << psg << std::endl;
+
+    // output power state graph to file
+    fstream fs;
+    const string psgFilename = DATA_OUTPUT_PATH + "powerStateGraph.gv";
+    cout << "Outputting power state graph to " << psgFilename << endl;
+    Utils::openFile(fs, psgFilename, fstream::out);
+    psg.writeGraphViz( fs );
+    fs.close();
 
     psg.getStartTimes( aggData );
 
@@ -106,6 +116,8 @@ int main(int argc, char * argv[])
     Array<Sample_t> raArray;
     raTest.rollingAv(&raArray,7);
     std::cout << raArray << std::endl;*/
+
+    cout << endl << "Finished." << endl << endl;
 
     return 0;
 }

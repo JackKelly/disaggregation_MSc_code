@@ -130,7 +130,7 @@ const list<Signature::Spike> Device::getSalientSpikes() const
  *
  * @return a list of UNIX times when the device starts
  *
- * @deprecated ?
+ * @deprecated We now use the disaggregation functions in PowerStateGraph
  */
 const list<size_t> Device::getStartTimes(
         const AggregateData& aggregateData /**< A populated array of AggregateData */
