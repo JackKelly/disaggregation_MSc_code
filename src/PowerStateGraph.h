@@ -42,17 +42,17 @@ public:
         size_t timestamp; /**< @brief UNIX timestamp for start time */
         size_t duration;
         double energy;    /**< @brief energy consumed */
-        double confidence;
+        double avLikelihood;
         std::list< TimeAndPower > timeAndPower;
 
         friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
 
-            o << "  timestamp   = " << ddi.timestamp << std::endl
-              << "  date        = " << ctime( (time_t*)(&ddi.timestamp) )
-              << "  confidence  = " << ddi.confidence << std::endl
-              << "  duration    = " << ddi.duration << " seconds"
+            o << "  timestamp      = " << ddi.timestamp << std::endl
+              << "  date           = " << ctime( (time_t*)(&ddi.timestamp) )
+              << "  av likelihood  = " << ddi.avLikelihood << std::endl
+              << "  duration       = " << ddi.duration << " seconds"
               << " (" << Utils::secondsToTime(ddi.duration) << ")" << std::endl
-              << "  energy      = " << ddi.energy << " Joules"
+              << "  energy         = " << ddi.energy << " Joules"
               << " equivalent to " << ddi.energy / J_PER_KWH << " kWh";
             return o;
         }
@@ -261,20 +261,20 @@ private:
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
-    struct ConfidenceAndVertex {
-        double confidence;
+    struct LikelihoodAndVertex {
+        double likelihood;
         DisagTree::vertex_descriptor vertex;
 
-        ConfidenceAndVertex()
-        : confidence(0), vertex(0)
+        LikelihoodAndVertex()
+        : likelihood(0), vertex(0)
         {}
 
-        ConfidenceAndVertex(const DisagTree::vertex_descriptor& _vertex)
-        : confidence(0), vertex(_vertex)
+        LikelihoodAndVertex(const DisagTree::vertex_descriptor& _vertex)
+        : likelihood(0), vertex(_vertex)
         {}
     };
 
-    std::list< std::list<ConfidenceAndVertex> > listOfPaths;
+    std::list< std::list<LikelihoodAndVertex> > listOfPaths;
 
     Statistic< double > energyConsumption; /**< @brief Energy consumption in Joules
                                                 obtained from training signatures */
@@ -352,8 +352,8 @@ private:
     void findListOfPathsThroughDisagTree(
             const DisagTree& disagTree,
             const DisagTree::vertex_descriptor vertex,
-            const ConfidenceAndVertex cav,
-            std::list<ConfidenceAndVertex> path = std::list<ConfidenceAndVertex>(0)
+            const LikelihoodAndVertex cav,
+            std::list<LikelihoodAndVertex> path = std::list<LikelihoodAndVertex>(0)
             );
 
     const DisagDataItem findBestPath(

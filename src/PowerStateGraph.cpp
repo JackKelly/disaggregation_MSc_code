@@ -626,7 +626,7 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
                 ( spike->timestamp - firstEdgeStats.duration.mean ) // time the device probably started
                 );
 
-        if ( candidateDisagDataItem.confidence != -1 ) {
+        if ( candidateDisagDataItem.avLikelihood != -1 ) {
             disagList.push_back( candidateDisagDataItem );
             if (verbose)
                 cout << endl << "candidate found at " << endl << candidateDisagDataItem << endl;
@@ -690,7 +690,7 @@ void PowerStateGraph::displayAndPlotDisagList(
 }
 
 /**
- * Remove any overlapping list entries and leave the one with the highest confidence
+ * Remove any overlapping list entries and leave the one with the highest likelihood
  */
 void PowerStateGraph::removeOverlapping(
         list<DisagDataItem> * disagList, /**< Input and output parameter */
@@ -718,7 +718,7 @@ void PowerStateGraph::removeOverlapping(
             }
 
             // they overlap.  so find which needs to be replaced
-            if (prevDisagItem->confidence < currentDisagItem->confidence) {
+            if (prevDisagItem->avLikelihood < currentDisagItem->avLikelihood) {
                 if (verbose) cout << "erasing item with timestamp " << prevDisagItem->timestamp << endl;
                 disagList->erase( prevDisagItem );
                 prevDisagItem = currentDisagItem++;
@@ -738,7 +738,7 @@ void PowerStateGraph::removeOverlapping(
 
 /**
  *
- * @return DisaggregatedStruct.confidence will be set to -1 if
+ * @return DisaggregatedStruct.likelihood will be set to -1 if
  * this looks like it's not a good candidate match.
  */
 const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
@@ -788,9 +788,9 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     // find route through the tree with highest average edge probabilities
     listOfPaths.clear();
 
-    ConfidenceAndVertex nextCav;
+    LikelihoodAndVertex nextCav;
     nextCav.vertex = firstVertex;
-    nextCav.confidence = disagTree[edge];
+    nextCav.likelihood = disagTree[edge];
 
     findListOfPathsThroughDisagTree(
             disagTree,
@@ -808,8 +808,8 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
 void PowerStateGraph::findListOfPathsThroughDisagTree(
         const DisagTree& disagTree,
         const DisagTree::vertex_descriptor vertex,
-        const ConfidenceAndVertex cav,
-        list<PowerStateGraph::ConfidenceAndVertex> path /**< Deliberately called-by-value because we want a copy. */
+        const LikelihoodAndVertex cav,
+        list<PowerStateGraph::LikelihoodAndVertex> path /**< Deliberately called-by-value because we want a copy. */
     )
 {
     path.push_back( cav );
@@ -829,9 +829,9 @@ void PowerStateGraph::findListOfPathsThroughDisagTree(
 
         DisagTree::vertex_descriptor downstreamVertex = target(*out_e_i, disagTree);
 
-        ConfidenceAndVertex nextCav;
+        LikelihoodAndVertex nextCav;
         nextCav.vertex = downstreamVertex;
-        nextCav.confidence = disagTree[*out_e_i];
+        nextCav.likelihood = disagTree[*out_e_i];
 
         // we haven't hit the end yet so recursively follow tree downwards.
         findListOfPathsThroughDisagTree(
@@ -973,7 +973,7 @@ void PowerStateGraph::traceToEnd(
             }//_________________________________________________________
 
             // merge probability for time and for spike delta
-            double avPdf = (normalisedLikelihoodForTime + spike->likelihood) / 2;
+            double avLikelihood = (normalisedLikelihoodForTime + spike->likelihood) / 2;
 
             // create new vertex
             DisagTree::vertex_descriptor newVertex=add_vertex(disagGraph);
@@ -982,7 +982,7 @@ void PowerStateGraph::traceToEnd(
             DisagTree::edge_descriptor newEdge;
             bool existingEdge;
             tie(newEdge, existingEdge) =
-                    add_edge(startVertex, newVertex, avPdf, disagGraph);
+                    add_edge(startVertex, newVertex, avLikelihood, disagGraph);
 
             // add details to newVertex
             disagGraph[newVertex].timestamp = spike->timestamp;
@@ -1005,7 +1005,7 @@ void PowerStateGraph::traceToEnd(
 
 /**
  * @brief Iterates through each path in @c listOfPaths
- *        to find the one with the highest confidence.
+ *        to find the one with the highest likelihood.
  *
  * To be called after @c listOfPaths has been populated by findListOfPathsThroughDisagTree().
  *
@@ -1022,34 +1022,34 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
 
     // first check that listOfPaths is populated
     if ( listOfPaths.empty() ) {
-        ddi.confidence = -1; // return error code
+        ddi.avLikelihood = -1; // return error code
         return ddi;
     }
 
-    ddi.confidence = 0;
+    ddi.avLikelihood = 0;
 
-    list< list<ConfidenceAndVertex> >::const_iterator path_i, bestPath_i;
-    list< ConfidenceAndVertex >::const_iterator cav_i;
+    list< list<LikelihoodAndVertex> >::const_iterator path_i, bestPath_i;
+    list< LikelihoodAndVertex >::const_iterator cav_i;
 
     if (verbose) cout << "path dump:" << endl;
 
-    double confidenceAccumulator, avConfidence;
+    double likelihoodAccumulator, avLikelihood;
     bool foundGoodPath = false;
 
-    // iterate through each path to find the one with the highest confidence
+    // iterate through each path to find the one with the highest likelihood
     for (path_i=listOfPaths.begin(); path_i!=listOfPaths.end(); path_i++) {
 
-        confidenceAccumulator = 0;
+        likelihoodAccumulator = 0;
         for ( cav_i=path_i->begin(); cav_i!=path_i->end(); cav_i++ ) {
-            if (verbose) cout << "vertex=" << cav_i->vertex << " conf=" << cav_i->confidence << ", ";
-            confidenceAccumulator += cav_i->confidence;
+            if (verbose) cout << "vertex=" << cav_i->vertex << " conf=" << cav_i->likelihood << ", ";
+            likelihoodAccumulator += cav_i->likelihood;
         }
 
-        avConfidence = confidenceAccumulator / path_i->size();
+        avLikelihood = likelihoodAccumulator / path_i->size();
 
         // if this is the most confident path we've seen yet then record its details.
-        if ( avConfidence >= ddi.confidence ) {
-            ddi.confidence = avConfidence;
+        if ( avLikelihood >= ddi.avLikelihood ) {
+            ddi.avLikelihood = avLikelihood;
             bestPath_i = path_i;
             foundGoodPath = true;
         }
@@ -1091,15 +1091,15 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
             count++;
         }
 
-        // now update ddi.confidence with the PDF of our energy consumption
+        // now update ddi.likelihood with the PDF of our energy consumption
         boost::math::normal dist(energyConsumption.mean, energyConsumption.nonZeroStdev());
         double normalisedLikelihoodForEnergy =
                 boost::math::pdf(dist, ddi.energy) /
                 boost::math::pdf(dist, energyConsumption.mean);
 
-        ddi.confidence = (ddi.confidence + normalisedLikelihoodForEnergy) / 2;
+        ddi.avLikelihood = (ddi.avLikelihood + normalisedLikelihoodForEnergy) / 2;
     } else {
-        ddi.confidence = -1;
+        ddi.avLikelihood = -1;
     }
 
     return ddi;
