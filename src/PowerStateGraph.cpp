@@ -775,7 +775,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     // add an edge between disagOffVertex and firstVertex
     DisagTree::edge_descriptor edge;
     bool existingEdge;
-    tie(edge, existingEdge) = add_edge(disagOffVertex, firstVertex, spike.pdf, disagTree);
+    tie(edge, existingEdge) = add_edge(disagOffVertex, firstVertex, spike.likelihood, disagTree);
 
     // now recursively trace from this edge to the end
     traceToEnd( &disagTree, firstVertex, deviceStart );
@@ -960,18 +960,20 @@ void PowerStateGraph::traceToEnd(
 
             double difference = (int)spike->timestamp - timeSpikeExpected;
 
-            double pdf_for_time = boost::math::pdf( dist, difference );
+            double normalisedLikelihoodForTime =
+                    boost::math::pdf( dist, difference ) /
+                    boost::math::pdf( dist, 0.0 );
 
             //******************** DIAGNOSTICS **************************
             if (verbose) {
                 cout << "Spike " << spike->delta << " found at " << spike->timestamp
                     << ", expected at " << Utils::roundToNearestSizeT( timeSpikeExpected )
                     << ", diff = " << difference
-                    << "pdf_for_time=" << pdf_for_time << endl;
+                    << "pdf_for_time=" << normalisedLikelihoodForTime << endl;
             }//_________________________________________________________
 
             // merge probability for time and for spike delta
-            double avPdf = (pdf_for_time + spike->pdf) / 2;
+            double avPdf = (normalisedLikelihoodForTime + spike->likelihood) / 2;
 
             // create new vertex
             DisagTree::vertex_descriptor newVertex=add_vertex(disagGraph);
@@ -1032,6 +1034,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
     if (verbose) cout << "path dump:" << endl;
 
     double confidenceAccumulator, avConfidence;
+    bool foundGoodPath = false;
 
     // iterate through each path to find the one with the highest confidence
     for (path_i=listOfPaths.begin(); path_i!=listOfPaths.end(); path_i++) {
@@ -1048,6 +1051,7 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
         if ( avConfidence >= ddi.confidence ) {
             ddi.confidence = avConfidence;
             bestPath_i = path_i;
+            foundGoodPath = true;
         }
 
         if (verbose) cout << endl << endl;
@@ -1062,34 +1066,41 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::findBestPath(
     duration = 0;
     prevTimestamp = deviceStart;
     size_t count = 0;
-    for (cav_i=bestPath_i->begin(); cav_i != bestPath_i->end(); cav_i++) {
+    if (foundGoodPath) {
+        for (cav_i=bestPath_i->begin(); cav_i != bestPath_i->end(); cav_i++) {
 
-        // Add to timeAndPower list for read-out later when we plot the power states
-        if ( cav_i != bestPath_i->begin() ) {
-            ddi.timeAndPower.push_back( TimeAndPower(
-                    disagTree[ cav_i->vertex ].timestamp-1 ,
-                    (count==1 ? 0 : prevMeanPower)
-            ) );
-            ddi.timeAndPower.push_back( TimeAndPower(
-                    disagTree[ cav_i->vertex ].timestamp,
-                    disagTree[ cav_i->vertex ].meanPower) );
+            // Add to timeAndPower list for read-out later when we plot the power states
+            if ( cav_i != bestPath_i->begin() ) {
+                ddi.timeAndPower.push_back( TimeAndPower(
+                        disagTree[ cav_i->vertex ].timestamp-1 ,
+                        (count==1 ? 0 : prevMeanPower)
+                ) );
+                ddi.timeAndPower.push_back( TimeAndPower(
+                        disagTree[ cav_i->vertex ].timestamp,
+                        disagTree[ cav_i->vertex ].meanPower) );
+            }
+
+            // Now calculate duration and energy consumption
+            duration = disagTree[ cav_i->vertex ].timestamp - prevTimestamp;
+            ddi.energy += prevMeanPower * duration;
+
+            ddi.duration += duration;
+
+            prevTimestamp = disagTree[ cav_i->vertex ].timestamp;
+            prevMeanPower = disagTree[ cav_i->vertex ].meanPower;
+            count++;
         }
 
-        // Now calculate duration and energy consumption
-        duration = disagTree[ cav_i->vertex ].timestamp - prevTimestamp;
-        ddi.energy += prevMeanPower * duration;
+        // now update ddi.confidence with the PDF of our energy consumption
+        boost::math::normal dist(energyConsumption.mean, energyConsumption.nonZeroStdev());
+        double normalisedLikelihoodForEnergy =
+                boost::math::pdf(dist, ddi.energy) /
+                boost::math::pdf(dist, energyConsumption.mean);
 
-        ddi.duration += duration;
-
-        prevTimestamp = disagTree[ cav_i->vertex ].timestamp;
-        prevMeanPower = disagTree[ cav_i->vertex ].meanPower;
-        count++;
+        ddi.confidence = (ddi.confidence + normalisedLikelihoodForEnergy) / 2;
+    } else {
+        ddi.confidence = -1;
     }
-
-    // now update ddi.confidence with the PDF of our energy consumption
-    boost::math::normal dist(energyConsumption.mean, energyConsumption.nonZeroStdev());
-    double pdf_for_energy = boost::math::pdf(dist, ddi.energy);
-    ddi.confidence = ((4*ddi.confidence) + pdf_for_energy) / 5;
 
     return ddi;
 }

@@ -195,7 +195,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
              << startTime << " - " << endTime << endl;
     }
 
-    boost::math::normal dist(spikeStats.mean, spikeStats.stdev + numeric_limits<double>::min());
+    boost::math::normal dist(spikeStats.mean, spikeStats.nonZeroStdev() );
     // see http://live.boost.org/doc/libs/1_42_0/libs/math/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/dists/normal_dist.html
 
     size_t time = startTime;
@@ -213,11 +213,15 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
             for (size_t var_i=0; var_i<4; var_i++) {
                 if ( Utils::between(narrowLowerLimit, narrowUpperLimit, variations[var_i]) ) {
 
+                    double normalisedLikelihood =
+                            boost::math::pdf(dist, variations[var_i]) /
+                            boost::math::pdf(dist, spikeStats.mean);
+
                     foundSpikes.push_back(
                             FoundSpike(
                                     time,
                                     variations[var_i],
-                                    boost::math::pdf(dist, variations[var_i])
+                                    normalisedLikelihood
                             ) );
 
                     if (verbose) cout << "Spike found with delta " << variations[var_i] << " expected " << spikeStats.mean << endl;

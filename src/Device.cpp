@@ -47,7 +47,9 @@ void Device::train(
         // Create a new signature
         Signature * sig = new Signature
                 (
-                fullSigFilename, 1, name,
+                fullSigFilename,  // filename
+                1,                // sample period
+                sigFile->substr(0, sigFile->length()-4), // sig filename without suffix
                 signatures.size() // Provides the signature with its sigID.
                 );
 
