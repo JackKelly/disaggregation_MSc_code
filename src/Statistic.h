@@ -351,8 +351,8 @@ struct Statistic {
      * @brief Returns stdev if stdev > mean/10, else returns mean/10
      */
     const double nonZeroStdev() const {
-        if (stdev < mean/10)
-            return mean/10;
+        if (stdev < fabs(mean/10))
+            return fabs(mean/10);
         else
             return stdev;
     }

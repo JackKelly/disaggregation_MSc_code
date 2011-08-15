@@ -38,9 +38,6 @@ install_manifest.txt
 doc/html
 doc/latex
 
-# Generated data files #
-########################
-data/output
 
 # Packages #
 ############

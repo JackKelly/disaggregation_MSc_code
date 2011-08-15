@@ -33,11 +33,11 @@ public:
     struct FoundSpike {
         size_t timestamp;
         Sample_t delta;
-        double pdf;  /**< probability */
+        double likelihood;
 
         friend std::ostream& operator<<( std::ostream& o, const FoundSpike& fs)
         {
-            o << "timestamp=" << fs.timestamp << ", delta=" << fs.delta << ", pdf=" << fs.pdf;
+            o << "timestamp=" << fs.timestamp << ", delta=" << fs.delta << ", pdf=" << fs.likelihood;
             return o;
         }
 
@@ -46,7 +46,7 @@ public:
                 const Sample_t d,
                 const double   p
                 )
-        : timestamp(t), delta(d), pdf(p)
+        : timestamp(t), delta(d), likelihood(p)
         {}
 
     };
