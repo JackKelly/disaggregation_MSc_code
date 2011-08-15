@@ -230,6 +230,6 @@ void Utils::fatalError(
         const std::string& message
         )
 {
-    std::cerr << message << std::endl;
-    exit(EXIT_ERROR);
+    std::cerr << "FATAL ERROR: " <<  message << std::endl;
+    exit(EXIT_FAILURE);
 }

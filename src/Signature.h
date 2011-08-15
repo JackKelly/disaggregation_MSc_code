@@ -58,7 +58,7 @@ public:
     ///@{
 
     Signature(
-            const char* filename,
+            const std::string& filename,
             const size_t _samplePeriod,
             const std::string _deviceName,
             const size_t _sigID = 0,

@@ -59,7 +59,8 @@ public:
     };
 
     const std::list<DisagDataItem> getStartTimes(
-            const AggregateData& aggregateData, /**< A populated array of AggregateData */
+            const AggregateData& aggregateData,
+            const bool keep_overlapping = false,
             const bool verbose = false
             );
 

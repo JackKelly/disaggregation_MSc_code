@@ -15,6 +15,7 @@
 #include "Statistic.h"
 #include "PowerStateSequence.h"
 #include "AggregateData.h"
+#include "PowerStateGraph.h"
 
 /**
  * @brief Class for representing "devices" (ie appliances like "dish washer", "lamp" etc)
@@ -33,6 +34,12 @@ public:
     const std::list<size_t> getStartTimes( const AggregateData& ) const;
 
     const std::list<Signature::Spike> getSalientSpikes() const;
+
+    void train(
+            const std::vector< std::string >& sigFiles
+            );
+
+    PowerStateGraph& getPowerStateGraph();
 
 private:
     /************************
@@ -60,6 +67,7 @@ private:
         size_t index;
         size_t delta;
     };
+    PowerStateGraph powerStateGraph;
 
 };
 

@@ -17,7 +17,7 @@
 using namespace std;
 
 Device::Device(const string _name) : name(_name) {
-    cout << "Creating new Device: " << name << endl;
+    cout << "Creating Device object with name: " << name << endl;
 }
 
 Device::~Device() {
@@ -31,7 +31,57 @@ const string Device::getName() const
     return name;
 }
 
-void Device::getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack)
+void Device::train(
+        const vector< string >& sigFiles
+        )
+{
+    vector< string >::const_iterator sigFile;
+    for (sigFile = sigFiles.begin(); sigFile!=sigFiles.end(); sigFile++) {
+
+        // Check sig file exists
+        string fullSigFilename = SIG_DATA_PATH + *sigFile;
+        if ( ! Utils::fileExists( fullSigFilename ) ) {
+            Utils::fatalError( "Signature file " + fullSigFilename + " does not exist." );
+        }
+
+        // Create a new signature
+        Signature * sig = new Signature
+                (
+                fullSigFilename, 1, name,
+                signatures.size() // Provides the signature with its sigID.
+                );
+
+        signatures.push_back( sig );
+        powerStateGraph.update( *sig );
+    }
+
+    cout << endl
+         << "Power State Graph vertices:" << endl
+         << powerStateGraph << endl;
+
+    // output power state graph to file
+    fstream fs;
+    const string psgFilename = DATA_OUTPUT_PATH + "powerStateGraph.gv";
+    cout << "Outputting power state graph to " << psgFilename << endl;
+    Utils::openFile(fs, psgFilename, fstream::out);
+    powerStateGraph.writeGraphViz( fs );
+    fs.close();
+}
+
+PowerStateGraph& Device::getPowerStateGraph()
+{
+    return powerStateGraph;
+}
+
+/**
+ * @deprecated
+ */
+void Device::getReadingFromCSV(
+        const char * filename,
+        const size_t samplePeriod,
+        const size_t cropFront,
+        const size_t cropBack
+        )
 {
     // Create a new signature
     Signature * sig = new Signature(

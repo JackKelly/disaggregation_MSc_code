@@ -16,6 +16,7 @@
 
 using namespace std;
 
+
 /**
  * @brief Plot a graph using GNUplot.
  *
@@ -27,7 +28,6 @@ using namespace std;
  * @see GNUplot::PlotVars for details of what variables
  * are expected to be instantiated in plotVars.
  *
- * @todo add path from config option DATA_OUTPUT_PATH.
  */
 void GNUplot::plot(
         PlotVars& plotVars /**< Variables for insertion into the template.
@@ -35,7 +35,6 @@ void GNUplot::plot(
                                 Strings will be sanitised. */
     )
 {
-
     /* Check if config/'plotVars.outFilename'.template.gnu exists.
      * If so, use it as the template.  */
     if ( Utils::fileExists( string("config/" + plotVars.outFilename + ".template.gnu") ) ) {
@@ -49,7 +48,9 @@ void GNUplot::plot(
     const string gnuPlotScriptFilename = DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu";
     const string plotCommand = "gnuplot " + gnuPlotScriptFilename;
 
-    cout << "Plotting gnuplot script " << gnuPlotScriptFilename << endl;
+    cout << "Plotting gnuplot script " << gnuPlotScriptFilename << " to produce output "
+         << DATA_OUTPUT_PATH << plotVars.outFilename << "." << GNUPLOT_OUTPUT_FILE_EXTENSION
+         << endl;
     system( plotCommand.c_str() );
 }
 
@@ -112,7 +113,6 @@ void GNUplot::sanitise(
  * <a href="http://www.boost.org/doc/libs/1_47_0/libs/regex/doc/html/boost_regex/ref/regex_replace.html">
  * Boost.Regex::regex_replace()</a> or Boost's String Algorithms.
  *
- * @todo add path from config option DATA_OUTPUT_PATH.
  */
 void GNUplot::instantiateTemplate(
         const PlotVars& plotVars /**< Variables for insertion into the template. */
@@ -126,8 +126,9 @@ void GNUplot::instantiateTemplate(
              "s/TITLE/" + plotVars.title + "/g"
             ";s/XLABEL/" + plotVars.xlabel + "/g"
             ";s/YLABEL/" + plotVars.ylabel + "/g"
-            ";s/SETTERMINAL/set terminal svg size 1200 800; set samples 1001/g" /**< @todo should be configurable */
-            ";s/SETOUTPUT/set output \"" + sanitisedOutputPath + plotVars.outFilename + ".svg\"/g" /**< @todo graph output suffix should be configuarble */
+            ";s/SETTERMINAL/" + GNUPLOT_SET_TERMINAL + "/g"
+            ";s/SETOUTPUT/set output \"" + sanitisedOutputPath
+                     + plotVars.outFilename + "." + GNUPLOT_OUTPUT_FILE_EXTENSION + "\"/g"
             ";s/PLOTARGS/" + plotVars.plotArgs + "/g";
 
     /* Loop through each gnuPlotData list item...

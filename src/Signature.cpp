@@ -26,7 +26,7 @@ using namespace std;
  * @todo sample period should be read from data file.
  */
 Signature::Signature(
-        const char* filename,       /**< Filename, including path and suffix. */
+        const string& filename,       /**< Filename, including path and suffix. */
         const size_t _samplePeriod, /**< Sample period. In seconds.           */
         const string _deviceName,   /**< All signatures are associated with devices */
         const size_t _sigID,        /**< Each Device can have multiple signatures.

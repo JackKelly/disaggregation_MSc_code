@@ -588,6 +588,7 @@ void PowerStateGraph::writeGraphViz(ostream& out)
  */
 const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
         const AggregateData& aggregateData, /**< A populated array of AggregateData */
+        const bool keep_overlapping, /**< Should we keep or remove overlapping candidates? */
         const bool verbose
         )
 {
@@ -641,7 +642,7 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
     if ( disagList.empty() ) {
         cout << "No signatures found." << endl;
     } else {
-        if (REMOVE_OVERLAPPING) {
+        if (!keep_overlapping) {
             removeOverlapping( &disagList );
         }
 
