@@ -223,6 +223,11 @@ int main(int argc, char * argv[])
     return EXIT_SUCCESS;
 }
 
+//**********************************************//
+// CODE BELOW THIS LINE WAS USED DURING TESTING //
+// AND CAN NOW BE SAFELY IGNORED!               //
+//**********************************************//
+
 void powerStateGraphTest(const bool keep_overlapping)
 {
     AggregateData aggData;
