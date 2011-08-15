@@ -17,6 +17,10 @@ void AggregateData::loadCurrentCostData(
 {
     cout << "Loading CurrentCost data " << filename << "..." << endl;
 
+    if ( ! Utils::fileExists( filename ) ) {
+        Utils::fatalError( "Current cost file " + filename + " does not exist." );
+    }
+
     samplePeriod = 6;
 
     std::fstream fs;

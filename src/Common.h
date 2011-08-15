@@ -28,10 +28,14 @@ typedef double  Histogram_t;  /**< @brief An individual histogram entry */
  *         CONSTS            *
  *****************************/
 
-const int EXIT_ERROR = 1;
-const size_t MAX_WATTAGE = 3500;
-const int J_PER_KWH = 3600000; /**< @brief Joules per kWh */
-const std::string DATA_OUTPUT_PATH = "data/output/"; /**< @deprecated Will be replaced with config option */
-const bool REMOVE_OVERLAPPING = true;
+const size_t MAX_WATTAGE = 3500; /**< @brief Maximum wattage allowed in DEVICE_RAW_DATA files */
+const int J_PER_KWH = 3600000;   /**< @brief Joules per kWh */
+
+const std::string DATA_OUTPUT_PATH = "data/output/";
+const std::string SIG_DATA_PATH    = "data/input/watts_up/";
+const std::string AGG_DATA_PATH    = "data/input/current_cost/";
+const std::string GNUPLOT_SET_TERMINAL = "set terminal svg size 1200 800; set samples 1001";
+//const std::string GNUPLOT_SET_TERMINAL = "set terminal epslatex solid colour size 15cm,12cm font \"\" 8";
+const std::string GNUPLOT_OUTPUT_FILE_EXTENSION = "svg";
 
 #endif /* COMMON_H_ */
