@@ -30,9 +30,9 @@ public:
      *        e.g. a Spike in the gradient of a signature.
      */
     struct Spike {
-        size_t index;    /**< @brief Location to find this Spike.     */
-        size_t duration; /**< @brief Length of spike in samples.      */
-        double delta;    /**< @brief Value of Spike at this location. */
+        size_t index;  /**< @brief Location to find this Spike.     */
+        size_t n;      /**< @brief Length of spike in samples.      */
+        double delta;  /**< @brief Value of Spike at this location. */
 
         /**
          * @brief Comparison function. Useful for sorting lists of spikes
