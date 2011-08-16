@@ -79,12 +79,12 @@ void PowerStateGraph::update(
         start = ((spike->index > WINDOW) ? (spike->index - WINDOW) : 0 );
 
         // calculate the end index
-        end = spike->index + WINDOW + spike->duration + 1;
+        end = spike->index + WINDOW + spike->n + 1;
         if (end > sig.getSize())
             end = sig.getSize();
 
         Statistic<Sample_t> preSpikePowerState(sig, start, spike->index);
-        Statistic<Sample_t> postSpikePowerState(sig, (spike->index + spike->duration + 1), end);
+        Statistic<Sample_t> postSpikePowerState(sig, (spike->index + spike->n + 1), end);
 
         // check to see if spikes needs to be rejected and that the spikes aren't too close
         if (rejectSpike(preSpikePowerState, postSpikePowerState) || start < indexOfLastAcceptedSpike) {
@@ -93,7 +93,7 @@ void PowerStateGraph::update(
 
             Statistic<Sample_t> betweenSpikesPowerState(
                     sig,
-                    (spike->index + spike->duration + 1),
+                    (spike->index + spike->n + 1),
                     indexOfNextSpike( spikes, spike, sig )
                     );
 
@@ -132,7 +132,7 @@ void PowerStateGraph::printSpikeInfo(
     cout << endl
             << "SPIKE: index=" << spike->index
             << ", delta=" << spike->delta
-            << ", duration=" << spike->duration
+            << ", duration=" << spike->n
             << endl
             << " KEEP" << endl
             << "Before=" << preSpikePowerState << endl
@@ -144,7 +144,7 @@ void PowerStateGraph::printSpikeInfo(
             cout << " before";
         else if (i == spike->index)
             cout << " <--SPIKE";
-        else if (i < (spike->index + spike->duration))
+        else if (i < (spike->index + spike->n))
             cout << " <--Spike continues";
         else
             cout << " after";

@@ -409,7 +409,7 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
     Spike spikeToStore;
     double currentDelta, lastDelta;
 
-    spikeToStore.duration = spikeToStore.index = 0;
+    spikeToStore.n = spikeToStore.index = 0;
     spikeToStore.delta = lastDelta = getDelta((size_t)0);
 
     for (size_t i=1; i<(size-1); i++) {
@@ -419,7 +419,7 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
         /* Check to see if this gradient is a continuation of
          * a larger spike.  i.e. does this gradient have the
          * same sign as the last gradient. */
-        spikeToStore.duration++;
+        spikeToStore.n++;
         if ( ((lastDelta > 0.0) && (currentDelta > 0.0)) || // check both this and last spike have same sign and are non-zero
                 ((lastDelta < 0.0) && (currentDelta < 0.0))    ) {
             // the current spike and the last spike are immediately
@@ -429,7 +429,7 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
         }
         else if ((lastDelta == 0.0) && (currentDelta != 0.0)) { // are we starting a new spike after having been at zero?
             spikeToStore.index = i;
-            spikeToStore.duration = 0;
+            spikeToStore.n = 0;
             spikeToStore.delta = currentDelta; // reset mergedGradient
         }
         else if ((lastDelta == 0.0) && (currentDelta == 0.0)) { // we're in no man's land
@@ -441,7 +441,7 @@ const list<Signature::Spike> Signature::getMergedSpikes() const
 
             // reset
             spikeToStore.delta = currentDelta;
-            spikeToStore.duration = 0;
+            spikeToStore.n = 0;
             spikeToStore.index = i;
         }
 
