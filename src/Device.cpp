@@ -31,8 +31,10 @@ const string Device::getName() const
     return name;
 }
 
-void Device::train(
-        const vector< string >& sigFiles
+void Device::loadSignatures(
+        const vector< string >& sigFiles,
+        const size_t cropFront,
+        const size_t cropBack
         )
 {
     vector< string >::const_iterator sigFile;
@@ -50,11 +52,22 @@ void Device::train(
                 fullSigFilename,  // filename
                 1,                // sample period
                 sigFile->substr(0, sigFile->length()-4), // sig filename without suffix
-                signatures.size() // Provides the signature with its sigID.
+                signatures.size(),// Provides the signature with its sigID.
+                cropFront, cropBack
                 );
 
         signatures.push_back( sig );
-        powerStateGraph.update( *sig );
+    }
+}
+
+/**
+ * @brief To be called once @c signatures have been loaded
+ */
+void Device::trainPowerStateGraph()
+{
+    vector< Signature* >::const_iterator sig;
+    for (sig = signatures.begin(); sig!=signatures.end(); sig++) {
+        powerStateGraph.update( *(*sig) );
     }
 
     cout << endl
@@ -236,18 +249,16 @@ const list<size_t> Device::getStartTimes(
 }
 
 /**
- * @todo this doesn't belong in Device
+ * @todo this doesn't belong in Device - maybe better in Signature or AggregateData?
  */
-list<size_t> Device::findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod )
+list<size_t> Device::findAlignment(
+        const AggregateData& aggData
+        )
 {
-    const double THRESHOLD = 250;
-
-    cout << "Attempting to find location of " << name << " in aggregate data file " << aggregateDataFilename << endl;
+    cout << endl
+         << "Attempting to find location of " << name << " in aggregate data." << endl;
 
     list<size_t> locations;
-
-    AggregateData aggregateData;
-    aggregateData.loadCurrentCostData( aggregateDataFilename );
 
     // Get a handy reference to the last 'rawReading' stored in 'signatures'
     const Array<Sample_t>& sigArray = *(signatures.back());
@@ -256,27 +267,22 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
 
     double lms;
     size_t foundAt=0;
+    const size_t end =
+            aggData.getSize() -
+                (sigArray.getSize() /
+                    (aggData.getSamplePeriod() / signatures.back()->getSamplePeriod() ));
     size_t i;
-    for (i = 0;
-            i < aggregateData.getSize() - (sigArray.getSize() / (aggDataSamplePeriod / signatures.back()->getSamplePeriod() ));
-            i++) {
-        lms = LMDiff(i, aggregateData, sigArray, aggDataSamplePeriod);
-        if ( lms < THRESHOLD ) {
-            locations.push_back( i );
-            cout << name << " found at" << aggregateData[i].timestamp - aggregateData[0].timestamp << " lmS=" << lms << endl;
-        }
-
+    for (i = 0; i < end; i++) {
+        lms = LMS(i, aggData, sigArray, aggData.getSamplePeriod());
         if ( lms < min ) {
             min = lms;
-            foundAt = aggregateData[i].timestamp - aggregateData[0].timestamp;
+            foundAt = aggData[i].timestamp;
         }
     }
 
-    cout << "aggregateData[0].timestamp=" << aggregateData[0].timestamp
-            << ", aggregateData[0].reading=" << aggregateData[0].reading << endl;
     cout << name << " found at " << foundAt << ", LMS=" << min << endl;
 
-    cout << "length=" << i*aggDataSamplePeriod << endl;
+    cout << "length=" << i*aggData.getSamplePeriod() << endl;
 
     cout << "min=" << min << endl;
 
@@ -284,17 +290,16 @@ list<size_t> Device::findAlignment( const char * aggregateDataFilename, const si
 }
 
 /**
- * @brief Least Mean Difference (like LMS but take the absolute rather than the square).
+ * @brief Least mean difference
  *
  * Know limitations:
  *   assumes SigArray has a sample period of 1
- *   doesn't try different alignments of sigArray against aggData
  *
  *   @todo this doesn't belong in Device
  *
  * @return
  */
-const double Device::LMDiff(
+const double Device::LMS(
         const size_t aggOffset,
         const Array<AggregateSample>& aggData, /**< aggregate data array */
         const Array<Sample_t>& sigArray,
@@ -319,8 +324,9 @@ const double Device::LMDiff(
     // Take the first few readings to establish the level difference
 
 
-// COMPARE START OF AGG DATA WITH START OF SIG DATA
-    while (sigIndex < (sigArray.getSize()-aggDataSamplePeriod) && aggIndex < (aggData.getSize()-1) && count < 50) {
+    // COMPARE START OF AGG DATA WITH START OF SIG DATA
+    while (sigIndex < (sigArray.getSize()-aggDataSamplePeriod)
+            && aggIndex < (aggData.getSize()-1) && count < 50) {
         accumulator += aggData[aggIndex].reading - sigArray[sigIndex]; // don't take the absolute
         count++;
         aggIndex++;
@@ -336,15 +342,27 @@ const double Device::LMDiff(
     }*/
 
     int levelDiff = accumulator/count; // -ve if sig is above aggregate
-//    cout << "levelDiff=" << levelDiff << endl;
 
     accumulator = 0;
     aggIndex=aggOffset;
     sigIndex=0;
     count=0;
+    double diff;
+
+//    bool printThis = (aggData[aggIndex].timestamp==1310294451);
+    bool printThis = (aggData[aggIndex].timestamp==1310294457);
+
     while (sigIndex < (sigArray.getSize()-aggDataSamplePeriod) && aggIndex < (aggData.getSize()-1)) {
             for (size_t fineTune = 0; fineTune<aggDataSamplePeriod; fineTune++) {
-                accumulator += abs( (sigArray[sigIndex+fineTune]+levelDiff) - aggData[aggIndex].reading );
+                diff = (sigArray[sigIndex+fineTune]+levelDiff) - aggData[aggIndex].reading;
+                accumulator += pow(diff,2);
+
+                if (printThis) {
+                    cout.setf(ios::fixed);
+                    cout.precision(2);
+                    cout << (aggData[aggIndex].timestamp + fineTune) << "\t" << pow(diff,2) << endl;
+                }
+
                 count++;
             }
             aggIndex++;

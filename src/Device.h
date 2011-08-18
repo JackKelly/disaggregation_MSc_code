@@ -25,9 +25,22 @@ public:
     Device(const std::string _name);
     virtual ~Device();
 
-    void getReadingFromCSV(const char * filename, const size_t samplePeriod, const size_t cropFront, const size_t cropBack);
+    void loadSignatures(
+            const std::vector< std::string >& sigFiles,
+            const size_t cropFront,
+            const size_t cropBack
+            );
 
-    std::list<size_t> findAlignment( const char * aggregateDataFilename, const size_t aggDataSamplePeriod );
+    void getReadingFromCSV(
+            const char * filename,
+            const size_t samplePeriod,
+            const size_t cropFront,
+            const size_t cropBack
+            );
+
+    std::list<size_t> findAlignment(
+            const AggregateData& aggregateData
+            );
 
     const std::string getName() const;
 
@@ -35,9 +48,7 @@ public:
 
     const std::list<Signature::Spike> getSalientSpikes() const;
 
-    void train(
-            const std::vector< std::string >& sigFiles
-            );
+    void trainPowerStateGraph();
 
     PowerStateGraph& getPowerStateGraph();
 
@@ -50,7 +61,7 @@ private:
 
     void loadCurrentCostData(std::fstream& fs, Array<AggregateSample> * aggData);
 
-    const double LMDiff(
+    const double LMS(
             const size_t agOffset,
             const Array<AggregateSample>& aggData,
             const Array<Sample_t>& sigArray,

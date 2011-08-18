@@ -596,6 +596,10 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
     cout << "Getting start times...";
     cout.flush();
 
+    if (num_vertices( powerStateGraph ) < 2) {
+        Utils::fatalError( "powerStateGraph is empty. Cannot continue with disaggregation." );
+    }
+
     list<DisagDataItem> disagList; // what we return
 
     // Store a pointer to aggregateData for use later.

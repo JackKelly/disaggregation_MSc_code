@@ -82,6 +82,8 @@ public:
             const Statistic<Sample_t>& powerState
             ) const;
 
+    const size_t getSamplePeriod() const;
+
 private:
 
     size_t samplePeriod; /**< @brief in seconds. */

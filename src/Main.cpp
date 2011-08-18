@@ -96,7 +96,15 @@ void declareAndParseOptions( po::variables_map * vm_p, int argc, char * argv[] )
                   po::value<string>(),
                   "The device name e.g. \"kettle\".")
             ("keep-overlapping,o",
-                  "Do not remove overlapping candidates during disaggregation.");
+                  "Do not remove overlapping candidates during disaggregation.")
+            ("lms",
+                  "Use Least Mean Squares approach for matching signature with aggregate data.")
+            ("cropfront",
+                  po::value<size_t>(),
+                  "The number of samples to crop off the front of the signature (only works with LMS).")
+            ("cropback",
+                  po::value<size_t>(),
+                  "The number of samples to crop off the back of the signature (only works with LMS).");
 
 
 /***********************************************
@@ -203,18 +211,48 @@ int main(int argc, char * argv[])
     cout << "SMART METER DISAGGREGATION TOOL" << endl;
 
     // Declare are parse program config options
+    size_t cropFront=0, cropBack=0;
     po::variables_map vm;
     declareAndParseOptions( &vm, argc, argv );
+
+    // Select mode of operator
+    enum {LMS, GRAPHSnSPIKES} mode;
+    if (vm.count("lms")) {
+        if (vm["signature"].as< vector<string> >().size() > 1) {
+            Utils::fatalError( "You've specified more than 1 signature in conjunction"
+                    " with the LMS mode.  LMS mode can only handle a single signature per device."
+                    " Please try again with a single signature specified (you may need to"
+                    " edit config/disaggregate.conf )." );
+        }
+        if (vm.count("cropback"))
+            cropBack = vm["cropback"].as< size_t >();
+        if (vm.count("cropfront"))
+            cropFront = vm["cropfront"].as< size_t >();
+        mode = LMS;
+    } else
+        mode = GRAPHSnSPIKES;
 
     // Instantiate a device
     Device device( vm["device-name"].as< string >() );
 
-    device.train( vm["signature"].as< vector<string> >() );
+    device.loadSignatures(
+            vm["signature"].as< vector<string> >(),
+            cropFront,
+            cropBack
+            );
 
     AggregateData aggData;
     aggData.loadCurrentCostData( AGG_DATA_PATH + vm["aggdata"].as< string >() );
 
-    device.getPowerStateGraph().getStartTimes(aggData, vm.count("keep-overlapping"));
+    switch (mode) {
+    case LMS:
+        device.findAlignment(aggData);
+        break;
+    case GRAPHSnSPIKES:
+        device.trainPowerStateGraph();
+        device.getPowerStateGraph().getStartTimes(aggData, vm.count("keep-overlapping"));
+        break;
+    }
 
 //    powerStateGraphTest( vm.count("keep-overlapping") );
 

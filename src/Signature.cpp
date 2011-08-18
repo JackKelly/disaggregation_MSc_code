@@ -50,11 +50,10 @@ Signature::Signature(
     data.loadData( dataFile );
     dataFile.close();
 
-    if ( cropFront == 0 ) {
-        copyCrop( data, data.getNumLeadingZeros(), data.getNumTrailingZeros() );
-    } else {
-        copyCrop( data, cropFront, cropBack );
-    }
+    size_t newCropFront = cropFront ? cropFront : data.getNumLeadingZeros();
+    size_t newCropBack  = cropBack  ? cropBack  : data.getNumTrailingZeros();
+
+    copyCrop( data, newCropFront, newCropBack );
 
     deviceName =_deviceName;
     powerStateSequence.setDeviceName( deviceName );
