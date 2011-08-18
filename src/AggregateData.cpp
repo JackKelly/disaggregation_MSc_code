@@ -266,3 +266,8 @@ const size_t AggregateData::findTime(
     // should never get here
     return -1;
 }
+
+const size_t AggregateData::getSamplePeriod() const
+{
+    return samplePeriod;
+}
