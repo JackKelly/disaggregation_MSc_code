@@ -650,14 +650,15 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
             removeOverlapping( &disagList );
         }
 
-        displayAndPlotDisagList( disagList );
+        displayAndPlotDisagList( disagList, aggregateData.getFilename() );
     }
 
     return disagList;
 }
 
 void PowerStateGraph::displayAndPlotDisagList(
-        const list< DisagDataItem >& disagList
+        const list< DisagDataItem >& disagList,
+        const string& aggDataFilename
         ) const
 {
     cout << "Expected energy consumption = "
@@ -684,12 +685,21 @@ void PowerStateGraph::displayAndPlotDisagList(
     pv.title       = "Automatic disaggregation for kettle";
     pv.xlabel      = "time";
     pv.ylabel      = "power (Watts)";
-    pv.plotArgs    = "[\"" + Utils::size_t_to_s( disagList.front().timestamp - BORDER + 3600) + "\":\""
-            + Utils::size_t_to_s( disagList.back().timestamp + disagList.back().duration + BORDER + 3600) + "\"]";
+
+    // set sensible xrange, but only if we're not dealing with synthetic data with a low timecode
+    if (disagList.front().timestamp > 1000) {
+        const size_t dstOffset = 3600; // to correct for BST
+        pv.plotArgs    = "[\"" + Utils::size_t_to_s( disagList.front().timestamp - BORDER + dstOffset) + "\":\""
+                + Utils::size_t_to_s( disagList.back().timestamp + disagList.back().duration + BORDER + dstOffset) + "\"]";
+    }
+
     pv.data.push_back(
             GNUplot::Data(
-                    "disagg", "Automatically determined device signature", "DISAGG")
-    );
+                    "disagg", "Automatically determined device signature", "DISAGG"));
+    pv.data.push_back(
+            GNUplot::Data(
+                      aggDataFilename, "Aggregate data", "AGGDATA", false));
+
     GNUplot::plot( pv );
 }
 
@@ -784,10 +794,10 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     // now recursively trace from this edge to the end
     traceToEnd( &disagTree, firstVertex, deviceStart );
 
-    if (verbose) {
+//    if (verbose) {
         write_graphviz(cout, disagTree,
             Disag_vertex_writer(disagTree), Disag_edge_writer(disagTree));
-    }
+//    }
 
     // find route through the tree with highest average edge probabilities
     listOfPaths.clear();
@@ -893,7 +903,7 @@ void PowerStateGraph::traceToEnd(
         size_t begOfSearchWindow, endOfSearchWindow;
         const size_t WINDOW_FRAME = 8; // number of seconds to widen window by
 
-        size_t e = powerStateGraph[*psg_out_i].duration.nonZeroStdev();
+        size_t e = 0; //powerStateGraph[*psg_out_i].duration.nonZeroStdev();
 
         if (verbose)  cout << "disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp << endl;
 

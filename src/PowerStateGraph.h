@@ -216,8 +216,8 @@ private:
             template <class Vertex>
             void operator()(std::ostream& out, Vertex e) {
                     out << " [label=\""
-                        <<   "timestamp=" << g[e].timestamp-1310252400
-                        << ", meanPower=" << g[e].meanPower
+                        << "$t = " << g[e].timestamp << "$, "
+                        << "$p = " << g[e].meanPower << "$ "
                         << "\"]";
             };
 
@@ -233,9 +233,11 @@ private:
 
             template <class Edge>
             void operator()(std::ostream& out, Edge e) {
-                    out << " [label=\""
-                        <<  g[e]
-                        << "\"]";
+                out.precision(0);
+                out.setf( std::ios::fixed );
+                out << " [label=\""
+                        <<  g[e]*100
+                        << "\\%\", lblstyle=\"fill=black!10,inner sep=1pt,align=center,anchor=west\"]";
             };
 
             DisagTree g;
@@ -257,7 +259,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 5;
+    static const size_t EDGE_HISTORY_SIZE = 1;
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
@@ -368,7 +370,8 @@ private:
             );
 
     void displayAndPlotDisagList(
-            const std::list< DisagDataItem >& disagList
+            const std::list< DisagDataItem >& disagList,
+            const std::string& aggDataFilename
             ) const;
 
     const size_t indexOfNextSpike(

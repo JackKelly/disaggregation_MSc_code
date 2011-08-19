@@ -349,7 +349,6 @@ const double Device::LMS(
     count=0;
     double diff;
 
-//    bool printThis = (aggData[aggIndex].timestamp==1310294451);
     bool printThis = (aggData[aggIndex].timestamp==1310294457);
 
     while (sigIndex < (sigArray.getSize()-aggDataSamplePeriod) && aggIndex < (aggData.getSize()-1)) {
