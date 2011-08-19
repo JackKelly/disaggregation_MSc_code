@@ -478,9 +478,9 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 100) {
+    if (spikes.size() > 10) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 100 );
+        advance( it, 10 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -794,10 +794,10 @@ const PowerStateGraph::DisagDataItem PowerStateGraph::initTraceToEnd(
     // now recursively trace from this edge to the end
     traceToEnd( &disagTree, firstVertex, deviceStart );
 
-//    if (verbose) {
+    if (verbose) {
         write_graphviz(cout, disagTree,
             Disag_vertex_writer(disagTree), Disag_edge_writer(disagTree));
-//    }
+    }
 
     // find route through the tree with highest average edge probabilities
     listOfPaths.clear();
@@ -903,7 +903,7 @@ void PowerStateGraph::traceToEnd(
         size_t begOfSearchWindow, endOfSearchWindow;
         const size_t WINDOW_FRAME = 8; // number of seconds to widen window by
 
-        size_t e = 0; //powerStateGraph[*psg_out_i].duration.nonZeroStdev();
+        size_t e = powerStateGraph[*psg_out_i].duration.nonZeroStdev();
 
         if (verbose)  cout << "disagGraph[startVertex].timestamp=" << disagGraph[startVertex].timestamp << endl;
 

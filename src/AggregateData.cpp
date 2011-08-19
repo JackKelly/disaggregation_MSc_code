@@ -182,9 +182,6 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         fakedStdev = fabs(spikeStats.mean/17);
     }
 
-    /** @todo change this! */
-    fakedStdev = 1;
-
     const double e = fakedStdev * 5;
     double wideLowerLimit = spikeStats.min - e;
     double wideUpperLimit = spikeStats.max + e;

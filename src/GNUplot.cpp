@@ -140,16 +140,12 @@ void GNUplot::instantiateTemplate(
             data != plotVars.data.end();
             data++, count++ ) {
 
-        cout << "data->dataFile=" << data->dataFile << endl;
-
         string sanitisedDataFilename;
         if (data->useDefaults) {
             sanitisedDataFilename = sanitisedOutputPath + data->dataFile + ".dat";
         } else {
             sanitisedDataFilename = data->dataFile ;
         }
-
-        cout << "sanitisedDataFilename=" << sanitisedDataFilename << endl;
 
         digit = '1' + count; // convert size_t "count" to a single-digit string
         sedCommand +=
