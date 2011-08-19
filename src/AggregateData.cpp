@@ -21,6 +21,7 @@ void AggregateData::loadCurrentCostData(
         Utils::fatalError( "Current cost file " + filename + " does not exist." );
     }
 
+    aggDataFilename = filename;
     samplePeriod = 6;
 
     std::fstream fs;
@@ -41,6 +42,11 @@ void AggregateData::loadCurrentCostData(
     }
 
     cout << "... done loading Current Cost data." << std::endl;
+}
+
+const string AggregateData::getFilename() const
+{
+    return aggDataFilename;
 }
 
 const size_t AggregateData::secondsSinceFirstSample(
@@ -158,7 +164,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         const bool verbose
         ) const
 {
-    if (verbose) cout << "startTime = " << startTime << " endTime = " << endTime << endl;
+    if (verbose) cout << "startTime = " << startTime-1310252400 << " endTime = " << endTime-1310252400 << endl;
 
     size_t i = checkStartAndEndTimes( &startTime, &endTime );
     list<AggregateData::FoundSpike> foundSpikes;
@@ -192,7 +198,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
         cout << "Looking for spike with mean " << spikeStats.mean
              << " between vals " << wideLowerLimit
              << " to " << wideUpperLimit << " and times "
-             << startTime << " - " << endTime << endl;
+             << startTime-1310252400 << " - " << endTime-1310252400 << endl;
     }
 
     boost::math::normal dist(spikeStats.mean, spikeStats.nonZeroStdev() );
@@ -224,7 +230,8 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
                                     normalisedLikelihood
                             ) );
 
-                    if (verbose) cout << "Spike found with delta " << variations[var_i] << " expected " << spikeStats.mean << endl;
+                    if (verbose) cout << "Spike found with delta " << variations[var_i]
+                                      << " expected " << spikeStats.mean << endl;
 
                     break;
                 }

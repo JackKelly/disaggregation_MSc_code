@@ -7,5 +7,9 @@ set yrange [0:3500]
 set xdata time
 set timefmt "%s"
 set format x "%d/%m\n%H:%M"
-plot PLOTARGS "DISAGGFILE" using ($1+3600):2 with filledcurves lw 1 t "DISAGGKEY", \
-"data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" using ($1+3600):2 with l lw 1 t "Raw aggregate signal"
+
+set macros
+dstOffset = 3600 # to correct for BST
+
+plot PLOTARGS "DISAGGFILE" using ($1+dstOffset):2 with filledcurves lw 1 t "DISAGGKEY", \
+"AGGDATAFILE" using ($1+dstOffset):2 with l lw 1 t "AGGDATAKEY"

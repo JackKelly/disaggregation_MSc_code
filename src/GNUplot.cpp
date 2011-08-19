@@ -140,9 +140,16 @@ void GNUplot::instantiateTemplate(
             data != plotVars.data.end();
             data++, count++ ) {
 
+        string sanitisedDataFilename;
+        if (data->useDefaults) {
+            sanitisedDataFilename = sanitisedOutputPath + data->dataFile + ".dat";
+        } else {
+            sanitisedDataFilename = data->dataFile ;
+        }
+
         digit = '1' + count; // convert size_t "count" to a single-digit string
         sedCommand +=
-                ";s/" + data->tokenBase + "FILE/" + sanitisedOutputPath + data->dataFile + ".dat/g"
+                ";s/" + data->tokenBase + "FILE/" + sanitisedDataFilename + "/g"
                 ";s/" + data->tokenBase + "KEY/" + data->title + "/g";
     }
 

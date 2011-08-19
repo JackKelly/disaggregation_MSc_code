@@ -478,9 +478,9 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
 
     // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 100) {
+    if (spikes.size() > 10) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 100 );
+        advance( it, 10 );
         spikes.erase( it, spikes.end() );
     }
 
@@ -650,14 +650,15 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
             removeOverlapping( &disagList );
         }
 
-        displayAndPlotDisagList( disagList );
+        displayAndPlotDisagList( disagList, aggregateData.getFilename() );
     }
 
     return disagList;
 }
 
 void PowerStateGraph::displayAndPlotDisagList(
-        const list< DisagDataItem >& disagList
+        const list< DisagDataItem >& disagList,
+        const string& aggDataFilename
         ) const
 {
     cout << "Expected energy consumption = "
@@ -684,12 +685,21 @@ void PowerStateGraph::displayAndPlotDisagList(
     pv.title       = "Automatic disaggregation for kettle";
     pv.xlabel      = "time";
     pv.ylabel      = "power (Watts)";
-    pv.plotArgs    = "[\"" + Utils::size_t_to_s( disagList.front().timestamp - BORDER + 3600) + "\":\""
-            + Utils::size_t_to_s( disagList.back().timestamp + disagList.back().duration + BORDER + 3600) + "\"]";
+
+    // set sensible xrange, but only if we're not dealing with synthetic data with a low timecode
+    if (disagList.front().timestamp > 1000) {
+        const size_t dstOffset = 3600; // to correct for BST
+        pv.plotArgs    = "[\"" + Utils::size_t_to_s( disagList.front().timestamp - BORDER + dstOffset) + "\":\""
+                + Utils::size_t_to_s( disagList.back().timestamp + disagList.back().duration + BORDER + dstOffset) + "\"]";
+    }
+
     pv.data.push_back(
             GNUplot::Data(
-                    "disagg", "Automatically determined device signature", "DISAGG")
-    );
+                    "disagg", "Automatically determined device signature", "DISAGG"));
+    pv.data.push_back(
+            GNUplot::Data(
+                      aggDataFilename, "Aggregate data", "AGGDATA", false));
+
     GNUplot::plot( pv );
 }
 

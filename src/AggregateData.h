@@ -84,6 +84,8 @@ public:
 
     const size_t getSamplePeriod() const;
 
+    const std::string getFilename() const;
+
 private:
 
     size_t samplePeriod; /**< @brief in seconds. */
@@ -92,6 +94,8 @@ private:
             size_t * startTime,
             size_t * endTime
             ) const;
+
+    std::string aggDataFilename; /**< @brief including path and suffix */
 
 };
 

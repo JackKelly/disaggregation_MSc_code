@@ -10,6 +10,7 @@
 
 #include <string>
 #include <list>
+#include "Common.h" // for DATA_OUTPUT_PATH
 
 namespace GNUplot {
 
@@ -17,19 +18,24 @@ namespace GNUplot {
  * @brief Structure for storing details about data elements to be plotted.
  */
 struct Data {
-    std::string dataFile, /**< @brief Base data filename (without path or suffix).
-                                      Directory = @c DATA_OUTPUT_PATH config option. */
+    std::string dataFile, /**< @brief Data filename.  If this does not include path or suffix
+                                      the set @c useDefaults=true, else set useDefaults=false. */
                 title,    /**< @brief Title of this data element (for displaying in the graph's key). */
                 tokenBase;/**< @brief Base of token to look for in the template.
                                       @c FILE and @c KEY will be appended to this tokenBase. */
+    bool        useDefaults; /**< @brief Should @c DATA_OUTPUT_PATH be added to the front of
+                                  @c dataFile and @c ".dat" be added to the end of ~c dataFile?
+                                  Defaults to true. */
     /**
      * @brief Constructor
      */
     Data(
             const std::string& _dataFile,
             const std::string& _title,
-            const std::string& _tokenBase = "DATA")
-    : dataFile(_dataFile), title(_title), tokenBase(_tokenBase) {}
+            const std::string& _tokenBase = "DATA",
+            const bool _useDefaults = true
+                    )
+    : dataFile(_dataFile), title(_title), tokenBase(_tokenBase), useDefaults(_useDefaults) {}
 };
 
 /**
