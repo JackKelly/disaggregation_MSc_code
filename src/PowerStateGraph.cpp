@@ -49,7 +49,10 @@ void PowerStateGraph::update(
         const bool verbose
         )
 {
-    energyConsumption.update( sig.getEnergyConsumption() );
+    const double energyConsumptionFromSig = sig.getEnergyConsumption();
+    energyConsumption.update( energyConsumptionFromSig );
+    cout << "Energy consumption from sig" << sig.getID() << " = "
+            << energyConsumptionFromSig / J_PER_KWH << " kWh" << endl;
 
     edgeHistory.clear();
 
@@ -564,7 +567,7 @@ void PowerStateGraph::writeGraphViz(ostream& out)
 /**
  *
  * Each candidate solution is represented as a
- * directed acyclic graph (DAG).  Each vertex
+ * tree.  Each vertex
  * on this tree is a spike found in the aggregate data.
  * The edge weights are the mean of the probability density
  * functions for the spike size and the timing.  If an
@@ -574,11 +577,11 @@ void PowerStateGraph::writeGraphViz(ostream& out)
  * shortest path through the tree is calculated and saved.
  *
  * <ol>
- * <li>Retrieve from @c graph edge @c e which connects @c vertex0 (offVertex)
+ * <li>Retrieve edge @c e which connects @c vertex0 (offVertex)
  *     to vertex1.  Look through the AggregateData
  *     searching for any spike within a certain number of
  *     standard deviations of @c e.delta.</li>
- * <li>When a spike is found, start a DAG structure and
+ * <li>When a spike is found, start a tree structure and
  *     start looking for the subsequent edges learnt during training.</li>
  * <li>Look for the delta corresponding to each out edge from current vertex.
  *     Store the UNIX timestamp of each candidate.  </li>

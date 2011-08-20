@@ -550,3 +550,8 @@ const double Signature::getEnergyConsumption() const
 
     return accumulator * samplePeriod;
 }
+
+const size_t Signature::getID() const
+{
+    return sigID;
+}

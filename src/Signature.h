@@ -84,6 +84,8 @@ public:
         ) const;
 
     const double getEnergyConsumption() const;
+
+    const size_t getID() const;
     ///@}
 
     /************************/
