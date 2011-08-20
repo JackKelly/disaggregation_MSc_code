@@ -110,8 +110,12 @@ struct Statistic {
             )
     : mean(0), stdev(0)
     {
-        // deal with the case where beginning and end or equal or within 1 of each other
-        if (beginning==end || beginning==(end-1)) {
+        // deal with the case where beginning and end are equal
+        // or within 1 of each other or beginning is bigger than end.
+        // We need the "beginning==end" to catch the case where
+        // beginning=end=0 (remember these are size_t types
+        // so 0-1 = some massive positive number).
+        if ( beginning >= (end-1) || beginning==end ) {
             min = max = mean = data[beginning];
             numDataPoints = 1;
             dataStore.push_back( data[beginning] );
