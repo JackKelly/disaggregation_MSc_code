@@ -20,8 +20,8 @@
 
 
 /**
- * @brief Array class.  At it's core it's just a wrapper around a C-style array.
- * With lots of added functionality useful for signal processing.
+ * @brief Array class.  At its core it's just a wrapper around a C-style array.
+ * With lots of added functionality for signal processing.
  *
  * @todo should Array inherit from <a href="http://www.cplusplus.com/reference/std/valarray/">valarray</a>. ?
  */

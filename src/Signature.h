@@ -79,7 +79,7 @@ public:
 
     const PowerStateSequence& getPowerStateSequence();
 
-    const std::list<Spike> getGradientSpikesInOrder(
+    const std::list<Spike> getDeltaSpikes(
             const size_t LOOK_AHEAD = 20
         ) const;
 

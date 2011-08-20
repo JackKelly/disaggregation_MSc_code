@@ -299,6 +299,10 @@ struct Statistic {
             const double alpha=0.05        /**< significance level */
             ) const
     {
+        // deal with case where one or both Statistic arrays only has a single data point
+        if (numDataPoints == 1  ||  other.numDataPoints == 1)
+            return (mean == other.mean);
+
         return tTest(other) > (alpha/2);
     }
 
@@ -319,28 +323,33 @@ struct Statistic {
                 const Statistic<T> other
                 ) const
         {
-        if (mean == other.mean)
-            return true;
 
-        // deal with case where one or both Statistic arrays only has a single data point
-        if (numDataPoints == 1  ||  other.numDataPoints == 1)
-            return (mean == other.mean);
+        if (mean == other.mean)
+            return 1.0;
+        // deal with case where numDataPoints is too low to be able to do a t-test
+        else if (numDataPoints<2 || other.numDataPoints<2)
+            return 0.0;
 
         using namespace boost::math;
 
+        double nonzeroStdev = nonZeroStdev();
+
         // Degrees of freedom (using Chi-Squared test):
-        double v = stdev * stdev / numDataPoints + other.stdev * other.stdev / other.numDataPoints;
+        double v = nonzeroStdev * nonzeroStdev / numDataPoints +
+                other.nonZeroStdev() * other.nonZeroStdev() / other.numDataPoints;
         v *= v;
-        double t1 = stdev * stdev / numDataPoints;
+        double t1 = nonzeroStdev * nonzeroStdev / numDataPoints;
         t1 *= t1;
         t1 /=  (numDataPoints - 1);
-        double t2 = other.stdev * other.stdev / other.numDataPoints;
+        double t2 = other.nonZeroStdev() * other.nonZeroStdev() / other.numDataPoints;
         t2 *= t2;
         t2 /= (other.numDataPoints - 1);
         v /= (t1 + t2);
 
         // t-statistic:
-        double t_stat = (mean - other.mean) / sqrt(stdev * stdev / numDataPoints + other.stdev * other.stdev / other.numDataPoints);
+        double t_stat = (mean - other.mean) /
+                sqrt(nonzeroStdev * nonzeroStdev / numDataPoints +
+                        other.nonZeroStdev() * other.nonZeroStdev() / other.numDataPoints);
 
         // define our distribution object
         students_t dist( v );

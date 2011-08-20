@@ -74,12 +74,15 @@ private:
     struct PowerStateEdge; // forward declared to fix interdependency introduced by edgeHistory
 
     struct PowerStateVertex {
-        Statistic<Sample_t> betweenSpikes; /**< @brief Stats taken for the entire
-                                                period between spikes. Used for estimating
-                                                energy consumption. */
-        Statistic<Sample_t> postSpike; /**< @brief Stats taken for a
-                                            few samples immediately after the spike. Used
-                                            for determining vertices during training. */
+         /**< @brief Stats for 8 samples immediately after the spike.
+          * Used for determining vertices during training.            */
+         Statistic<Sample_t> postSpike;
+
+         /**< @brief Stats for the entire period between spikes.
+          * Used only for estimating energy consumption.              */
+         Statistic<Sample_t> betweenSpikes;
+
+         /* (Sample_t is simply a typedef for a double.)   */
     };
 
 
@@ -90,7 +93,8 @@ private:
      * See <a href="http://www.boost.org/doc/libs/1_47_0/libs/graph/doc/bundles.html">boost::graph bundles tutorial</a>
      */
     typedef boost::adjacency_list<
-            boost::vecS, boost::vecS, boost::directedS,  // vecS allows multiple edges between vertices
+            boost::vecS, boost::vecS, // vecS allows multiple edges between vertices
+            boost::directedS, // we need directional edges
             PowerStateVertex, // our custom vertex (node) type
             PowerStateEdge    // our custom edge type
             > PSGraph;
@@ -101,9 +105,13 @@ private:
         size_t count; /**< @brief The number of times this edge has been
                                   traversed during training.  Used with @c totalCount
                                   to determine which edges are traversed most often.
-                                  @todo remove if we're not using this. */
+                                  @deprecated we're not using this. */
         std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
-                                                                the previous few edges we've seen. */
+                                                                the previous few edges we've seen.
+                                                                This serves exactly the same purpose
+                                                                as @c getEdgeHistoryForVertex(). @todo
+                                                                benchmark the 2 approaches and delete
+                                                                the slowest.  */
     };
 
 
@@ -255,7 +263,8 @@ private:
     PSGraph::vertex_descriptor offVertex; /**< @todo we probably don't need this as the offVertex will probably always been vertex index 0. */
 
     size_t totalCount; /**< @brief the total number of times any edge
-                                   has been traversed during training. */
+                                   has been traversed during training.
+                                   @deprecated not actually used. */
 
     AggregateData const * aggData;
 
