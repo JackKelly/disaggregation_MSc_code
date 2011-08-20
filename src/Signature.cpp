@@ -349,7 +349,7 @@ PowerStates_t::const_iterator Signature::getPowerState( const Sample_t sample ) 
  * @return a list of gradient Spikes, sorted in descending order of absolute 'value'.
  *
  */
-const list<Signature::Spike> Signature::getGradientSpikesInOrder(
+const list<Signature::Spike> Signature::getDeltaSpikes(
         const size_t LOOK_AHEAD  /**< check there isn't an opposite-sign
                                       spike within this number of samples. */
     ) const

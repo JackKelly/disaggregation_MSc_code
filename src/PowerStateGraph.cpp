@@ -57,7 +57,7 @@ void PowerStateGraph::update(
     edgeHistory.clear();
 
     // get the gradient spikes for the signature
-    list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
+    list<Signature::Spike> spikes = sig.getDeltaSpikes();
     list<Signature::Spike>::iterator spike;
     PSGraph::vertex_descriptor targetVertex, sourceVertex=offVertex;
     size_t indexOfLastAcceptedSpike = 0;
@@ -78,14 +78,15 @@ void PowerStateGraph::update(
 
     for (spike = spikes.begin(); spike!=spikes.end(); spike++) {
 
-        // calculate the start index for the window of signature data we'll examine
+        // calculate the start index for the 8 pre-spike samples
         start = ((spike->index > WINDOW) ? (spike->index - WINDOW) : 0 );
 
-        // calculate the end index
+        // calculate the end index for the 8 post-spike samples
         end = spike->index + WINDOW + spike->n + 1;
         if (end > sig.getSize())
             end = sig.getSize();
 
+        // Create statistics for pre- and post-spike
         Statistic<Sample_t> preSpikePowerState(sig, start, spike->index);
         Statistic<Sample_t> postSpikePowerState(sig, (spike->index + spike->n + 1), end);
 
@@ -94,6 +95,7 @@ void PowerStateGraph::update(
             if (verbose) cout << " REJECT";
         } else {
 
+            // Create inter-spike stats
             Statistic<Sample_t> betweenSpikesPowerState(
                     sig,
                     (spike->index + spike->n + 1),
@@ -252,6 +254,8 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::updateOrInsertVerte
  *
  * @return vertex descriptor of best fit.
  *         @c success is also used as a return parameter.
+ *
+ * @todo remove commented-out code if it proves to be of no use
  */
 PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
         bool * success, /**< return parameter.  Did we find a satisfactory match? */
@@ -261,36 +265,39 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
 {
     PSGraph::vertex_descriptor vertex=0;
     std::pair<PSG_vertex_iter, PSG_vertex_iter> vp;
-    double highestTTest=0, diff, lowestDiff = std::numeric_limits<double>::max();
+    double tTest, highestTTest=0;
+//    double diff, lowestDiff = std::numeric_limits<double>::max();
 
     // Find the best fit
     for (vp = boost::vertices(powerStateGraph); vp.first != vp.second; ++vp.first) {
         // t test
-/*      tTest = stat.tTest( graph[*vp.first] );
-        cout << "tTest=" << tTest << "  " << graph[*vp.first] << endl;
+        tTest = stat.tTest( powerStateGraph[*vp.first].postSpike );
         if (tTest > highestTTest) {
             highestTTest = tTest;
             vertex = *vp.first;
         }
-*/
+
         // Now compare means.  In the vast majority of the cases, comparing
         // means will produce the same best match as the tTest.
-        diff = fabs( powerStateGraph[*vp.first].postSpike.mean - stat.mean );
+/*        diff = fabs( powerStateGraph[*vp.first].postSpike.mean - stat.mean );
         if (diff < lowestDiff) {
             lowestDiff = diff;
             vertex = *vp.first;
         }
+*/
     }
 
     // Check whether the best fit is satisfactory
-    if ( (highestTTest > (ALPHA/2)) || // T-Test
-         ( Utils::within
+    if ( (highestTTest > (ALPHA/2)) // T-Test
+/*       ||  ( Utils::within
                  (
                  powerStateGraph[vertex].postSpike.mean,
                  stat.mean,
                  (Utils::highest(powerStateGraph[vertex].postSpike.mean, stat.mean) * 0.2)
                  ) // check if the means are within 20% of each other
-         ))
+         )
+         */
+      )
         *success = true;
     else
         *success = false;
@@ -478,7 +485,7 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     size_t previousIndex;
 
     // get the gradient spikes for the first signature
-    list<Signature::Spike> spikes = sig.getGradientSpikesInOrder();
+    list<Signature::Spike> spikes = sig.getDeltaSpikes();
 
     // take just the top ten (whilst ordered by absolute value)
     if (spikes.size() > 10) {
@@ -610,29 +617,38 @@ const list<PowerStateGraph::DisagDataItem> PowerStateGraph::getStartTimes(
 
     DisagDataItem candidateDisagDataItem;
 
-    // search through aggregateData for the delta corresponding
-    // to the first edge from vertex0.
+    /* Load the stats from the first PowerStateGraph edge.
+     * The Boost Graph Lib provides an out_edges() function which returns
+     * a pair of edge iterators: the first iterator points to the first edge;
+     * the second iterator points 1 past the last edge. Dereferencing an
+     * edge iterator returns an edge descriptor. tie() allows easy
+     * access to each element of the pair of edge iterators. */
     PSG_out_edge_iter out_i, out_end;
     tie(out_i, out_end) = out_edges(offVertex, powerStateGraph);
     PowerStateEdge firstEdgeStats = powerStateGraph[*out_i];
 
-    list<AggregateData::FoundSpike> foundSpikes
+    // Search through aggregateData for possible start spikes
+    list<AggregateData::FoundSpike> posStartSpikes
         = aggregateData.findSpike(firstEdgeStats.delta);
 
-    cout << " found " << foundSpikes.size() << " possible start deltas. Following through... " << endl;
+    cout << " found " << posStartSpikes.size() << " possible start deltas. Following through... " << endl;
 
     // for each spike which might possibly be the start of
     // the device signature in the aggregate reading,
     // attempt to find all the subsequent state changes.
-    for (list<AggregateData::FoundSpike>::const_iterator spike=foundSpikes.begin();
-            spike!=foundSpikes.end();
-            spike++) {
+    for (list<AggregateData::FoundSpike>::const_iterator posStartSpike=posStartSpikes.begin();
+            posStartSpike!=posStartSpikes.end();
+            posStartSpike++) {
 
+        // Attempt to recursively "follow through" from this posStartSpike.
+        // initTraceToEnd() calls the recursive function traceToEnd().
         candidateDisagDataItem = initTraceToEnd(
-                *spike,
-                ( spike->timestamp - firstEdgeStats.duration.mean ) // time the device probably started
+                *posStartSpike,
+                ( posStartSpike->timestamp - firstEdgeStats.duration.mean ) // time the device probably started
                 );
 
+        // If this start spike was successfully traced all the way to
+        // an off power state then add this item to the list
         if ( candidateDisagDataItem.avLikelihood != -1 ) {
             disagList.push_back( candidateDisagDataItem );
             if (verbose)

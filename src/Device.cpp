@@ -162,7 +162,7 @@ void Device::updatePowerStateSequence()
 const list<Signature::Spike> Device::getSalientSpikes() const
 {
     // get the gradient spikes for the first signature
-    list<Signature::Spike> spikes = signatures.front()->getGradientSpikesInOrder();
+    list<Signature::Spike> spikes = signatures.front()->getDeltaSpikes();
 
     // take just the top ten (by absolute value)
     if (spikes.size() > 10) {

@@ -18,7 +18,7 @@
 #include "PowerStateGraph.h"
 
 /**
- * @brief Class for representing "devices" (ie appliances like "dish washer", "lamp" etc)
+ * @brief Class for representing "devices" (e.g. appliances like "dish washer", "lamp" etc)
  */
 class Device {
 public:
