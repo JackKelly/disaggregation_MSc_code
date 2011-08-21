@@ -13,9 +13,11 @@
 #include <cmath>
 #include <iostream>
 #include <boost/math/distributions/students_t.hpp>
+#include <boost/math/distributions/normal.hpp>
 #include <limits> // for std::numeric_limits<std::size_t>::max()
 #include "Array.h"
 #include "Common.h"
+
 
 template <class T>
 struct Statistic {
@@ -369,6 +371,26 @@ struct Statistic {
         else
             return stdev;
     }
+
+    /**
+     * @brief The likelihood is normalised by dividing the raw likelihood
+     *    by the likelihood of the distribution's mean. The end result
+     *    is that we get a number between 0 and 1 which tells us how
+     *    close we are to the distribution's mean; if we're right on
+     *    target then the normalised likelihood will be 1.
+     */
+    const double normalisedLikelihood(
+            const double x
+            ) const
+    {
+        // Create a normal distribution
+        boost::math::normal dist(mean, nonZeroStdev());
+
+        // Calculate normalised likelihood
+        return  boost::math::pdf(dist, x) /
+                boost::math::pdf(dist, mean);
+    }
+
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {

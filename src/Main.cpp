@@ -250,7 +250,7 @@ int main(int argc, char * argv[])
         break;
     case GRAPHSnSPIKES:
         device.trainPowerStateGraph();
-        device.getPowerStateGraph().getStartTimes(aggData, vm.count("keep-overlapping"));
+        device.getPowerStateGraph().disaggregate(aggData, vm.count("keep-overlapping"));
         break;
     }
 
@@ -303,7 +303,7 @@ void powerStateGraphTest(const bool keep_overlapping)
     psg.writeGraphViz( fs );
     fs.close();
 
-    psg.getStartTimes( aggData, keep_overlapping );
+    psg.disaggregate( aggData, keep_overlapping );
 
 }
 
