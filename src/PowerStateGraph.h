@@ -38,14 +38,17 @@ public:
 
     void writeGraphViz(std::ostream& out);
 
-    struct DisagDataItem {
+    /**< @brief Information about an entire device 'fingerprint'
+     *   found in the aggregate data.
+     */
+    struct Fingerprint {
         size_t timestamp; /**< @brief UNIX timestamp for start time */
         size_t duration;
         double energy;    /**< @brief energy consumed */
         double avLikelihood;
         std::list< TimeAndPower > timeAndPower;
 
-        friend std::ostream& operator<<(std::ostream& o, const DisagDataItem& ddi) {
+        friend std::ostream& operator<<(std::ostream& o, const Fingerprint& ddi) {
 
             o << "  timestamp      = " << ddi.timestamp << std::endl
               << "  date           = " << ctime( (time_t*)(&ddi.timestamp) )
@@ -58,11 +61,13 @@ public:
         }
     };
 
-    const std::list<DisagDataItem> getStartTimes(
+    const std::list<Fingerprint> disaggregate(
             const AggregateData& aggregateData,
             const bool keep_overlapping = false,
             const bool verbose = false
             );
+
+    void setDeviceName(const std::string& _deviceName);
 
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
 
@@ -208,7 +213,7 @@ private:
     typedef boost::adjacency_list<
             boost::setS, boost::vecS, boost::bidirectionalS,
             DisagVertex,   // our custom vertex (node) type
-            double          // our custom edge type (for storing probabilities)
+            double         // our custom edge type (for storing likelihood)
             > DisagTree;
 
     typedef boost::graph_traits<DisagTree>::out_edge_iterator Disag_out_edge_iter;
@@ -290,14 +295,16 @@ private:
     Statistic< double > energyConsumption; /**< @brief Energy consumption in Joules
                                                 obtained from training signatures */
 
+    std::string deviceName; /**< @brief All PowerStateGraphs are associated with a single device.  */
+
     /****************************
      * PRIVATE MEMBER FUNCTIONS *
      ****************************/
 
     PSGraph::vertex_descriptor updateOrInsertVertex(
             const Signature& sig,
-            const Statistic<Sample_t> postSpikePowerState,
-            const Statistic<Sample_t> betweenSpikesPowerState,
+            const Statistic<Sample_t>& postSpikePowerState,
+            const Statistic<Sample_t>& betweenSpikesPowerState,
             const bool verbose = false
         );
 
@@ -332,15 +339,15 @@ private:
 
     void updateEdges( const Signature& sig );
 
-    const DisagDataItem initTraceToEnd(
+    const Fingerprint initTraceToEnd(
             const AggregateData::FoundSpike& spike,
             const size_t deviceStart,
             const bool verbose = false // set true to see graphviz output of trees
             );
 
     void traceToEnd(
-            DisagTree * disagGraph,
-            const DisagTree::vertex_descriptor& startVertex,
+            DisagTree * disagTree,
+            const DisagTree::vertex_descriptor& vertex,
             const size_t prevTimestamp,
             const bool verbose = false
             ) const;
@@ -367,19 +374,19 @@ private:
             std::list<LikelihoodAndVertex> path = std::list<LikelihoodAndVertex>(0)
             );
 
-    const DisagDataItem findBestPath(
+    const Fingerprint findBestPath(
             const DisagTree& disagTree,
             const size_t deviceStart,
             const bool verbose = false
             );
 
     void removeOverlapping(
-            std::list<DisagDataItem> * disagList, /**< Input and output parameter */
+            std::list<Fingerprint> * disagList, /**< Input and output parameter */
             const bool verbose = false
             );
 
-    void displayAndPlotDisagList(
-            const std::list< DisagDataItem >& disagList,
+    void displayAndPlotFingerprintList(
+            const std::list< Fingerprint >& fingerprintList,
             const std::string& aggDataFilename
             ) const;
 

@@ -18,6 +18,7 @@ using namespace std;
 
 Device::Device(const string _name) : name(_name) {
     cout << "Creating Device object with name: " << name << endl;
+    powerStateGraph.setDeviceName( name );
 }
 
 Device::~Device() {
@@ -81,6 +82,9 @@ void Device::trainPowerStateGraph()
     Utils::openFile(fs, psgFilename, fstream::out);
     powerStateGraph.writeGraphViz( fs );
     fs.close();
+    string dotCommand =
+            "dot -Tpdf " + psgFilename + " > " + DATA_OUTPUT_PATH + "powerStateGraph.pdf";
+    system( dotCommand.c_str() );
 }
 
 PowerStateGraph& Device::getPowerStateGraph()

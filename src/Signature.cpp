@@ -61,9 +61,9 @@ Signature::Signature(
     // Draw graph of raw data after cropping
     drawGraph( "-afterCropping" );
 
-    Array<Sample_t> gradient;
-    getDelta( &gradient );
-    gradient.drawGraph( "-gradient" );
+    Array<Sample_t> delta;
+    getDelta( &delta );
+    delta.drawGraph( "-delta" );
 
 }
 

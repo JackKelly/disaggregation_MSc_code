@@ -6,7 +6,6 @@
  */
 
 #include "AggregateData.h"
-#include <boost/math/distributions/normal.hpp>
 #include <cassert>
 
 using namespace std;
@@ -220,8 +219,7 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
                 if ( Utils::between(narrowLowerLimit, narrowUpperLimit, variations[var_i]) ) {
 
                     double normalisedLikelihood =
-                            boost::math::pdf(dist, variations[var_i]) /
-                            boost::math::pdf(dist, spikeStats.mean);
+                            spikeStats.normalisedLikelihood( variations[var_i] );
 
                     foundSpikes.push_back(
                             FoundSpike(
