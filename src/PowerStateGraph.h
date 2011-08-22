@@ -134,6 +134,7 @@ private:
             template <class Vertex>
             void operator()(std::ostream& out, Vertex v) {
                     out << " [label=\""
+                        "vertex " << v << " \\n\\n"
                         << "min="  << g[v].betweenSpikes.min << " \\n"
                         << "mean=" << g[v].betweenSpikes.mean << " \\n"
                         << "max=" << g[v].betweenSpikes.max << " \\n"
@@ -273,7 +274,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 5;
+    static const size_t EDGE_HISTORY_SIZE = 5; /**< @brief must be 1 or higher */
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
@@ -330,9 +331,9 @@ private:
             ) const;
 
     void updateOrInsertEdge(
-            const PSGraph::vertex_descriptor& before,
-            const PSGraph::vertex_descriptor& after,
-            const size_t sampleSinceLastSpike,
+            const PSGraph::vertex_descriptor& beforeVertex,
+            const PSGraph::vertex_descriptor& afterVertex,
+            const size_t samplesSinceLastSpike,
             const double spikeDelta,
             const bool verbose = false
             );
@@ -370,7 +371,7 @@ private:
     void findListOfPathsThroughDisagTree(
             const DisagTree& disagTree,
             const DisagTree::vertex_descriptor vertex,
-            const LikelihoodAndVertex cav,
+            const LikelihoodAndVertex lav,
             std::list<LikelihoodAndVertex> path = std::list<LikelihoodAndVertex>(0)
             );
 

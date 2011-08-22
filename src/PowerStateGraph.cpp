@@ -65,10 +65,11 @@ void PowerStateGraph::update(
     // for each spike, locate the samples immediately before and immediately after the spike
     const size_t WINDOW = 8; // how far either side of the spike will we look?
 
-    // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 10) {
+    // take just the top TOP_SLICE_SIZE (whilst ordered by absolute value)
+    const size_t TOP_SLICE_SIZE = 10;
+    if (spikes.size() > TOP_SLICE_SIZE) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 10 );
+        advance( it, TOP_SLICE_SIZE );
         spikes.erase( it, spikes.end() );
     }
 
@@ -269,7 +270,7 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
     PSGraph::vertex_descriptor vertex=0;
     std::pair<PSG_vertex_iter, PSG_vertex_iter> vp;
     double tTest, highestTTest=0;
-//    double diff, lowestDiff = std::numeric_limits<double>::max();
+    double diff, lowestDiff = std::numeric_limits<double>::max();
 
     // Find the best fit
     for (vp = boost::vertices(powerStateGraph); vp.first != vp.second; ++vp.first) {
@@ -298,8 +299,7 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
                  stat.mean,
                  (Utils::highest(powerStateGraph[vertex].postSpike.mean, stat.mean) * 0.2)
                  ) // check if the means are within 20% of each other
-         )
-         */
+         )  */
       )
         *success = true;
     else
