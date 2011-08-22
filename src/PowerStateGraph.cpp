@@ -34,6 +34,10 @@ void PowerStateGraph::addItemToEdgeHistory(
         const PSGraph::edge_descriptor& edge
         )
 {
+    // Check if edge histories are disabled
+    if (EDGE_HISTORY_SIZE == 0)
+        return;
+
     if (edgeHistory.size() >= EDGE_HISTORY_SIZE)
         edgeHistory.erase( edgeHistory.begin() );
 
@@ -65,10 +69,11 @@ void PowerStateGraph::update(
     // for each spike, locate the samples immediately before and immediately after the spike
     const size_t WINDOW = 8; // how far either side of the spike will we look?
 
-    // take just the top ten (whilst ordered by absolute value)
-    if (spikes.size() > 10) {
+    // take just the top TOP_SLICE_SIZE (whilst ordered by absolute value)
+    const size_t TOP_SLICE_SIZE = 15;
+    if (spikes.size() > TOP_SLICE_SIZE) {
         list<Signature::Spike>::iterator it = spikes.begin();
-        advance( it, 10 );
+        advance( it, TOP_SLICE_SIZE );
         spikes.erase( it, spikes.end() );
     }
 
@@ -292,14 +297,13 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
 
     // Check whether the best fit is satisfactory
     if ( (highestTTest > (ALPHA/2)) // T-Test
-/*       ||  ( Utils::within
+       ||  ( Utils::within
                  (
                  powerStateGraph[vertex].postSpike.mean,
                  stat.mean,
                  (Utils::highest(powerStateGraph[vertex].postSpike.mean, stat.mean) * 0.2)
                  ) // check if the means are within 20% of each other
          )
-         */
       )
         *success = true;
     else
@@ -414,6 +418,10 @@ const bool PowerStateGraph::edgeListsAreEqual(
         const bool verbose
         ) const
 {
+    // Check if edge histories are disabled
+    if (EDGE_HISTORY_SIZE == 0)
+        return true;
+
     //******************* DIAGNOSTICS *******************
     if (verbose ) {
         cout << "************" << endl
@@ -811,7 +819,8 @@ const PowerStateGraph::Fingerprint PowerStateGraph::initTraceToEnd(
     disagTree[firstVertex].meanPower = powerStateGraph[*v_i].betweenSpikes.mean;
     disagTree[firstVertex].psgVertex = *v_i;
     disagTree[firstVertex].psgEdge   = *out_e_i;
-    disagTree[firstVertex].edgeHistory.push_back(*out_e_i);
+    if (EDGE_HISTORY_SIZE)
+        disagTree[firstVertex].edgeHistory.push_back(*out_e_i);
 
     // add an edge between disagOffVertex and firstVertex
     DisagTree::edge_descriptor edge;
@@ -924,7 +933,9 @@ void PowerStateGraph::traceToEnd(
 
     for (; psg_out_i!=psg_out_end; psg_out_i++ ) {
 
-        std::list< PSGraph::edge_descriptor > eHistory = getEdgeHistoryForVertex(disagTree, disagVertex);
+        // Commented out alternative strategy for getting edge history. Almost certainly slower than
+        // using disagTree[disagVertex].edgeHistory
+//        std::list< PSGraph::edge_descriptor > eHistory = getEdgeHistoryForVertex(disagTree, disagVertex);
 
         if ( ! edgeListsAreEqual(
 //                eHistory,
@@ -1020,10 +1031,13 @@ void PowerStateGraph::traceToEnd(
             disagTree[newVertex].psgEdge   = *psg_out_i;
             disagTree[newVertex].meanPower =
                     powerStateGraph[disagTree[newVertex].psgVertex].betweenSpikes.mean;
-            disagTree[newVertex].edgeHistory = disagTree[disagVertex].edgeHistory;
-            disagTree[newVertex].edgeHistory.push_back(*psg_out_i);
-            if (disagTree[newVertex].edgeHistory.size() > EDGE_HISTORY_SIZE) {
-                disagTree[newVertex].edgeHistory.erase( disagTree[newVertex].edgeHistory.begin() );
+
+            if (EDGE_HISTORY_SIZE) {
+                disagTree[newVertex].edgeHistory = disagTree[disagVertex].edgeHistory;
+                disagTree[newVertex].edgeHistory.push_back(*psg_out_i);
+                if (disagTree[newVertex].edgeHistory.size() > EDGE_HISTORY_SIZE) {
+                    disagTree[newVertex].edgeHistory.erase( disagTree[newVertex].edgeHistory.begin() );
+                }
             }
 
             // recursively trace to end.
