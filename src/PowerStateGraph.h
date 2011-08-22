@@ -135,10 +135,10 @@ private:
             void operator()(std::ostream& out, Vertex v) {
                     out << " [label=\""
                         "vertex " << v << " \\n\\n"
-                        << "min="  << g[v].betweenSpikes.min << " \\n"
-                        << "mean=" << g[v].betweenSpikes.mean << " \\n"
-                        << "max=" << g[v].betweenSpikes.max << " \\n"
-                        << "stdev=" << g[v].betweenSpikes.stdev << " \\n"
+                        << "min="  << g[v].betweenSpikes.min << "; " << g[v].postSpike.min << " \\n"
+                        << "mean=" << g[v].betweenSpikes.mean << "; " << g[v].postSpike.mean  << " \\n"
+                        << "max=" << g[v].betweenSpikes.max << "; " << g[v].postSpike.max  << " \\n"
+                        << "stdev=" << g[v].betweenSpikes.stdev << "; " << g[v].postSpike.stdev  << " \\n"
                         << "\"]";
             };
 
@@ -274,7 +274,7 @@ private:
 
     AggregateData const * aggData;
 
-    static const size_t EDGE_HISTORY_SIZE = 5; /**< @brief must be 1 or higher */
+    static const size_t EDGE_HISTORY_SIZE = 5; /**< @brief Set to 0 to disable. */
     std::list< PSGraph::edge_descriptor > edgeHistory; /**< @brief a "rolling" list storing
                                                             the previous few edges we've seen. */
 
