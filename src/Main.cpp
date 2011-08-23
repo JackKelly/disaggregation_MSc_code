@@ -195,6 +195,13 @@ void declareAndParseOptions( po::variables_map * vm_p, int argc, char * argv[] )
             exit(EXIT_SUCCESS);
         }
 
+        if (! vm.count("device-name")) {
+            cout << endl << "A device name must be provided with the -n option,"
+                    << endl << endl;
+            printHelp( visible );
+            exit(EXIT_SUCCESS);
+        }
+
         if (vm.count("aggdata")) {
             cout << "Aggregate data set to" << endl
                  << AGG_DATA_PATH << vm["aggdata"].as< string >() << endl;

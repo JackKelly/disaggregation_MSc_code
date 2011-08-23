@@ -70,7 +70,7 @@ void PowerStateGraph::update(
     const size_t WINDOW = 8; // how far either side of the spike will we look?
 
     // take just the top TOP_SLICE_SIZE (whilst ordered by absolute value)
-    const size_t TOP_SLICE_SIZE = 15;
+    const size_t TOP_SLICE_SIZE = 10;
     if (spikes.size() > TOP_SLICE_SIZE) {
         list<Signature::Spike>::iterator it = spikes.begin();
         advance( it, TOP_SLICE_SIZE );
@@ -698,15 +698,17 @@ void PowerStateGraph::displayAndPlotFingerprintList(
     fstream fs;
     Utils::openFile(fs, DATA_OUTPUT_PATH + "disagg.dat", fstream::out);
     list<Fingerprint>::const_iterator disagItem;
+    size_t count = 0;
     for (disagItem=fingerprintList.begin(); disagItem!=fingerprintList.end(); disagItem++) {
         cout << endl << "Candidate fingerprint found: " << endl << *disagItem << endl;
-
+        count++;
         for (list<TimeAndPower>::const_iterator tap_i=disagItem->timeAndPower.begin();
                 tap_i!=disagItem->timeAndPower.end(); tap_i++) {
             fs << tap_i->timestamp << "\t" << tap_i->meanPower << endl;
         }
     }
-    cout << endl;
+    cout << endl
+            << "Found " << count << " candidates." << endl;
 
     // Calculate size of x-axis border
     const size_t begOfFirstFingerprint = fingerprintList.front().timestamp;
