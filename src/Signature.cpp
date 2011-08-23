@@ -99,20 +99,20 @@ void Signature::drawHistWithStateBars(
     pv.ylabel      = "histogram frequency";
 
     // Set data for plotting
-    pv.data.push_back( GNUplot::Data(
+    pv.data.push_back( GNUplot::PlotData(
             hist.getBaseFilename(),
             "Histogram. HistSmoothing = " + Utils::size_t_to_s( hist.getSmoothing() ) +
                  ". UpstreamSmoothing=" + Utils::size_t_to_s( hist.getUpstreamSmoothing() ),
             "HIST" )
     );
 
-    pv.data.push_back( GNUplot::Data (
+    pv.data.push_back( GNUplot::PlotData (
             hist.getSmoothedGradOfHistFilename(),
             "Gradient of histogram. Gradient smoothing=" + Utils::size_t_to_s( hist.HIST_GRADIENT_RA_LENGTH ),
             "HISTGRAD" )
     );
 
-    pv.data.push_back( GNUplot::Data(
+    pv.data.push_back( GNUplot::PlotData(
             getStateBarsBaseFilename(),
             "Automatically determined power states (min, mean, max)",
             "STATES" )

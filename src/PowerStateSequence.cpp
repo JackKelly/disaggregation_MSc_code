@@ -42,9 +42,9 @@ void PowerStateSequence::plotGraph() const
     pv.ylabel      = "power (Watts)";
     pv.plotArgs    = "";
 
-    pv.data.push_back( GNUplot::Data( baseFilename, deviceName + " power state sequence", "POWERSTATESEQUENCE" ) );
+    pv.data.push_back( GNUplot::PlotData( baseFilename, deviceName + " power state sequence", "POWERSTATESEQUENCE" ) );
 
-    pv.data.push_back( GNUplot::Data( deviceName + "-afterCropping", deviceName + " raw signature (unsmoothed)", "SIG" ) );
+    pv.data.push_back( GNUplot::PlotData( deviceName + "-afterCropping", deviceName + " raw signature (unsmoothed)", "SIG" ) );
 
     // Plot
     GNUplot::plot( pv );

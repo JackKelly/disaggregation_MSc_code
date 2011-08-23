@@ -731,10 +731,10 @@ void PowerStateGraph::displayAndPlotFingerprintList(
     }
 
     pv.data.push_back(
-            GNUplot::Data(
+            GNUplot::PlotData(
                     "disagg", "Automatically determined device fingerprint", "DISAGG"));
     pv.data.push_back(
-            GNUplot::Data(
+            GNUplot::PlotData(
                       aggDataFilename, "Aggregate data", "AGGDATA", false));
 
     GNUplot::plot( pv );
