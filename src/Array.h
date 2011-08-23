@@ -249,18 +249,18 @@ public:
      *
      */
     void rollingAv(
-            Array<Sample_t> * ra,   /**< Initially an empty Array<Sample_t>.  Returned with Rolling Averages. */
+            Array<Sample_t> * destination,   /**< Initially an empty Array<Sample_t>.  Returned with Rolling Averages. */
             const size_t RAlength=5 /**< number of items to use in the average.  Must be odd. */
             ) const
     {
         // setup ra
-        ra->setSmoothing( RAlength );
-        ra->setUpstreamSmoothing( smoothing );
-        ra->setDeviceName( deviceName );
-        ra->setSize(this->size);
+        destination->setSmoothing( RAlength );
+        destination->setUpstreamSmoothing( smoothing );
+        destination->setDeviceName( deviceName );
+        destination->setSize(this->size);
 
         for (size_t i=0; i<size; i++) {
-            (*ra)[i] = rollingAv(i, RAlength);
+            (*destination)[i] = rollingAv(i, RAlength);
         }
     }
 
@@ -637,7 +637,7 @@ public:
         pv.xlabel      = xlabel;
         pv.ylabel      = ylabel;
         pv.plotArgs    = args;
-        pv.data.push_back( GNUplot::Data( baseFilename, baseFilename ) );
+        pv.data.push_back( GNUplot::PlotData( baseFilename, baseFilename ) );
 
         // Plot
         GNUplot::plot( pv );
@@ -747,7 +747,7 @@ public:
         pv.xlabel      = "power (Watts)";
         pv.ylabel      = "frequency";
         pv.plotArgs    = "";
-        pv.data.push_back( GNUplot::Data( baseFilename, baseFilename ) );
+        pv.data.push_back( GNUplot::PlotData( baseFilename, baseFilename ) );
 
         // Plot
         GNUplot::plot( pv );

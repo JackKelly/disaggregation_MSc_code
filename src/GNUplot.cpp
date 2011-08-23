@@ -73,10 +73,10 @@ void GNUplot::sanitise(
 }
 
 void GNUplot::sanitise(
-        list<Data> * data_p  /**< Input and output */
+        list<PlotData> * data_p  /**< Input and output */
         )
 {
-    for (list<Data>::iterator item=data_p->begin(); item!=data_p->end(); item++) {
+    for (list<PlotData>::iterator item=data_p->begin(); item!=data_p->end(); item++) {
         sanitise( &(item->dataFile) );
         sanitise( &(item->title)    );
     }
@@ -136,7 +136,7 @@ void GNUplot::instantiateTemplate(
      *      supported in GCC since v4.6 but the DoC machines only run GCC v4.3) */
     size_t count = 0;
     string digit;
-    for ( list<Data>::const_iterator data=plotVars.data.begin();
+    for ( list<PlotData>::const_iterator data=plotVars.data.begin();
             data != plotVars.data.end();
             data++, count++ ) {
 

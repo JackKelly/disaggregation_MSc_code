@@ -15,8 +15,8 @@ BOOST_AUTO_TEST_CASE( GNUplotInstantiateTemplateTest )
     plotVars.title = "This is a test";
     plotVars.xlabel = "time (Seconds)";
     plotVars.ylabel = "power (Watts)";
-    plotVars.data.push_back( GNUplot::Data( "data\\/input\\/watts_up\\/washer.csv", "Washer 1" ) );
-    plotVars.data.push_back( GNUplot::Data( "data\\/input\\/watts_up\\/washer2.csv", "Washer 2" ) );
+    plotVars.data.push_back( GNUplot::PlotData( "data\\/input\\/watts_up\\/washer.csv", "Washer 1" ) );
+    plotVars.data.push_back( GNUplot::PlotData( "data\\/input\\/watts_up\\/washer2.csv", "Washer 2" ) );
 
     GNUplot::plot( plotVars );
 }

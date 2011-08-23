@@ -17,7 +17,7 @@ namespace GNUplot {
 /**
  * @brief Structure for storing details about data elements to be plotted.
  */
-struct Data {
+struct PlotData {
     std::string dataFile, /**< @brief Data filename.  If this does not include path or suffix
                                       the set @c useDefaults=true, else set useDefaults=false. */
                 title,    /**< @brief Title of this data element (for displaying in the graph's key). */
@@ -29,7 +29,7 @@ struct Data {
     /**
      * @brief Constructor
      */
-    Data(
+    PlotData(
             const std::string& _dataFile,
             const std::string& _title,
             const std::string& _tokenBase = "DATA",
@@ -52,7 +52,7 @@ struct PlotVars {
                 plotArgs;    /**< @brief Plot arguments (e.g. range).
                                          Best not to use this but to put custom args
                                          into the @c template.gnu file instead. */
-    std::list<Data> data;    /**< @brief List of data elements to be plotted.
+    std::list<PlotData> data;    /**< @brief List of data elements to be plotted.
                                          @see GNUplot::Data for details. */
 };
 
@@ -69,7 +69,7 @@ void sanitise(
 );
 
 void sanitise(
-        std::list<Data> * data_p
+        std::list<PlotData> * data_p
 );
 
 void instantiateTemplate(
