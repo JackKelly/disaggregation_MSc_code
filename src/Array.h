@@ -244,9 +244,6 @@ public:
 
     /**
      * @brief Returns a rolling average of same length as the original array.
-     *
-     * @todo this code produces a slightly odd result for Toaster-Smoothing31; almost certainly a bug.
-     *
      */
     void rollingAv(
             Array<Sample_t> * destination,   /**< Initially an empty Array<Sample_t>.  Returned with Rolling Averages. */

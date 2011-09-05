@@ -92,6 +92,9 @@ const size_t AggregateData::findNear(
     return 0;
 }
 
+/**
+ * @brief Make sure start and end times are sane.
+ */
 const size_t AggregateData::checkStartAndEndTimes(
         size_t * startTime,
         size_t * endTime
@@ -155,11 +158,13 @@ const bool AggregateData::readingGoesBelowPowerState(
     return false;
 }
 
-
+/**
+ * @brief Find all spikes in aggregate data which fit @c spikeStats.
+ */
 list<AggregateData::FoundSpike> AggregateData::findSpike(
-        const Statistic<Sample_t>& spikeStats,
-        size_t startTime,
-        size_t endTime,
+        const Statistic<Sample_t>& spikeStats, /**< A statistical description of the spike to look for. */
+        size_t startTime, /**< The UNIX timecode marking the start of the search window. */
+        size_t endTime, /**< The UNIX timecode marking the end of the search window. */
         const bool verbose
         ) const
 {

@@ -16,7 +16,7 @@ typedef Statistic<Sample_t>     PowerState_t;  /**< @todo should PowerState inhe
 typedef std::list<PowerState_t> PowerStates_t;
 
 struct PowerStateSequenceItem {
-    PowerStates_t::const_iterator powerState; /**< @todo Does the same iterator point to the same element, no matter if an item is subsequently entered before the item?  And does the iterator point to the correct item even after copying?  */
+    PowerStates_t::const_iterator powerState; /**< @brief An iterator "pointer" to a powerState  */
     size_t startTime; /**< @brief in seconds  */
     size_t endTime;   /**< @brief in seconds  */
     Sample_t delta;   /**< @brief the delta corresponding to this power state sequence item  */
