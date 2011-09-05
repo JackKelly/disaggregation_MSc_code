@@ -32,12 +32,17 @@ const string Device::getName() const
     return name;
 }
 
+/**
+ * @brief Load signature data files
+ */
 void Device::loadSignatures(
-        const vector< string >& sigFiles,
-        const size_t cropFront,
-        const size_t cropBack
+        const vector< string >& sigFiles, /**< Vector of filenames (without path). */
+        const size_t cropFront, /**< Amount to crop from front (only makes sense for use with LMS mode) */
+        const size_t cropBack   /**< Amount to crop from back  (only makes sense for use with LMS mode) */
         )
 {
+    cout << endl << "**** LOADING DATA FILES... *****" << endl << endl;
+
     vector< string >::const_iterator sigFile;
     for (sigFile = sigFiles.begin(); sigFile!=sigFiles.end(); sigFile++) {
 
@@ -62,14 +67,19 @@ void Device::loadSignatures(
 }
 
 /**
- * @brief To be called once @c signatures have been loaded
+ * @brief Trains the powerStateGraph using signatures declared with loadSignatures().
+ * To be called once @c signatures have been loaded.
  */
 void Device::trainPowerStateGraph()
 {
+    cout << endl << "***** TRAINING POWER STATE GRAPH... *****" << endl << endl;
+
     vector< Signature* >::const_iterator sig;
     for (sig = signatures.begin(); sig!=signatures.end(); sig++) {
         powerStateGraph.update( *(*sig) );
     }
+
+    cout << "Mean energy consumption      = " << powerStateGraph.getEnergyConsumption().mean / J_PER_KWH << " kWh" << endl;
 
     cout << endl
          << "Power State Graph vertices:" << endl

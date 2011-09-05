@@ -30,9 +30,10 @@ using namespace std;
  *
  */
 void GNUplot::plot(
-        PlotVars& plotVars /**< Variables for insertion into the template.
-                                @c 'inFilename' will be changed if config/'inFilename'.template.gnu exists.
-                                Strings will be sanitised. */
+        PlotVars& plotVars, /**< Variables for insertion into the template.
+                                 @c 'inFilename' will be changed if config/'inFilename'.template.gnu exists.
+                                 Strings will be sanitised. */
+        const bool verbose
     )
 {
     /* Check if config/'plotVars.outFilename'.template.gnu exists.
@@ -48,9 +49,12 @@ void GNUplot::plot(
     const string gnuPlotScriptFilename = DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu";
     const string plotCommand = "gnuplot " + gnuPlotScriptFilename;
 
-    cout << "Plotting gnuplot script " << gnuPlotScriptFilename << " to produce output "
-         << DATA_OUTPUT_PATH << plotVars.outFilename << "." << GNUPLOT_OUTPUT_FILE_EXTENSION
-         << endl;
+    if (verbose) {
+        cout << "Plotting gnuplot script " << gnuPlotScriptFilename << " to produce output "
+             << DATA_OUTPUT_PATH << plotVars.outFilename << "." << GNUPLOT_OUTPUT_FILE_EXTENSION
+             << endl;
+    }
+
     system( plotCommand.c_str() );
 }
 
@@ -115,7 +119,8 @@ void GNUplot::sanitise(
  *
  */
 void GNUplot::instantiateTemplate(
-        const PlotVars& plotVars /**< Variables for insertion into the template. */
+        const PlotVars& plotVars, /**< Variables for insertion into the template. */
+        const bool verbose
     )
 {
     string sanitisedOutputPath = DATA_OUTPUT_PATH;
@@ -157,7 +162,10 @@ void GNUplot::instantiateTemplate(
             "' config/" + plotVars.inFilename + ".template.gnu" // input to sed
             " > " + DATA_OUTPUT_PATH + plotVars.outFilename + ".gnu";  // output from sed
 
-    cout << "Instantiating GNUplot template \"config/" + plotVars.inFilename + ".template.gnu\""
-            " and outputting instantiated template to " << DATA_OUTPUT_PATH << plotVars.outFilename << ".gnu" << endl;
+    if (verbose) {
+        cout << "Instantiating GNUplot template \"config/" + plotVars.inFilename + ".template.gnu\""
+                " and outputting instantiated template to " << DATA_OUTPUT_PATH << plotVars.outFilename << ".gnu" << endl;
+    }
+
     system( sedCommand.c_str() ) ;
 }

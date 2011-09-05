@@ -69,6 +69,8 @@ public:
 
     void setDeviceName(const std::string& _deviceName);
 
+    const Statistic< double >& getEnergyConsumption() const;
+
     friend std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg );
 
 private:

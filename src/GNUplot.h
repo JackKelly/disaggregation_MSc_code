@@ -57,7 +57,8 @@ struct PlotVars {
 };
 
 void plot(
-        PlotVars& gnuPlotVars
+        PlotVars& gnuPlotVars,
+        const bool verbose = false
 );
 
 void sanitise(
@@ -73,7 +74,8 @@ void sanitise(
 );
 
 void instantiateTemplate(
-        const PlotVars& gnuPlotVars
+        const PlotVars& gnuPlotVars,
+        const bool verbose = false
 );
 
 } /* namespace GNUplot */

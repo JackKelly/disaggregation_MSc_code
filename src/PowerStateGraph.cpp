@@ -44,6 +44,11 @@ void PowerStateGraph::addItemToEdgeHistory(
     edgeHistory.push_back(edge);
 }
 
+const Statistic< double >& PowerStateGraph::getEnergyConsumption() const
+{
+    return energyConsumption;
+}
+
 /**
  * Update or initialise Power State Graph.
  */
@@ -614,7 +619,7 @@ const list<PowerStateGraph::Fingerprint> PowerStateGraph::disaggregate(
         )
 {
     cout << endl << "***** TRAINING FINISHED. DISAGGREGATION STARTING. *****" << endl << endl;
-    cout << "Getting start times...";
+    cout << "Finding start deltas...";
     cout.flush();
 
     if (num_vertices( powerStateGraph ) < 2) {
@@ -691,9 +696,7 @@ void PowerStateGraph::displayAndPlotFingerprintList(
         const string& aggDataFilename
         ) const
 {
-    cout << "Expected energy consumption = "
-         << energyConsumption.mean / J_PER_KWH << " kWh" << endl
-         << "Displaying disaggregation data and dumping to file for plotting. " << endl;
+    cout << "Displaying disaggregation data and dumping to file for plotting. " << endl;
 
     fstream fs;
     Utils::openFile(fs, DATA_OUTPUT_PATH + "disagg.dat", fstream::out);
@@ -748,9 +751,6 @@ void PowerStateGraph::removeOverlapping(
         const bool verbose
         )
 {
-    cout << "Removing overlapping items...";
-    cout.flush();
-
     list<Fingerprint>::iterator currentDisagItem, prevDisagItem;
     size_t count = 0;
 
@@ -784,7 +784,11 @@ void PowerStateGraph::removeOverlapping(
         }
     }
 
-    cout << " removed " << count << " overlapping items." << endl;
+    if (count == 0) {
+        cout << "No candidate fingerprints overlap." << endl;
+    } else {
+        cout << "Removed " << count << " overlapping candidate fingerprints." << endl;
+    }
 }
 
 /**
@@ -1181,7 +1185,7 @@ std::ostream& operator<<( std::ostream& o, const PowerStateGraph& psg )
     for (vp = boost::vertices(psg.powerStateGraph); vp.first != vp.second; ++vp.first) {
         o << "vertex" << index[*vp.first] << " = {" << psg.powerStateGraph[*vp.first].postSpike <<  "}";
         if ( *vp.first == psg.offVertex ) {
-            o << " (offVertex)";
+            o << "\n          (offVertex)" << std::endl;
         }
         o << std::endl;
     }

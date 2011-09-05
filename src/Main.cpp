@@ -51,7 +51,7 @@ void printHelp(const po::options_description& desc)
          << " this device in the AGGREGATE_DATA_FILE." << endl << endl
          << desc << endl
          << "Example usage:" << endl
-         << "   ./disaggregate dataCroppedToKettleToasterWasherTumble.csv -s kettle.csv -s kettle2.csv -n kettle" << endl << endl;
+         << "   ./disaggregate 10July.csv -s kettle.csv -s kettle2.csv -n kettle" << endl << endl;
 }
 
 void declareAndParseOptions( po::variables_map * vm_p, int argc, char * argv[] )
@@ -221,6 +221,9 @@ int main(int argc, char * argv[])
     size_t cropFront=0, cropBack=0;
     po::variables_map vm;
     declareAndParseOptions( &vm, argc, argv );
+
+    cout.precision(3);
+    cout.setf(ios::fixed);
 
     // Select mode of operator
     enum {LMS, GRAPHSnSPIKES} mode;
