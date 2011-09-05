@@ -394,7 +394,15 @@ struct Statistic {
 
     friend std::ostream& operator<<(std::ostream& o, const Statistic<T>& s)
     {
-        o << "min=" << s.min << "\tmean=" << s.mean << "\tmax=" << s.max << "\tstdev=" << s.stdev << "\tnumDataPoints=" << s.numDataPoints;
+        const size_t w = 6;
+        using namespace std;
+        o.precision(1);
+        o <<   "min = "   << setw(w) << s.min
+          << ", mean = "  << setw(w) << s.mean
+          << ", max = "   << setw(w) << s.max
+          << ", stdev = " << setw(w) << s.stdev
+          << ", n = "     << setw(3) << s.numDataPoints;
+        o.precision(3);
         return o;
     }
 
