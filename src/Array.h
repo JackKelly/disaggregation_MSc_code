@@ -481,7 +481,7 @@ public:
             return (data[i+1] - data[i]);
     }
 
-    static const size_t HIST_GRADIENT_RA_LENGTH = 17; /**> @brief Length of rolling average of histogram gradient.
+    static const size_t HIST_GRADIENT_RA_LENGTH = 17; /**< @brief Length of rolling average of histogram gradient.
                                                           Best if odd. */
     /**
      * @brief Attempts to automatically find the peaks.

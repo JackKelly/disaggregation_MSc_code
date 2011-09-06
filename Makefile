@@ -76,7 +76,7 @@ StatisticTest: CXXFLAGS = $(TESTCXXFLAGS)
 StatisticTest: $(TEST)StatisticTest.cpp $(SRC)Statistic.h $(SRC)Array.h $(STOBJFILES)
 	g++ $(CXXFLAGS) -o $(TEST)StatisticTest $(TEST)StatisticTest.cpp $(STOBJFILES)  && $(TEST)StatisticTest
 
-PSGTOBJFILES = $(SRC)PowerStateGraph.o $(SRC)Signature.o $(SRC)GNUplot.o $(SRC)Utils.o $(SRC)PowerStateSequence.o
+PSGTOBJFILES = $(SRC)PowerStateGraph.o $(SRC)Signature.o $(SRC)GNUplot.o $(SRC)Utils.o $(SRC)PowerStateSequence.o $(SRC)AggregateData.o
 PowerStateGraphTest: CXXFLAGS = $(TESTCXXFLAGS) -Wno-deprecated -Wno-unused-result -O3
 PowerStateGraphTest: $(TEST)PowerStateGraphTest.cpp $(SRC)Array.h $(PSGTOBJFILES)
 	g++ $(CXXFLAGS) -o $(TEST)PowerStateGraphTest $(PSGTOBJFILES) $(TEST)PowerStateGraphTest.cpp && $(TEST)PowerStateGraphTest

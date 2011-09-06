@@ -99,12 +99,14 @@ void declareAndParseOptions( po::variables_map * vm_p, int argc, char * argv[] )
                   "Do not remove overlapping candidates during disaggregation.")
             ("lms",
                   "Use Least Mean Squares approach for matching signature with aggregate data.")
+            ("histogram",
+                  "Use histogram approach. Full disaggregation is not implemented for this approach hence an aggregate file need not be supplied")
             ("cropfront",
                   po::value<size_t>(),
-                  "The number of samples to crop off the front of the signature (only works with LMS).")
+                  "The number of samples to crop off the front of the signature (only works with LMS or histogram).")
             ("cropback",
                   po::value<size_t>(),
-                  "The number of samples to crop off the back of the signature (only works with LMS).");
+                  "The number of samples to crop off the back of the signature (only works with LMS or histogram).");
 
 
 /***********************************************
@@ -226,7 +228,7 @@ int main(int argc, char * argv[])
     cout.setf(ios::fixed);
 
     // Select mode of operator
-    enum {LMS, GRAPHSnSPIKES} mode;
+    enum {LMS, GRAPHSnSPIKES, HISTOGRAM} mode;
     if (vm.count("lms")) {
         if (vm["signature"].as< vector<string> >().size() > 1) {
             Utils::fatalError( "You've specified more than 1 signature in conjunction"
@@ -239,6 +241,18 @@ int main(int argc, char * argv[])
         if (vm.count("cropfront"))
             cropFront = vm["cropfront"].as< size_t >();
         mode = LMS;
+    } else if (vm.count("histogram")) {
+        if (vm["signature"].as< vector<string> >().size() > 1) {
+            Utils::fatalError( "You've specified more than 1 signature in conjunction"
+                    " with the histogram mode.  histogram mode can only handle a single signature per device."
+                    " Please try again with a single signature specified (you may need to"
+                    " edit config/disaggregate.conf )." );
+        }
+        if (vm.count("cropback"))
+            cropBack = vm["cropback"].as< size_t >();
+        if (vm.count("cropfront"))
+            cropFront = vm["cropfront"].as< size_t >();
+        mode = HISTOGRAM;
     } else
         mode = GRAPHSnSPIKES;
 
@@ -252,123 +266,30 @@ int main(int argc, char * argv[])
             );
 
     AggregateData aggData;
-    aggData.loadCurrentCostData( AGG_DATA_PATH + vm["aggdata"].as< string >() );
+    if (mode!=HISTOGRAM) {
+        if (!vm.count("aggdata")) {
+            Utils::fatalError( "An aggregate data file must be supplied at the command line.");
+        }
+        aggData.loadCurrentCostData( AGG_DATA_PATH + vm["aggdata"].as< string >() );
+    }
 
     switch (mode) {
     case LMS:
+        cout << endl << "USING THE \"LEAST MEAN SQUARES\" APPROACH." << endl;
         device.findAlignment(aggData);
         break;
     case GRAPHSnSPIKES:
+        cout << endl << "USING THE \"GRAPHS AND SPIKES\" APPROACH." << endl;
         device.trainPowerStateGraph();
         device.getPowerStateGraph().disaggregate(aggData, vm.count("keep-overlapping"));
         break;
+    case HISTOGRAM:
+        cout << endl << "USING THE \"HISTOGRAM\" APPROACH." << endl;
+        device.getPowerStatesAndSequence();
+        break;
     }
-
-//    powerStateGraphTest( vm.count("keep-overlapping") );
 
     cout << endl << "Finished." << endl << endl;
 
     return EXIT_SUCCESS;
-}
-
-//**********************************************//
-// CODE BELOW THIS LINE WAS USED DURING TESTING //
-// AND CAN NOW BE SAFELY IGNORED!               //
-//**********************************************//
-
-void powerStateGraphTest(const bool keep_overlapping)
-{
-    AggregateData aggData;
-    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
-//    aggData.loadCurrentCostData( "data/input/watts_up/washer2-timestamped.csv" );
-//    aggData.loadCurrentCostData( "data/input/current_cost/test.csv" );
-
-//    for (size_t i=0; i<aggData.getSize(); i++) {
-//        cout << aggData.aggDelta(i) << endl;
-//    }
-
-    PowerStateGraph psg;
-//    Signature sig( "data/input/watts_up/kettle.csv", 1, "kettle" );
-//    Signature sig2( "data/input/watts_up/kettle2.csv", 1, "kettle2" );
-//    Signature sig( "data/input/watts_up/toaster.csv", 1, "toaster" );
-//    Signature sig( "data/input/watts_up/tumble.csv", 1, "tumble", 1, 1, 6600 );
-
-//    Signature sig( "data/input/watts_up/test.csv", 1, "test" );
-
-    Signature sig2( "data/input/watts_up/washer2.csv", 1, "washer2" );
-    Signature sig( "data/input/watts_up/washer.csv", 1, "washer" );
-
-    psg.update( sig2 );
-    psg.update( sig );
-
-    cout << endl
-         << "Power State Graph vertices:" << endl
-         << psg << std::endl;
-
-    // output power state graph to file
-    fstream fs;
-    const string psgFilename = DATA_OUTPUT_PATH + "powerStateGraph.gv";
-    cout << "Outputting power state graph to " << psgFilename << endl;
-    Utils::openFile(fs, psgFilename, fstream::out);
-    psg.writeGraphViz( fs );
-    fs.close();
-
-    psg.disaggregate( aggData, keep_overlapping );
-
-}
-
-
-void testing()
-{
-    /*
-    Signature sig( "washer.csv", 1 );
-    Histogram ha;
-    sig.getRawReading().histogram( &ha );
-    ha.dumpToFile( "data/input/processed/histogram.csv" );
-
-    Array<Sample_t> a;
-    sig.downSample( &a, 100 );
-
-    Array<Sample_t> raHist;
-    ha.rollingAv(&raHist,39);
-    raHist.dumpToFile( "data/input/processed/raHistogram39.csv" );
-
-    int pop[10] = {2,4,4,4,5,5,7,9,3,4};
-    Array<int> stdevTest(10, pop);
-    Statistic<int> stat(stdevTest);
-
-    std::cout << stat << std::endl;
-*/
-
-/*    Device toaster("Toaster");
-    toaster.getReadingFromCSV( "data/input/watts_up/toaster.csv", 1 ,0 ,0 );
-    toaster.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
-*/
-
-/*    Device kettle("Kettle");
-    kettle.getReadingFromCSV( "data/input/watts_up/kettle.csv", 1 ,1 ,1);
-    kettle.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
-*/
-
-//      Device washer("Washer2");
-//    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
-//      washer.getReadingFromCSV( "data/input/watts_up/washer.csv", 1, 50, 2200 );
-//    washer.getReadingFromCSV( "data/input/watts_up/washer2.csv", 1, 1, 1 );
-//    washer.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
-
-//    AggregateData aggData;
-//    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
-//      washer.getStartTimes( aggData );
-
-    //    washer.findAlignment( "data/input/watts_up/washer2.csv", 1);
-
-    /*    Device tumble("tumble");
-        tumble.getReadingFromCSV( "data/input/watts_up/tumble.csv", 1, 1, 6500 );
-        tumble.findAlignment( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv", 6);
-    */
-        /*
-        Array<int> raTest(10, pop);
-        Array<Sample_t> raArray;
-        raTest.rollingAv(&raArray,7);
-        std::cout << raArray << std::endl;*/
 }

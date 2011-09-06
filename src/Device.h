@@ -31,12 +31,7 @@ public:
             const size_t cropBack
             );
 
-    void getReadingFromCSV(
-            const char * filename,
-            const size_t samplePeriod,
-            const size_t cropFront,
-            const size_t cropBack
-            );
+    void getPowerStatesAndSequence();
 
     std::list<size_t> findAlignment(
             const AggregateData& aggregateData
