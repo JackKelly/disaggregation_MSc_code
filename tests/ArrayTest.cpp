@@ -102,9 +102,9 @@ BOOST_AUTO_TEST_CASE( copyCropTest1 )
 
     arrayTestDest.copyCrop(arrayTestSrc, 3, 4);
 
-    int answers[3] = {4, 5, 5};
+    int answers[6] = {0, 4, 5, 5, 0, 0};
 
-    for (size_t i=0; i<3; i++) {
+    for (size_t i=0; i<6; i++) {
         BOOST_CHECK_EQUAL( arrayTestDest[i] , answers[i]);
     }
 }
@@ -119,9 +119,9 @@ BOOST_AUTO_TEST_CASE( copyCropTest2 )
 
     arrayTestDest.copyCrop(arrayTestSrc, 0, 4);
 
-    int answers[] = {2, 4, 4, 4, 5, 5};
+    int answers[] = {0, 2, 4, 4, 4, 5, 5, 0 ,0};
 
-    for (size_t i=0; i<6; i++) {
+    for (size_t i=0; i<9; i++) {
         BOOST_CHECK_EQUAL( arrayTestDest[i] , answers[i]);
     }
 }
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE( copyCropTest3 )
     arrayTestDest.copyCrop(arrayTestSrc, 0, 0);
 
     for (size_t i=0; i<SIZE; i++) {
-        BOOST_CHECK_EQUAL( arrayTestDest[i] , arrayTestSrc[i]);
+        BOOST_CHECK_EQUAL( arrayTestDest[i+1] , arrayTestSrc[i]);
     }
 }
 

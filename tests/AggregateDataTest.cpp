@@ -11,7 +11,7 @@
 BOOST_AUTO_TEST_CASE( findTime )
 {
     AggregateData aggData;
-    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+    aggData.loadCurrentCostData( "data/input/current_cost/10July.csv" );
 
     BOOST_CHECK_EQUAL( aggData.findTime(1310252400), 0 );
     BOOST_CHECK_EQUAL( aggData.findTime(1310255190), 427);
@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( findTime )
 BOOST_AUTO_TEST_CASE( findSpike )
 {
     AggregateData aggData;
-    aggData.loadCurrentCostData( "data/input/current_cost/dataCroppedToKettleToasterWasherTumble.csv" );
+    aggData.loadCurrentCostData( "data/input/current_cost/10July.csv" );
 
     std::list<AggregateData::FoundSpike> foundSpikes = aggData.findSpike(Statistic<Sample_t>(245));
 

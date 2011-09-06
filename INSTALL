@@ -28,4 +28,5 @@
 =====================
 
 1. change directory to doc/
-2. run 'doxygen'
+2. run 'doxygen' (you may have to install doxygen first! It is available from doxygen.org )
+3. Now point a web browser at doc/html/index.html 

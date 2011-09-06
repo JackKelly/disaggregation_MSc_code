@@ -68,7 +68,7 @@ void Device::loadSignatures(
 
 /**
  * @brief Trains the powerStateGraph using signatures declared with loadSignatures().
- * To be called once @c signatures have been loaded.
+ * To be called once @c signatures have been loaded by @c loadSignatures()
  */
 void Device::trainPowerStateGraph()
 {
@@ -103,29 +103,24 @@ PowerStateGraph& Device::getPowerStateGraph()
 }
 
 /**
- * @deprecated
+* To be called once @c signatures have been loaded by @c loadSignatures()
+ *
+ * @deprecated This is the function used by the "Histograms" design and not by
+ * the subsequent "Graph and Spikes" design.
  */
-void Device::getReadingFromCSV(
-        const char * filename,
-        const size_t samplePeriod,
-        const size_t cropFront,
-        const size_t cropBack
-        )
+void Device::getPowerStatesAndSequence()
 {
-    // Create a new signature
-    Signature * sig = new Signature(
-            filename, samplePeriod,
-            name,
-            signatures.size(), // Provides the signature with its sigID.
-            cropFront, cropBack
-            );
-    signatures.push_back( sig );
+    cout << "Running the code which was built for the \"histograms\" design iteration.\n"
+            " This code only works with the last signature.  This code does not disaggregate;\n"
+            " it creates a histogram from the signature, determines a set of power states \n"
+            " and then creates a power state sequence.  The relevant graphs are output\n"
+            " to " << DATA_OUTPUT_PATH << endl << endl;
 
+    cout << "Determining power states..." << endl;
     updatePowerStates();  // old technique
 
+    cout << "Determining power state sequence..." << endl;
     updatePowerStateSequence();  // old technique
-
-    getSalientSpikes();  // old technique
 }
 
 /**
@@ -172,6 +167,9 @@ void Device::updatePowerStateSequence()
  * @return a list of the most salient spikes to look for,
  *         taking into consideration all Signatures,
  *         in ascending temporal order.
+ *
+ * @deprecated This is only used by the "histogram" design, not the
+ * subsequence "Graphs and Spikes" design iteration.
  */
 const list<Signature::Spike> Device::getSalientSpikes() const
 {
@@ -208,6 +206,8 @@ const list<Signature::Spike> Device::getSalientSpikes() const
 /**
  *
  * @return a list of UNIX times when the device starts
+ *
+ * @todo unfinished.
  *
  * @deprecated We now use the disaggregation functions in PowerStateGraph
  */
@@ -294,11 +294,10 @@ list<size_t> Device::findAlignment(
         }
     }
 
-    cout << name << " found at " << foundAt << ", LMS=" << min << endl;
-
-    cout << "length=" << i*aggData.getSamplePeriod() << endl;
-
-    cout << "min=" << min << endl;
+    cout << endl << name << " found at:" << endl
+         << "  timestamp = " << foundAt << endl
+         << "  date      = " << ctime( (time_t*)(&foundAt) )
+         << "  LMS       = " << min << endl;
 
     return locations;
 }
@@ -363,18 +362,10 @@ const double Device::LMS(
     count=0;
     double diff;
 
-    bool printThis = (aggData[aggIndex].timestamp==1310294457);
-
     while (sigIndex < (sigArray.getSize()-aggDataSamplePeriod) && aggIndex < (aggData.getSize()-1)) {
             for (size_t fineTune = 0; fineTune<aggDataSamplePeriod; fineTune++) {
                 diff = (sigArray[sigIndex+fineTune]+levelDiff) - aggData[aggIndex].reading;
                 accumulator += pow(diff,2);
-
-                if (printThis) {
-                    cout.setf(ios::fixed);
-                    cout.precision(2);
-                    cout << (aggData[aggIndex].timestamp + fineTune) << "\t" << pow(diff,2) << endl;
-                }
 
                 count++;
             }
@@ -382,8 +373,6 @@ const double Device::LMS(
             // Inc sigIndex by however many seconds are between this and the previous aggData recording
             sigIndex += (aggData[aggIndex].timestamp - aggData[aggIndex-1].timestamp);
     }
-
-//    cout << "Offset=" << agOffset << ", LMDiff=" << accumulator / (sigArray.getSize()/aggDataSamplePeriod) << endl;
 
     return accumulator / count; // average
 }
