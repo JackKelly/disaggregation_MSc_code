@@ -20,6 +20,7 @@ struct PowerStateSequenceItem {
     size_t startTime; /**< @brief in seconds  */
     size_t endTime;   /**< @brief in seconds  */
     Sample_t delta;   /**< @brief the delta corresponding to this power state sequence item  */
+    PowerStateSequenceItem(): startTime(0), endTime(0), delta(0) {}
 };
 
 class PowerStateSequence : public std::list<PowerStateSequenceItem> {
