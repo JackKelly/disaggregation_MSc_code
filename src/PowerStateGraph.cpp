@@ -711,7 +711,7 @@ void PowerStateGraph::displayAndPlotFingerprintList(
         }
     }
     cout << endl
-            << "Found " << count << " candidates." << endl;
+            << "Found " << count << " candidate" << (count==1 ? ". " : "s." ) << endl;
 
     // Calculate size of x-axis border
     const size_t begOfFirstFingerprint = fingerprintList.front().timestamp;
@@ -724,7 +724,7 @@ void PowerStateGraph::displayAndPlotFingerprintList(
     pv.outFilename = "disagg";
     pv.title       = "Automatic disaggregation for " + deviceName;
     pv.xlabel      = "time";
-    pv.ylabel      = "power (Watts)";
+    pv.ylabel      = "power (kW)";
 
     // set sensible xrange, but only if we're not dealing with synthetic data with a low timecode
     if (fingerprintList.front().timestamp > BORDER) {
