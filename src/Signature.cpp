@@ -79,7 +79,7 @@ void Signature::drawGraph(
     Array<Sample_t>::drawGraph(
             details,
             "time (seconds)",
-            "power (Watts)"
+            "power (kW)"
             );
 }
 
