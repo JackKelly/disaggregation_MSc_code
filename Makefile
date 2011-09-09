@@ -92,8 +92,10 @@ AggregateDataTest: $(TEST)AggregateDataTest.cpp $(SRC)Array.h $(ADTOBJFILES)
 #################################################
 
 clean:
-	rm -f $(SRC)*.o $(SRC)*.d
+	rm -f $(SRC)*.o $(SRC)*.d $(TEST)*.o $(TEST)*.d
 	
 linecount:
 	wc -l $(SRC)*.cpp $(SRC)*.h $(TEST)*.cpp config/*.* Makefile
+
+	
 

@@ -35,8 +35,8 @@ const std::string DATA_OUTPUT_PATH = "data/output/";
 const std::string SIG_DATA_PATH    = "data/input/watts_up/";
 const std::string AGG_DATA_PATH    = "data/input/current_cost/";
 const std::string GNUPLOT_SET_TERMINAL = "set terminal svg size 1200 800; set samples 1001";
-//const std::string GNUPLOT_SET_TERMINAL = "set terminal epslatex solid colour size 17cm,10cm";
+// const std::string GNUPLOT_SET_TERMINAL = "set terminal epslatex solid colour size 10cm,10cm"; // 8cm,5cm // 17,8
 const std::string GNUPLOT_OUTPUT_FILE_EXTENSION = "svg";
-//const std::string GNUPLOT_OUTPUT_FILE_EXTENSION = "tex";
+// const std::string GNUPLOT_OUTPUT_FILE_EXTENSION = "tex";
 
 #endif /* COMMON_H_ */
