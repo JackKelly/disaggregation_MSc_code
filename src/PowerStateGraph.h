@@ -18,8 +18,17 @@
 #include "Signature.h"
 #include "AggregateData.h"
 
+/**
+ * @brief This class does most of the work behind the "graphs and spikes" disaggregation approach.
+ * In particular, this class has responsibility for maintaining the "powerStateGraph"
+ * and the "disaggregation tree".
+ */
 class PowerStateGraph {
 private:
+    /**
+     * @brief A simple struct for pairing @c timestamp and @c meanPower.
+     * Used in @c Fingerprint struct.
+     */
     struct TimeAndPower {
         size_t timestamp;
         double meanPower;
@@ -29,7 +38,6 @@ private:
     };
 public:
     PowerStateGraph();
-    virtual ~PowerStateGraph();
 
     void update(
             const Signature& sig,
@@ -43,9 +51,9 @@ public:
      */
     struct Fingerprint {
         size_t timestamp; /**< @brief UNIX timestamp for start time */
-        size_t duration;
-        double energy;    /**< @brief energy consumed */
-        double avLikelihood;
+        size_t duration;  /**< @brief Duration (in seconds)         */
+        double energy;    /**< @brief energy consumed (Joules)      */
+        double avLikelihood; /**< @brief Average likelihood         */
         std::list< TimeAndPower > timeAndPower;
 
         friend std::ostream& operator<<(std::ostream& o, const Fingerprint& ddi) {

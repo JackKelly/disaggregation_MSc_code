@@ -248,16 +248,18 @@ list<AggregateData::FoundSpike> AggregateData::findSpike(
 }
 
 /**
- * @brief a simple and inefficient way to find a timestamp.
+ * @brief a simple way to find the array index at which a timestamp occurs.
  * If precise time cannot be found, returns the index to the
  * sample immediately prior.
  * Terminates program if time is out of range (as this is always fatal).
- * Should probably be re-written as a hash-function.
  *
- * @return the index at which @time is located.
+ * This implements a kind of "poor man's" hash function and
+ * should probably be re-written as a hash-function.
+ *
+ * @return the array index at which @c time is located.
  */
 const size_t AggregateData::findTime(
-        const size_t time
+        const size_t time /**< UNIX timestamp */
     ) const
 {
     if (time > data[size-1].timestamp || time < data[0].timestamp) {
@@ -267,10 +269,21 @@ const size_t AggregateData::findTime(
     if (data[size-1].timestamp == time)
         return size-1;
 
-    size_t i = 0;
-    for (; i<size-2; i++) {
-        if ( Utils::between(data[i].timestamp, data[i+1].timestamp-1, time))
+    /* poor man's hash table! (kind of).
+     * estimatedIndex assumes there are no missing samples in the aggregate
+     * data and estimates the index.  This estimate will almost always be
+     * too high; it will never be too low.
+     */
+    size_t estimatedIndex = (time - data[0].timestamp) / samplePeriod;
+
+    if ( estimatedIndex > size-1 )
+        estimatedIndex = size-1;
+
+    size_t i;
+    for (i=estimatedIndex; i>=0; i--) {
+        if ( Utils::between(data[i].timestamp, data[i+1].timestamp-1, time)) {
             return i;
+        }
     }
 
     // should never get here

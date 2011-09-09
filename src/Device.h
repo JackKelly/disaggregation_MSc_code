@@ -22,8 +22,18 @@
  */
 class Device {
 public:
+    /***************************************/
+    /** @name Constructors and destructors */
+    ///@{
+
     Device(const std::string _name);
     virtual ~Device();
+
+    ///@}
+
+    /******************************************************************/
+    /** @name General functions used by all disaggregation approaches */
+    ///@{
 
     void loadSignatures(
             const std::vector< std::string >& sigFiles,
@@ -31,28 +41,48 @@ public:
             const size_t cropBack
             );
 
-    void getPowerStatesAndSequence();
-
-    std::list<size_t> findAlignment(
-            const AggregateData& aggregateData
-            );
-
     const std::string getName() const;
+    ///@}
+
+    /*****************************************************/
+    /** @name Functions used by the "histogram" approach */
+    ///@{
+    void getPowerStatesAndSequence();
 
     const std::list<size_t> getStartTimes( const AggregateData& ) const;
 
     const std::list<Signature::Spike> getSalientSpikes() const;
+    ///@}
 
+    /***********************************************/
+    /** @name Functions used by the "LMS" approach */
+    ///@{
+
+    std::list<size_t> findAlignment(
+            const AggregateData& aggregateData
+            );
+    ///@}
+
+
+    /**************************************************************/
+    /** @name Functions used by the "graphs and spikes" approach */
+    ///@{
     void trainPowerStateGraph();
 
     PowerStateGraph& getPowerStateGraph();
+    ///@}
 
 private:
     /************************
      *  Member functions    *
      ************************/
+
+    /*****************************************************/
+    /** @name Private functions used by the "histogram" approach */
+    ///@{
     void updatePowerStates();
     void updatePowerStateSequence();
+    ///@}
 
     void loadCurrentCostData(std::fstream& fs, Array<AggregateSample> * aggData);
 

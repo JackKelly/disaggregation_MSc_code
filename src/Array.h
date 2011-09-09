@@ -44,7 +44,9 @@ public:
      * Member functions *
      ********************/
 
-    /**************** CONSTRUCTORS **************/
+    /***************************************/
+    /** @name Constructors and destructors */
+    ///@{
 
     Array()
     : data(0), size(0), smoothing(0), upstreamSmoothing(0), deviceName("")
@@ -93,6 +95,12 @@ public:
         }
     }
 
+    ///@}
+
+    /******************************************/
+    /** @name Operators                       */
+    ///@{
+
     Array<T>& operator=(const Array<T>& source)
     {
         setSize(source.size);
@@ -106,7 +114,23 @@ public:
         return *this;
     }
 
-    /************* GETTERS AND SETTERS **************/
+    bool operator==(const Array<T>& other)
+    {
+        if (size != other.size)
+            return false;
+
+        for (size_t i=0; i<size; i++) {
+            if (data[i] != other[i])
+                return false;
+        }
+
+        return true;
+    }
+    ///@}
+
+    /******************************/
+    /** @name Getters and setters */
+    ///@{
 
     /**
      * @brief Mutable subscript operator.  Fast.  No range checking
@@ -152,11 +176,17 @@ public:
         return smoothing;
     }
 
+    /**
+     * @brief Used simply to keep tracking of smoothing parameters throughout the workflow.
+     */
     void setSmoothing (const size_t _smoothing)
     {
         smoothing = _smoothing;
     }
 
+    /**
+     * @see @c upstreamSmoothing
+     */
     const size_t getUpstreamSmoothing() const
     {
         return upstreamSmoothing;
@@ -177,45 +207,6 @@ public:
         return deviceName;
     }
 
-    /************* OTHER MEMBER FUNCTIONS ****************/
-
-    bool operator==(const Array<T>& other)
-    {
-        if (size != other.size)
-            return false;
-
-        for (size_t i=0; i<size; i++) {
-            if (data[i] != other[i])
-                return false;
-        }
-
-        return true;
-    }
-
-
-    /**
-     * @brief Copy from source to this object, starting at cropFront index and
-     * ignoring the last cropBack items from the source.
-     */
-    void copyCrop(const Array<T>& source, const size_t cropFront, const size_t cropBack)
-    {
-        if ( source.size==0 || source.data==0 ) {
-            return;
-        }
-
-        this->setSize( (source.size - cropFront - cropBack) + 3 ); // "+3" for the added 0 at the front and two 0s at the end (important for the Signature::getGradientSpike code))
-        upstreamSmoothing = source.getUpstreamSmoothing();
-        smoothing = source.getSmoothing();
-        deviceName = source.deviceName;
-
-        data[0] = 0;
-        for (size_t i = 0; i<(size-2); i++ ) {
-            data[i+1] = source[i+cropFront];
-        }
-        data[size-1] = 0;
-        data[size-2] = 0;
-    }
-
     /**
      * @brief Initialise all array entries to a single value.
      * Does not reset 'deviceName' or 'smoothing' or 'upstreamSmoothing'.
@@ -227,6 +218,12 @@ public:
         }
     }
 
+    ///@}
+
+
+    /************************************/
+    /** @name File IO and graph drawing */
+    ///@{
 
     void dumpToFile(
             const std::string& filename /**< Excluding path and suffix.  DATA_OUTPUT_PATH and .dat will be added. */
@@ -241,6 +238,74 @@ public:
         fs << *this;
         fs.close();
     }
+
+    const std::string getSmoothedGradOfHistFilename() const
+    {
+        return deviceName + "-smoothedGradOfHist-" + Utils::size_t_to_s( HIST_GRADIENT_RA_LENGTH );
+    }
+
+    virtual const std::string getBaseFilename() const
+    {
+        std::string baseFilename = deviceName +
+                (smoothing ? ("-Smoothing" + Utils::size_t_to_s(smoothing)) : "") +
+                (upstreamSmoothing ? ("-UpstreamSmoothing" + Utils::size_t_to_s(upstreamSmoothing)) : "");
+        return baseFilename;
+    }
+
+
+    virtual void drawGraph(
+            const std::string details,  /**< Type of graph e.g. "gradient".  NOT device name, which gets added automatically. */
+            const std::string xlabel = "",
+            const std::string ylabel = "",
+            const std::string args   = ""
+            ) const
+    {
+        // Dump data to a .dat file
+
+        const std::string baseFilename = getBaseFilename() + details;
+
+        dumpToFile( baseFilename );
+
+        // Set plot variables
+        GNUplot::PlotVars pv;
+        pv.inFilename  = "1line";
+        pv.outFilename = baseFilename;
+        pv.title       = baseFilename;
+        pv.xlabel      = xlabel;
+        pv.ylabel      = ylabel;
+        pv.plotArgs    = args;
+        pv.data.push_back( GNUplot::PlotData( baseFilename, baseFilename ) );
+
+        // Plot
+        GNUplot::plot( pv );
+    }
+
+    /**
+     * @brief Load data from a CSV file with a single column.
+     */
+    void loadData(
+            std::fstream& fs /**< An opened and valid file stream containing a CSV datafile. */
+            )
+    {
+        setSize( Utils::countDataPoints( fs ) );
+
+        int count = 0;
+        char ch;
+        while ( ! fs.eof() ) {
+            ch = fs.peek();
+            if ( isdigit(ch) ) {
+                fs >> data[ count++ ];  // attempt to read a float from the file
+            }
+            fs.ignore( 255, '\n' );  // skip to next line
+        }
+    }
+
+
+    ///@}
+
+    /******************************/
+    /** @name Smoothing           */
+    ///@{
 
     /**
      * @brief Returns a rolling average of same length as the original array.
@@ -290,6 +355,12 @@ public:
 
         return accumulator/RAlength;
     }
+    ///@}
+
+
+    /**********************************************************/
+    /** @name Functions used mostly by the histogram approach */
+    ///@{
 
     /**
      * @brief Return the index of and the value of the largest element of the Array,
@@ -598,66 +669,33 @@ public:
         // For data visualisation purposes, dump rolling average data to file
         smoothedGrad.dumpToFile( getSmoothedGradOfHistFilename() );
     }
+    ///@}
 
-    const std::string getSmoothedGradOfHistFilename() const
-    {
-        return deviceName + "-smoothedGradOfHist-" + Utils::size_t_to_s( HIST_GRADIENT_RA_LENGTH );
-    }
-
-    virtual const std::string getBaseFilename() const
-    {
-        std::string baseFilename = deviceName +
-                (smoothing ? ("-Smoothing" + Utils::size_t_to_s(smoothing)) : "") +
-                (upstreamSmoothing ? ("-UpstreamSmoothing" + Utils::size_t_to_s(upstreamSmoothing)) : "");
-        return baseFilename;
-    }
-
-
-    virtual void drawGraph(
-            const std::string details,  /**< Type of graph e.g. "gradient".  NOT device name, which gets added automatically. */
-            const std::string xlabel = "",
-            const std::string ylabel = "",
-            const std::string args   = ""
-            ) const
-    {
-        // Dump data to a .dat file
-
-        const std::string baseFilename = getBaseFilename() + details;
-
-        dumpToFile( baseFilename );
-
-        // Set plot variables
-        GNUplot::PlotVars pv;
-        pv.inFilename  = "1line";
-        pv.outFilename = baseFilename;
-        pv.title       = baseFilename;
-        pv.xlabel      = xlabel;
-        pv.ylabel      = ylabel;
-        pv.plotArgs    = args;
-        pv.data.push_back( GNUplot::PlotData( baseFilename, baseFilename ) );
-
-        // Plot
-        GNUplot::plot( pv );
-    }
+    /******************************/
+    /** @name Cropping            */
+    ///@{
 
     /**
-     * @brief Load data from a CSV file with a single column.
+     * @brief Copy from source to this object, starting at cropFront index and
+     * ignoring the last cropBack items from the source.
      */
-    void loadData(
-            std::fstream& fs /**< An opened and valid file stream containing a CSV datafile. */
-            )
+    void copyCrop(const Array<T>& source, const size_t cropFront, const size_t cropBack)
     {
-        setSize( Utils::countDataPoints( fs ) );
-
-        int count = 0;
-        char ch;
-        while ( ! fs.eof() ) {
-            ch = fs.peek();
-            if ( isdigit(ch) ) {
-                fs >> data[ count++ ];  // attempt to read a float from the file
-            }
-            fs.ignore( 255, '\n' );  // skip to next line
+        if ( source.size==0 || source.data==0 ) {
+            return;
         }
+
+        this->setSize( (source.size - cropFront - cropBack) + 3 ); // "+3" for the added 0 at the front and two 0s at the end (important for the Signature::getGradientSpike code))
+        upstreamSmoothing = source.getUpstreamSmoothing();
+        smoothing = source.getSmoothing();
+        deviceName = source.deviceName;
+
+        data[0] = 0;
+        for (size_t i = 0; i<(size-2); i++ ) {
+            data[i+1] = source[i+cropFront];
+        }
+        data[size-1] = 0;
+        data[size-2] = 0;
     }
 
     const size_t getNumLeadingZeros()
@@ -679,6 +717,7 @@ public:
         }
         return (size-count)-1;
     }
+    ///@}
 
 
     friend std::ostream& operator<<(std::ostream& o, const Array<T>& a)
@@ -690,9 +729,6 @@ public:
     }
 };
 
-/**
- * @todo break this out into a separate couple of files
- */
 class Histogram : public Array<Histogram_t>
 {
 public:

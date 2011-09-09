@@ -25,11 +25,6 @@ PowerStateGraph::PowerStateGraph()
 
 }
 
-PowerStateGraph::~PowerStateGraph()
-{
-    // TODO Auto-generated destructor stub
-}
-
 void PowerStateGraph::addItemToEdgeHistory(
         const PSGraph::edge_descriptor& edge
         )
@@ -50,7 +45,7 @@ const Statistic< double >& PowerStateGraph::getEnergyConsumption() const
 }
 
 /**
- * Update or initialise Power State Graph.
+ * @brief Update or initialise Power State Graph.
  */
 void PowerStateGraph::update(
         const Signature& sig,
@@ -60,7 +55,7 @@ void PowerStateGraph::update(
     const double energyConsumptionFromSig = sig.getEnergyConsumption();
     energyConsumption.update( energyConsumptionFromSig );
     cout << "Energy consumption from sig" << sig.getID() << " = "
-            << energyConsumptionFromSig / J_PER_KWH << " kWh" << endl;
+         << energyConsumptionFromSig / J_PER_KWH << " kWh" << endl;
 
     edgeHistory.clear();
 
@@ -133,6 +128,9 @@ void PowerStateGraph::update(
     }
 }
 
+/**
+ * @brief Useful for diagnostics.
+ */
 void PowerStateGraph::printSpikeInfo(
         const list<Signature::Spike>::iterator spike,
         const size_t start,
@@ -167,6 +165,9 @@ void PowerStateGraph::printSpikeInfo(
 
 }
 
+/**
+ * @brief Determine the index of the next spike after @c spike
+ */
 const size_t PowerStateGraph::indexOfNextSpike(
         const list<Signature::Spike>& spikes,
         list<Signature::Spike>::iterator spike,
@@ -181,7 +182,10 @@ const size_t PowerStateGraph::indexOfNextSpike(
         return sig.getSize() - 1;
 }
 
-
+/**
+ * @brief Decides whether or not to reject this spike based on the
+ * @c before and @c after statistics.
+ */
 const bool PowerStateGraph::rejectSpike(
         const Statistic<Sample_t>& before,
         const Statistic<Sample_t>& after,
@@ -263,7 +267,7 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::updateOrInsertVerte
 }
 
 /**
- * @brief Find the statistically most similar vertex to @c stat.
+ * @brief Find the vertex statistically most similarto @c stat.
  *
  * @return vertex descriptor of best fit.
  *         @c success is also used as a return parameter.
@@ -279,7 +283,6 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
     PSGraph::vertex_descriptor vertex=0;
     std::pair<PSG_vertex_iter, PSG_vertex_iter> vp;
     double tTest, highestTTest=0;
-//    double diff, lowestDiff = std::numeric_limits<double>::max();
 
     // Find the best fit
     for (vp = boost::vertices(powerStateGraph); vp.first != vp.second; ++vp.first) {
@@ -290,14 +293,6 @@ PowerStateGraph::PSGraph::vertex_descriptor PowerStateGraph::mostSimilarVertex(
             vertex = *vp.first;
         }
 
-        // Now compare means.  In the vast majority of the cases, comparing
-        // means will produce the same best match as the tTest.
-/*        diff = fabs( powerStateGraph[*vp.first].postSpike.mean - stat.mean );
-        if (diff < lowestDiff) {
-            lowestDiff = diff;
-            vertex = *vp.first;
-        }
-*/
     }
 
     // Check whether the best fit is satisfactory
@@ -417,6 +412,9 @@ void PowerStateGraph::updateOrInsertEdge(
     addItemToEdgeHistory( newEdge );
 }
 
+/**
+ * @brief Check if edge list @c a and edge list @c b are equal.
+ */
 const bool PowerStateGraph::edgeListsAreEqual(
         const list< PSGraph::edge_descriptor >& a,
         const list< PSGraph::edge_descriptor >& b,
@@ -513,11 +511,6 @@ void PowerStateGraph::updateEdges( const Signature& sig )
     // re-order by index (i.e. by time)
     spikes.sort( Signature::Spike::compareIndexAsc );
 
-    // Useful for seeing what's going on...
-/*    for (list<Signature::Spike>::const_iterator it=spikes.begin(); it!=spikes.end(); it++) {
-        cout << it->index << "\t" << it->delta << endl;
-    }
-*/
     // calculate stats for the signature's values between start and first spike
     // as long as the first spike->index > 1
     previousVertex = offVertex;
@@ -577,6 +570,9 @@ void PowerStateGraph::updateEdges( const Signature& sig )
 
 }
 
+/**
+ * @brief Produce a graphviz output
+ */
 void PowerStateGraph::writeGraphViz(ostream& out)
 {
     write_graphviz(
@@ -588,6 +584,7 @@ void PowerStateGraph::writeGraphViz(ostream& out)
 }
 
 /**
+ * @brief This is the main public interface to the disaggregation algorithm
  *
  * Each candidate solution is represented as a
  * tree.  Each vertex
