@@ -227,7 +227,7 @@ int main(int argc, char * argv[])
     cout.precision(3);
     cout.setf(ios::fixed);
 
-    // Select mode of operator
+    // Select mode of operation (i.e. which disaggregation approach to take)
     enum {LMS, GRAPHSnSPIKES, HISTOGRAM} mode;
     if (vm.count("lms")) {
         if (vm["signature"].as< vector<string> >().size() > 1) {
@@ -253,8 +253,9 @@ int main(int argc, char * argv[])
         if (vm.count("cropfront"))
             cropFront = vm["cropfront"].as< size_t >();
         mode = HISTOGRAM;
-    } else
+    } else {
         mode = GRAPHSnSPIKES;
+    }
 
     // Instantiate a device
     Device device( vm["device-name"].as< string >() );
