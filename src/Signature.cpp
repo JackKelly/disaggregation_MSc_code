@@ -10,6 +10,7 @@
 #include "Utils.h"
 #include "Statistic.h"
 #include "Device.h"
+#include "Histogram.h"
 #include <fstream>
 #include <cstdlib>
 #include <cstring>

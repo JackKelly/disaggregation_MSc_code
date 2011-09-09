@@ -12,6 +12,7 @@
 #include "Common.h"
 #include "Statistic.h"
 #include "PowerStateSequence.h"
+#include "Histogram.h"
 #include <list>
 #include <fstream>
 
