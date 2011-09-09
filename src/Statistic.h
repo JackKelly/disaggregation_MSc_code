@@ -17,6 +17,7 @@
 #include <limits> // for std::numeric_limits<std::size_t>::max()
 #include "Array.h"
 #include "Common.h"
+#include "Histogram.h"
 
 
 template <class T>

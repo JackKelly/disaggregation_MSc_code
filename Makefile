@@ -30,7 +30,7 @@ endif
 
 # COMMON OBJECT FILES
 COMMONOBJS = $(SRC)Main.o $(SRC)Signature.o $(SRC)Utils.o $(SRC)Device.o \
- $(SRC)GNUplot.o $(SRC)PowerStateSequence.o $(SRC)AggregateData.o $(SRC)PowerStateGraph.o
+ $(SRC)GNUplot.o $(SRC)PowerStateSequence.o $(SRC)AggregateData.o $(SRC)PowerStateGraph.o $(SRC)Histogram.o
 
 #####################
 # COMPILATION RULES #
@@ -56,7 +56,7 @@ TESTCXXFLAGS = -g -Wall -std=c++0x -lboost_unit_test_framework -MD # -DGOOGLE_ST
 
 testAll: ArrayTest GNUplotTest UtilsTest StatisticTest PowerStateGraphTest
 
-ATOBJFILES = $(SRC)Utils.o $(SRC)GNUplot.o
+ATOBJFILES = $(SRC)Utils.o $(SRC)GNUplot.o $(SRC)Histogram.o
 ArrayTest: CXXFLAGS = $(TESTCXXFLAGS)
 ArrayTest: $(TEST)ArrayTest.cpp $(SRC)Array.h $(ATOBJFILES)  
 	g++ $(TESTCXXFLAGS) -o $(TEST)ArrayTest $(TEST)ArrayTest.cpp $(ATOBJFILES) && $(TEST)ArrayTest 

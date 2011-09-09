@@ -2,6 +2,7 @@
 #define BOOST_TEST_DYN_LINK
 #define GOOGLE_STRIP_LOG 4
 #include "../src/Array.h"
+#include "../src/Histogram.h"
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include <list>
