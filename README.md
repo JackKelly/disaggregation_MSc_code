@@ -1,8 +1,7 @@
 
-====================
-#   DEPENDENCIES   #
-====================
+#   DEPENDENCIES
 
+```
 1. Doxygen (developed against version 1.7.3)
 2. Boost   (developed against version 1.42.0.1)
  | 
@@ -21,11 +20,10 @@
            Details:
               http://www.boost.org/doc/libs/1_42_0/more/getting_started/unix-variants.html#easy-build-and-install
               http://www.boost.org/doc/libs/1_42_0/more/getting_started/unix-variants.html#link-your-program-to-a-boost-library
+```
 
 
-=====================
-#   DOCUMENTATION   #
-=====================
+#   DOCUMENTATION
 
 1. change directory to doc/
 2. run 'doxygen' (you may have to install doxygen first! It is available from doxygen.org )
