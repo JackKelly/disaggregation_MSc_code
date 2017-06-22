@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$class_power_state_graph.html#a90ebffe4864640182b342a814af0f0a7" title="Update or initialise Power State Graph." alt="" coords="295,5,465,35"/>
-<area shape="rect" id="node5" href="$class_device.html#ad3d9721aca89723e22cf723149a39583" title="Trains the powerStateGraph using signatures declared with loadSignatures(). To be called once signatu..." alt="" coords="516,5,713,35"/>
-<area shape="rect" id="node7" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="763,5,813,35"/>
-</map>

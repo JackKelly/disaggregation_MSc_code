@@ -1,9 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$namespace_utils.html#afb991f08a33e9d7f3298e60f3bf76960" title="Utils::openFile" alt="" coords="367,19,473,48"/>
-<area shape="rect" id="node7" href="$namespace_g_n_uplot.html#ab276a6d946560395f9d6caa8cb6cb640" title="Plot a graph using GNUplot." alt="" coords="369,85,471,115"/>
-<area shape="rect" id="node16" href="$namespace_utils.html#a48dfa27103961c7cc6082f7e68857748" title="Utils::size_t_to_s" alt="" coords="359,139,481,168"/>
-<area shape="rect" id="node5" href="$namespace_utils.html#a5f35365dae06a93f4bbf0f406a78b90b" title="Utils::fatalError" alt="" coords="573,5,683,35"/>
-<area shape="rect" id="node9" href="$namespace_utils.html#ae7741f30cf104d6660673d7c336ef5cc" title="Utils::fileExists" alt="" coords="573,59,683,88"/>
-<area shape="rect" id="node11" href="$namespace_g_n_uplot.html#a1a232691d61b3e55fdcc406a3a2e9c1f" title="Replaces all the tokens in the template file &#39;config/plotVars.inFilename&#39; with variables from..." alt="" coords="531,112,725,141"/>
-<area shape="rect" id="node13" href="$namespace_g_n_uplot.html#a60ecface5bf85a5e3e2e1743bd266737" title="Replace all characters which might confuse &#39;sed&#39;." alt="" coords="775,139,900,168"/>
-</map>

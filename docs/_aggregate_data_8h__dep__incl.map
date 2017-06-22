@@ -1,9 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$_aggregate_data_8cpp.html" title="/mnt/sshfs/imperialroot/homes/dk3810/workingcopies/disaggregate/src/AggregateData.cpp" alt="" coords="312,83,859,112"/>
-<area shape="rect" id="node5" href="$_device_8h.html" title="/mnt/sshfs/imperialroot/homes/dk3810/workingcopies/disaggregate/src/Device.h" alt="" coords="653,160,1139,189"/>
-<area shape="rect" id="node13" href="$_power_state_graph_8h.html" title="/mnt/sshfs/imperialroot/homes/dk3810/workingcopies/disaggregate/src/PowerStateGraph.h" alt="" coords="933,83,1483,112"/>
-<area shape="rect" id="node17" href="$_power_state_graph_8cpp.html" title="/mnt/sshfs/imperialroot/homes/dk3810/workingcopies/disaggregate/src/PowerStateGraph.cpp" alt="" coords="1243,160,1805,189"/>
-<area shape="rect" id="node7" href="$_device_8cpp.html" title="/mnt/sshfs/imperialroot/homes/dk3810/workingcopies/disaggregate/src/Device.cpp" alt="" coords="5,237,507,267"/>
-<area shape="rect" id="node9" href="$_main_8cpp.html" title="/mnt/sshfs/imperialroot/homes/dk3810/workingcopies/disaggregate/src/Main.cpp" alt="" coords="1069,237,1557,267"/>
-<area shape="rect" id="node11" href="$_signature_8cpp.html" title="/mnt/sshfs/imperialroot/homes/dk3810/workingcopies/disaggregate/src/Signature.cpp" alt="" coords="531,237,1045,267"/>
-</map>

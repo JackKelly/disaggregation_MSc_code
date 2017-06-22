@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$class_signature.html#ad298320a4b490ba402d3f5489ce3651a" title="Signature::getPowerState" alt="" coords="236,5,407,35"/>
-<area shape="rect" id="node9" href="$class_histogram.html#a329173c485e08f1da1383e4df38f99ac" title="Create a (relative) histogram from a sample array." alt="" coords="247,59,396,88"/>
-<area shape="rect" id="node11" href="$struct_statistic.html#af65b6ce15fbfb16859606e61cf29ba4c" title="Constructor from histogram data." alt="" coords="219,112,424,141"/>
-<area shape="rect" id="node5" href="$class_signature.html#af94cd3aa816030f1560410e4ad6f2dcc" title="Finding out where each &#39;powerState&#39; starts and ends." alt="" coords="472,5,723,35"/>
-<area shape="rect" id="node7" href="$class_signature.html#abf3dc6265e852ecb66a928c682e3eb5f" title="Signature::getPowerStateSequence" alt="" coords="771,5,1000,35"/>
-</map>

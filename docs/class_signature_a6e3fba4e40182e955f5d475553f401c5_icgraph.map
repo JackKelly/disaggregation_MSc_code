@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$class_signature.html#a80ab9f3c989f356fd8fd61282de3a994" title="Signature::drawHistWithStateBars" alt="" coords="300,5,521,35"/>
-<area shape="rect" id="node5" href="$class_signature.html#afebb6e34dcba3d828093eba1ffc7fad6" title="Runs through signature data to find power states and stores the resulting power states in powerStates..." alt="" coords="572,32,769,61"/>
-<area shape="rect" id="node7" href="$class_signature.html#ada861d4b0e402605478abc4217f35979" title="Signature::getPowerStates" alt="" coords="819,32,997,61"/>
-</map>

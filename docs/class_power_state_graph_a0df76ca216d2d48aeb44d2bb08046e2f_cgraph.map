@@ -1,9 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$class_power_state_graph.html#a6de44e31afe85bf0ee18dc09a7be329c" title="Check if edge list a and edge list b are equal." alt="" coords="280,32,523,61"/>
-<area shape="rect" id="node5" href="$class_aggregate_data.html#ada468d155767d721c755405582d108ee" title="Find all spikes in aggregate data which fit spikeStats." alt="" coords="316,85,487,115"/>
-<area shape="rect" id="node15" href="$class_aggregate_data.html#a81a921c732483c6d97cbed3ac1b00366" title="Run through the raw aggregate data from startTime to endTime to make sure that no agg data sample has..." alt="" coords="255,139,548,168"/>
-<area shape="rect" id="node7" href="$namespace_utils.html#a30128571ef453645d7731302607a16de" title="Utils::between" alt="" coords="644,5,751,35"/>
-<area shape="rect" id="node9" href="$struct_statistic.html#aa487c5c0322d9d1fa96affa11939b393" title="Returns stdev if stdev &gt; mean/10, else returns mean/10." alt="" coords="619,59,776,88"/>
-<area shape="rect" id="node11" href="$struct_statistic.html#a16764e35873ab9b1cfbffe5668515b47" title="The likelihood is normalised by dividing the raw likelihood by the likelihood of the distribution&amp;#39..." alt="" coords="599,112,796,141"/>
-<area shape="rect" id="node13" href="$namespace_utils.html#a297beaecb52c2c24b05b9666d080bb7e" title="Returns true if a and b are the same sign. Zero is assumed to be positive." alt="" coords="640,165,755,195"/>
-</map>
