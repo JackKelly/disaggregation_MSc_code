@@ -1,3 +1,4 @@
+The code for my 2011 MSc thesis.  The thesis can be downloaded from http://jack-kelly.com/files/writing/d_kelly_MSc_thesis.pdf
 
 #   DEPENDENCIES
 
@@ -24,6 +25,10 @@
 
 
 #   DOCUMENTATION
+
+HTML documentation is [available online](http://jackkelly.github.io/disaggregation_MSc_code/annotated.html).
+
+To compile the documentation youself:
 
 1. change directory to doc/
 2. run 'doxygen' (you may have to install doxygen first! It is available from doxygen.org )
