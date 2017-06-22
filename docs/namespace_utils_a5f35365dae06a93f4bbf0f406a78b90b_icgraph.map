@@ -1,0 +1,16 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_power_state_graph.html#a3823f720987e5e13eb7f1cfae7cdf4be" title="This is the main public interface to the disaggregation algorithm." alt="" coords="775,339,980,368"/>
+<area shape="rect" id="node5" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="1029,285,1080,315"/>
+<area shape="rect" id="node7" href="$class_array.html#a6ef27596ae6f5cd98001ca8ba7b13038" title="Array\&lt; Sample_t \&gt;::dumpToFile" alt="" coords="165,127,373,156"/>
+<area shape="rect" id="node9" href="$class_aggregate_data.html#a330afb37cdef0863a94babd3954b714f" title="a simple way to find the array index at which a timestamp occurs. If precise time cannot be found..." alt="" coords="187,180,352,209"/>
+<area shape="rect" id="node11" href="$class_aggregate_data.html#a6081d80a8dacb3fe085b5dc9d99f8086" title="AggregateData::loadCurrentCostData" alt="" coords="453,73,693,103"/>
+<area shape="rect" id="node14" href="$class_device.html#a82d7e65439c0191ab9e767612b2ed843" title="Load signature data files." alt="" coords="799,416,956,445"/>
+<area shape="rect" id="node18" href="$namespace_utils.html#afb991f08a33e9d7f3298e60f3bf76960" title="Utils::openFile" alt="" coords="216,233,323,263"/>
+<area shape="rect" id="node35" href="$class_array.html#a5b752093b1b3ab4d82707115d1f41adc" title="Array\&lt; Sample_t \&gt;::setSize" alt="" coords="177,492,361,521"/>
+<area shape="rect" id="node20" href="$class_power_state_graph.html#a8c7b40b543c04d5f5b498a537093ae46" title="PowerStateGraph::displayAndPlotFingerprintList" alt="" coords="423,337,724,367"/>
+<area shape="rect" id="node23" href="$class_power_state_sequence.html#a41b5f635d81abca292bd6cbcf08c73df" title="Dump the contents of powerStateSequence to a data file ready for gnuplot to plot using the &#39;boxxy..." alt="" coords="461,127,685,156"/>
+<area shape="rect" id="node26" href="$class_signature.html#a3ddd7b321b4eda212b310c8462febf3f" title="Constructor for opening a CSV file." alt="" coords="504,180,643,209"/>
+<area shape="rect" id="node28" href="$class_device.html#ad3d9721aca89723e22cf723149a39583" title="Trains the powerStateGraph using signatures declared with loadSignatures(). To be called once signatu..." alt="" coords="779,285,976,315"/>
+<area shape="rect" id="node31" href="$class_signature.html#afebb6e34dcba3d828093eba1ffc7fad6" title="Runs through signature data to find power states and stores the resulting power states in powerStates..." alt="" coords="475,233,672,263"/>
+<area shape="rect" id="node33" href="$class_signature.html#ada861d4b0e402605478abc4217f35979" title="Signature::getPowerStates" alt="" coords="788,232,967,261"/>
+</map>

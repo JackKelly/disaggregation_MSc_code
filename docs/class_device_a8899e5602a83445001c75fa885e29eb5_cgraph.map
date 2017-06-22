@@ -1,0 +1,4 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_device.html#a0fc31c44ec09adabef3b109917048b0e" title="Extract the power states from last signature and add them to this device&#39;s powerStates." alt="" coords="325,5,509,35"/>
+<area shape="rect" id="node5" href="$class_device.html#a255c62bedb8b90aaf4a60d2bed7d6017" title="Extract the power state sequence from last signature and add them to this device&#39;s powerStates..." alt="" coords="300,59,535,88"/>
+</map>

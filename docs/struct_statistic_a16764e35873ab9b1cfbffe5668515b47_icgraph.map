@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_power_state_graph.html#a222bc37f6c90142887eb36b4e31ab568" title="Iterates through each path in listOfPaths to find the one with the highest likelihood." alt="" coords="472,5,680,35"/>
+<area shape="rect" id="node11" href="$class_aggregate_data.html#ada468d155767d721c755405582d108ee" title="Find all spikes in aggregate data which fit spikeStats." alt="" coords="253,59,424,88"/>
+<area shape="rect" id="node5" href="$class_power_state_graph.html#a0478f171d51d21613746640c7415fb0b" title="PowerStateGraph::initTraceToEnd" alt="" coords="728,59,949,88"/>
+<area shape="rect" id="node7" href="$class_power_state_graph.html#a3823f720987e5e13eb7f1cfae7cdf4be" title="This is the main public interface to the disaggregation algorithm." alt="" coords="999,85,1204,115"/>
+<area shape="rect" id="node9" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="1253,85,1304,115"/>
+<area shape="rect" id="node14" href="$class_power_state_graph.html#a0df76ca216d2d48aeb44d2bb08046e2f" title="PowerStateGraph::traceToEnd" alt="" coords="476,59,676,88"/>
+</map>

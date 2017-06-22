@@ -1,0 +1,13 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_array.html#a6ef27596ae6f5cd98001ca8ba7b13038" title="Array::dumpToFile" alt="" coords="343,5,471,35"/>
+<area shape="rect" id="node5" href="$class_histogram.html#ac542b993b1f5a0ab1b94d4ee7b0bb70d" title="Histogram::getBaseFilename" alt="" coords="312,59,501,88"/>
+<area shape="rect" id="node7" href="$namespace_utils.html#a48dfa27103961c7cc6082f7e68857748" title="Utils::size_t_to_s" alt="" coords="620,85,743,115"/>
+<area shape="rect" id="node9" href="$class_array.html#a142bd1adb0eb622a1d89e6ca514509c0" title="Array::getSmoothedGradOfHistFilename" alt="" coords="279,163,535,192"/>
+<area shape="rect" id="node11" href="$class_array.html#ae80fff561b788262683b42941f2ebda5" title="Array::getSmoothing" alt="" coords="336,216,477,245"/>
+<area shape="rect" id="node13" href="$class_signature.html#a6e3fba4e40182e955f5d475553f401c5" title="Signature::getStateBarsBaseFilename" alt="" coords="285,269,528,299"/>
+<area shape="rect" id="node15" href="$class_array.html#a7ba19720014d5acbdc165dee31686bd3" title="Array::getUpstreamSmoothing" alt="" coords="308,323,505,352"/>
+<area shape="rect" id="node17" href="$namespace_g_n_uplot.html#ab276a6d946560395f9d6caa8cb6cb640" title="Plot a graph using GNUplot." alt="" coords="356,376,457,405"/>
+<area shape="rect" id="node19" href="$namespace_utils.html#ae7741f30cf104d6660673d7c336ef5cc" title="Utils::fileExists" alt="" coords="627,323,736,352"/>
+<area shape="rect" id="node21" href="$namespace_g_n_uplot.html#a1a232691d61b3e55fdcc406a3a2e9c1f" title="Replaces all the tokens in the template file &#39;config/plotVars.inFilename&#39; with variables from..." alt="" coords="584,376,779,405"/>
+<area shape="rect" id="node23" href="$namespace_g_n_uplot.html#a60ecface5bf85a5e3e2e1743bd266737" title="Replace all characters which might confuse &#39;sed&#39;." alt="" coords="828,403,953,432"/>
+</map>

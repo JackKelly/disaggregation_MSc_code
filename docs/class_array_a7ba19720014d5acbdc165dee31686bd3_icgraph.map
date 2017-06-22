@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_array.html#ae68b00a51265644510bc23945960561e" title="Copy from source to this object, starting at cropFront index and ignoring the last cropBack items fro..." alt="" coords="268,5,463,35"/>
+<area shape="rect" id="node7" href="$class_signature.html#a80ab9f3c989f356fd8fd61282de3a994" title="Signature::drawHistWithStateBars" alt="" coords="255,59,476,88"/>
+<area shape="rect" id="node13" href="$class_array.html#a72349c801957e25b2d797e31aea10164" title="Array\&lt; Sample_t \&gt;::operator=" alt="" coords="268,112,463,141"/>
+<area shape="rect" id="node5" href="$class_signature.html#a3ddd7b321b4eda212b310c8462febf3f" title="Constructor for opening a CSV file." alt="" coords="556,5,695,35"/>
+<area shape="rect" id="node9" href="$class_signature.html#afebb6e34dcba3d828093eba1ffc7fad6" title="Runs through signature data to find power states and stores the resulting power states in powerStates..." alt="" coords="527,59,724,88"/>
+<area shape="rect" id="node11" href="$class_signature.html#ada861d4b0e402605478abc4217f35979" title="Signature::getPowerStates" alt="" coords="773,59,952,88"/>
+</map>

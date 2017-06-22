@@ -1,0 +1,17 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$struct_signature_1_1_spike.html#ad5c457fd1b72cd723bdf89f715f34abd" title="Signature::Spike::compareIndexAsc" alt="" coords="269,72,499,101"/>
+<area shape="rect" id="node5" href="$class_signature.html#a02acc8e9f1ceb1af2908807eb1526fcd" title="Takes the gradient of this Signature, then merges gradient values with the same sign, then removes transient spikes, then sorts by value." alt="" coords="297,125,471,155"/>
+<area shape="rect" id="node24" href="$class_power_state_graph.html#a7420e492ce4608c1a4dbba027af116c0" title="Find the vertex statistically most similarto stat." alt="" coords="264,205,504,235"/>
+<area shape="rect" id="node7" href="$struct_signature_1_1_spike.html#a0345ed985cbc94883286755c47ab0d63" title="Comparison function. Useful for sorting lists of spikes into descending order of absolute magnitude..." alt="" coords="553,32,815,61"/>
+<area shape="rect" id="node9" href="$class_signature.html#a6bf289b7aa40eb2791d13d8669089953" title="Merge consecutive spikes of the same sign and then remove any spikes under 10 Watts." alt="" coords="591,85,777,115"/>
+<area shape="rect" id="node22" href="$namespace_utils.html#a64df1cf745416e01ed1b1d0618d4cdfa" title="Compares 2 doubles. Are they within (a * tolerance) of each other?" alt="" coords="619,139,749,168"/>
+<area shape="rect" id="node11" href="$class_array.html#adeb6ee31eaa806644ce52552b8fc8bc1" title="Array\&lt; Sample_t \&gt;::getDelta" alt="" coords="864,85,1053,115"/>
+<area shape="rect" id="node14" href="$class_array.html#a94bb8954df95b259c7fadf175f531b6b" title="Array::setDeviceName" alt="" coords="1124,5,1279,35"/>
+<area shape="rect" id="node16" href="$class_array.html#a5b752093b1b3ab4d82707115d1f41adc" title="Array::setSize" alt="" coords="1149,59,1253,88"/>
+<area shape="rect" id="node18" href="$class_array.html#af4cbe83b9a05e769dd54007402b9b3e1" title="Used simply to keep tracking of smoothing parameters throughout the workflow." alt="" coords="1131,112,1272,141"/>
+<area shape="rect" id="node20" href="$class_array.html#a0af1f966c6f45c8ff7949ca8b290e01a" title="Array::setUpstreamSmoothing" alt="" coords="1103,165,1300,195"/>
+<area shape="rect" id="node26" href="$namespace_utils.html#a6c1d66956e07544cec585bc664b93c4d" title="Utils::highest" alt="" coords="635,192,733,221"/>
+<area shape="rect" id="node28" href="$struct_statistic.html#a2809624bf38cbe0817c3c5e3c2639c71" title="A two&#45;sided Student T&#45;Test." alt="" coords="631,245,737,275"/>
+<area shape="rect" id="node30" href="$namespace_utils.html#a0f28dbdddde3ce309eba6afb7d1f2785" title="Utils::within" alt="" coords="639,299,729,328"/>
+<area shape="rect" id="node32" href="$namespace_utils.html#a30128571ef453645d7731302607a16de" title="Utils::between" alt="" coords="905,299,1012,328"/>
+</map>

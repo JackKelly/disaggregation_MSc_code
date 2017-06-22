@@ -1,0 +1,16 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_aggregate_data.html#ada468d155767d721c755405582d108ee" title="Find all spikes in aggregate data which fit spikeStats." alt="" coords="160,35,331,64"/>
+<area shape="rect" id="node14" href="$class_aggregate_data.html#a330afb37cdef0863a94babd3954b714f" title="a simple way to find the array index at which a timestamp occurs. If precise time cannot be found..." alt="" coords="163,101,328,131"/>
+<area shape="rect" id="node16" href="$namespace_utils.html#a0f28dbdddde3ce309eba6afb7d1f2785" title="Utils::within" alt="" coords="200,180,291,209"/>
+<area shape="rect" id="node5" href="$class_power_state_graph.html#a3823f720987e5e13eb7f1cfae7cdf4be" title="This is the main public interface to the disaggregation algorithm." alt="" coords="985,35,1191,64"/>
+<area shape="rect" id="node9" href="$class_power_state_graph.html#a0df76ca216d2d48aeb44d2bb08046e2f" title="PowerStateGraph::traceToEnd" alt="" coords="404,35,604,64"/>
+<area shape="rect" id="node7" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="1488,89,1539,119"/>
+<area shape="rect" id="node11" href="$class_power_state_graph.html#a0478f171d51d21613746640c7415fb0b" title="PowerStateGraph::initTraceToEnd" alt="" coords="696,35,917,64"/>
+<area shape="rect" id="node18" href="$class_power_state_graph.html#a7420e492ce4608c1a4dbba027af116c0" title="Find the vertex statistically most similarto stat." alt="" coords="384,141,624,171"/>
+<area shape="rect" id="node29" href="$class_power_state_graph.html#a84bbbefd53f67b2945ac17eb11e28fdf" title="Decides whether or not to reject this spike based on the before and after statistics." alt="" coords="708,195,905,224"/>
+<area shape="rect" id="node32" href="$class_power_state_graph.html#a0e3e05ae1b952132621425c042d84ec1" title="Update or Insert a new edge into powerStateGraph." alt="" coords="380,245,628,275"/>
+<area shape="rect" id="node20" href="$class_power_state_graph.html#a26384a0a6d9867d336814b70b7a22cd3" title="Update (or create) directional edges between power states (vertices) so the edges are consistent with..." alt="" coords="703,88,911,117"/>
+<area shape="rect" id="node22" href="$class_power_state_graph.html#ac36cccb3fb0281f9b68e39ba28737770" title="Attempts to find an existing vertex which is statistically similar to stat. If an existing similar ve..." alt="" coords="679,141,935,171"/>
+<area shape="rect" id="node24" href="$class_power_state_graph.html#a90ebffe4864640182b342a814af0f0a7" title="Update or initialise Power State Graph." alt="" coords="1003,181,1173,211"/>
+<area shape="rect" id="node26" href="$class_device.html#ad3d9721aca89723e22cf723149a39583" title="Trains the powerStateGraph using signatures declared with loadSignatures(). To be called once signatu..." alt="" coords="1241,128,1439,157"/>
+</map>

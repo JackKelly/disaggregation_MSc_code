@@ -1,0 +1,9 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_power_state_graph.html#a7420e492ce4608c1a4dbba027af116c0" title="Find the vertex statistically most similarto stat." alt="" coords="163,32,403,61"/>
+<area shape="rect" id="node15" href="$struct_statistic.html#ab94f7ca35daf363dfe676ad613de006d" title="Uses a two&#45;sided Student T&#45;Test to determine if other.mean is &#39;similar&#39; to the calling object..." alt="" coords="185,85,380,115"/>
+<area shape="rect" id="node5" href="$class_power_state_graph.html#a26384a0a6d9867d336814b70b7a22cd3" title="Update (or create) directional edges between power states (vertices) so the edges are consistent with..." alt="" coords="476,5,684,35"/>
+<area shape="rect" id="node7" href="$class_power_state_graph.html#ac36cccb3fb0281f9b68e39ba28737770" title="Attempts to find an existing vertex which is statistically similar to stat. If an existing similar ve..." alt="" coords="452,59,708,88"/>
+<area shape="rect" id="node9" href="$class_power_state_graph.html#a90ebffe4864640182b342a814af0f0a7" title="Update or initialise Power State Graph." alt="" coords="759,59,929,88"/>
+<area shape="rect" id="node11" href="$class_device.html#ad3d9721aca89723e22cf723149a39583" title="Trains the powerStateGraph using signatures declared with loadSignatures(). To be called once signatu..." alt="" coords="980,59,1177,88"/>
+<area shape="rect" id="node13" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="1227,59,1277,88"/>
+</map>
