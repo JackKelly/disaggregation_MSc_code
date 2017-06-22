@@ -1,0 +1,6 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_power_state_graph.html#a90ebffe4864640182b342a814af0f0a7" title="Update or initialise Power State Graph." alt="" coords="249,5,420,35"/>
+<area shape="rect" id="node9" href="$class_power_state_graph.html#a26384a0a6d9867d336814b70b7a22cd3" title="Update (or create) directional edges between power states (vertices) so the edges are consistent with..." alt="" coords="231,59,439,88"/>
+<area shape="rect" id="node5" href="$class_device.html#ad3d9721aca89723e22cf723149a39583" title="Trains the powerStateGraph using signatures declared with loadSignatures(). To be called once signatu..." alt="" coords="489,5,687,35"/>
+<area shape="rect" id="node7" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="736,5,787,35"/>
+</map>

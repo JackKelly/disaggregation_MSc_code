@@ -1,0 +1,18 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_array.html#ae68b00a51265644510bc23945960561e" title="Copy from source to this object, starting at cropFront index and ignoring the last cropBack items fro..." alt="" coords="223,52,417,81"/>
+<area shape="rect" id="node11" href="$class_array.html#acc8d9358f9cc9fa7d10d5010099cbc10" title="Array::drawGraph" alt="" coords="259,105,381,135"/>
+<area shape="rect" id="node13" href="$class_signature.html#a3d3b6a270b3f38922568438690096237" title="Signature::drawGraph" alt="" coords="247,159,393,188"/>
+<area shape="rect" id="node15" href="$class_array.html#adeb6ee31eaa806644ce52552b8fc8bc1" title="Array\&lt; Sample_t \&gt;::getDelta" alt="" coords="225,236,415,265"/>
+<area shape="rect" id="node25" href="$class_array.html#a6a96fa1422cb1353a86173f82f13940e" title="Array::getNumLeadingZeros" alt="" coords="228,289,412,319"/>
+<area shape="rect" id="node27" href="$class_array.html#a2161aca5d07d156bdf15bc8d098fe054" title="Array::getNumTrailingZeros" alt="" coords="229,343,411,372"/>
+<area shape="rect" id="node29" href="$class_array.html#a16b3e6c252265356859eea3843afa84c" title="Load data from a CSV file with a single column." alt="" coords="264,396,376,425"/>
+<area shape="rect" id="node31" href="$namespace_utils.html#afb991f08a33e9d7f3298e60f3bf76960" title="Utils::openFile" alt="" coords="267,449,373,479"/>
+<area shape="rect" id="node35" href="$class_power_state_sequence.html#af6cb14df9881d4dea2256640fe52c26b" title="PowerStateSequence::setDeviceName" alt="" coords="195,503,445,532"/>
+<area shape="rect" id="node5" href="$class_array.html#ae80fff561b788262683b42941f2ebda5" title="Array::getSmoothing" alt="" coords="523,5,664,35"/>
+<area shape="rect" id="node7" href="$class_array.html#a7ba19720014d5acbdc165dee31686bd3" title="Array::getUpstreamSmoothing" alt="" coords="495,59,692,88"/>
+<area shape="rect" id="node9" href="$class_array.html#a5b752093b1b3ab4d82707115d1f41adc" title="Array::setSize" alt="" coords="541,117,645,147"/>
+<area shape="rect" id="node18" href="$class_array.html#a94bb8954df95b259c7fadf175f531b6b" title="Array::setDeviceName" alt="" coords="516,183,671,212"/>
+<area shape="rect" id="node21" href="$class_array.html#af4cbe83b9a05e769dd54007402b9b3e1" title="Used simply to keep tracking of smoothing parameters throughout the workflow." alt="" coords="523,236,664,265"/>
+<area shape="rect" id="node23" href="$class_array.html#a0af1f966c6f45c8ff7949ca8b290e01a" title="Array::setUpstreamSmoothing" alt="" coords="495,289,692,319"/>
+<area shape="rect" id="node33" href="$namespace_utils.html#a5f35365dae06a93f4bbf0f406a78b90b" title="Utils::fatalError" alt="" coords="539,449,648,479"/>
+</map>

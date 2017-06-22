@@ -1,0 +1,7 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_signature.html#a02acc8e9f1ceb1af2908807eb1526fcd" title="Takes the gradient of this Signature, then merges gradient values with the same sign, then removes transient spikes, then sorts by value." alt="" coords="241,32,415,61"/>
+<area shape="rect" id="node5" href="$class_power_state_graph.html#a90ebffe4864640182b342a814af0f0a7" title="Update or initialise Power State Graph." alt="" coords="484,5,655,35"/>
+<area shape="rect" id="node11" href="$class_power_state_graph.html#a26384a0a6d9867d336814b70b7a22cd3" title="Update (or create) directional edges between power states (vertices) so the edges are consistent with..." alt="" coords="465,59,673,88"/>
+<area shape="rect" id="node7" href="$class_device.html#ad3d9721aca89723e22cf723149a39583" title="Trains the powerStateGraph using signatures declared with loadSignatures(). To be called once signatu..." alt="" coords="724,5,921,35"/>
+<area shape="rect" id="node9" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="971,5,1021,35"/>
+</map>

@@ -1,0 +1,14 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_signature.html#ad298320a4b490ba402d3f5489ce3651a" title="Signature::getPowerState" alt="" coords="325,5,496,35"/>
+<area shape="rect" id="node7" href="$class_power_state_sequence.html#a52cd95f5d505d6e199eb96fb488b4658" title="PowerStateSequence::plotGraph" alt="" coords="305,59,516,88"/>
+<area shape="rect" id="node18" href="$class_array.html#a6603ebeb68bb0c1b493f0808d5694498" title="Returns a rolling average of same length as the original array." alt="" coords="316,165,505,195"/>
+<area shape="rect" id="node5" href="$namespace_utils.html#a17211384a3579f952022415556bcda62" title="Utils::roundToNearestInt" alt="" coords="583,5,748,35"/>
+<area shape="rect" id="node9" href="$namespace_g_n_uplot.html#ab276a6d946560395f9d6caa8cb6cb640" title="Plot a graph using GNUplot." alt="" coords="615,59,716,88"/>
+<area shape="rect" id="node11" href="$namespace_utils.html#ae7741f30cf104d6660673d7c336ef5cc" title="Utils::fileExists" alt="" coords="856,5,965,35"/>
+<area shape="rect" id="node13" href="$namespace_g_n_uplot.html#a1a232691d61b3e55fdcc406a3a2e9c1f" title="Replaces all the tokens in the template file &#39;config/plotVars.inFilename&#39; with variables from..." alt="" coords="813,59,1008,88"/>
+<area shape="rect" id="node15" href="$namespace_g_n_uplot.html#a60ecface5bf85a5e3e2e1743bd266737" title="Replace all characters which might confuse &#39;sed&#39;." alt="" coords="1057,85,1183,115"/>
+<area shape="rect" id="node21" href="$class_array.html#a94bb8954df95b259c7fadf175f531b6b" title="Array::setDeviceName" alt="" coords="588,112,743,141"/>
+<area shape="rect" id="node23" href="$class_array.html#a5b752093b1b3ab4d82707115d1f41adc" title="Array::setSize" alt="" coords="613,165,717,195"/>
+<area shape="rect" id="node25" href="$class_array.html#af4cbe83b9a05e769dd54007402b9b3e1" title="Used simply to keep tracking of smoothing parameters throughout the workflow." alt="" coords="595,219,736,248"/>
+<area shape="rect" id="node27" href="$class_array.html#a0af1f966c6f45c8ff7949ca8b290e01a" title="Array::setUpstreamSmoothing" alt="" coords="567,272,764,301"/>
+</map>

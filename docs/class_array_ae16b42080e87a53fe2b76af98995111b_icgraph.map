@@ -1,0 +1,11 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_device.html#a821d5fa106be895802fff97c673ba633" title="Device::findAlignment" alt="" coords="460,100,609,129"/>
+<area shape="rect" id="node7" href="$class_device.html#a47fcd7e3c739ede14fdb27407d1b4481" title="Device::getStartTimes" alt="" coords="204,46,356,76"/>
+<area shape="rect" id="node9" href="$class_power_state_graph.html#aae4db4000f6485559f06ab4de4d54619" title="Determine the index of the next spike after spike." alt="" coords="161,153,399,182"/>
+<area shape="rect" id="node11" href="$class_power_state_graph.html#a90ebffe4864640182b342a814af0f0a7" title="Update or initialise Power State Graph." alt="" coords="449,153,620,182"/>
+<area shape="rect" id="node16" href="$class_device.html#ac99af11562629b3f90001e5415f5399a" title="Least mean difference." alt="" coords="231,100,329,129"/>
+<area shape="rect" id="node19" href="$struct_statistic.html#af65b6ce15fbfb16859606e61cf29ba4c" title="Constructor from histogram data." alt="" coords="177,257,383,286"/>
+<area shape="rect" id="node21" href="$struct_statistic.html#acabbdf2b6cc229a10a8d3d6658a0c366" title="Update an existing Statistic with new data points." alt="" coords="183,310,377,340"/>
+<area shape="rect" id="node5" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="917,128,968,157"/>
+<area shape="rect" id="node13" href="$class_device.html#ad3d9721aca89723e22cf723149a39583" title="Trains the powerStateGraph using signatures declared with loadSignatures(). To be called once signatu..." alt="" coords="671,153,868,182"/>
+</map>

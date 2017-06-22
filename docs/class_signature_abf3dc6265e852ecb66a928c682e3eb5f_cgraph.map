@@ -1,0 +1,15 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_signature.html#af94cd3aa816030f1560410e4ad6f2dcc" title="Finding out where each &#39;powerState&#39; starts and ends." alt="" coords="283,59,533,88"/>
+<area shape="rect" id="node5" href="$class_signature.html#ad298320a4b490ba402d3f5489ce3651a" title="Signature::getPowerState" alt="" coords="603,5,773,35"/>
+<area shape="rect" id="node9" href="$class_power_state_sequence.html#a52cd95f5d505d6e199eb96fb488b4658" title="PowerStateSequence::plotGraph" alt="" coords="583,59,793,88"/>
+<area shape="rect" id="node20" href="$class_array.html#a6603ebeb68bb0c1b493f0808d5694498" title="Returns a rolling average of same length as the original array." alt="" coords="593,165,783,195"/>
+<area shape="rect" id="node7" href="$namespace_utils.html#a17211384a3579f952022415556bcda62" title="Utils::roundToNearestInt" alt="" coords="860,5,1025,35"/>
+<area shape="rect" id="node11" href="$namespace_g_n_uplot.html#ab276a6d946560395f9d6caa8cb6cb640" title="Plot a graph using GNUplot." alt="" coords="892,59,993,88"/>
+<area shape="rect" id="node13" href="$namespace_utils.html#ae7741f30cf104d6660673d7c336ef5cc" title="Utils::fileExists" alt="" coords="1133,5,1243,35"/>
+<area shape="rect" id="node15" href="$namespace_g_n_uplot.html#a1a232691d61b3e55fdcc406a3a2e9c1f" title="Replaces all the tokens in the template file &#39;config/plotVars.inFilename&#39; with variables from..." alt="" coords="1091,59,1285,88"/>
+<area shape="rect" id="node17" href="$namespace_g_n_uplot.html#a60ecface5bf85a5e3e2e1743bd266737" title="Replace all characters which might confuse &#39;sed&#39;." alt="" coords="1335,85,1460,115"/>
+<area shape="rect" id="node23" href="$class_array.html#a94bb8954df95b259c7fadf175f531b6b" title="Array::setDeviceName" alt="" coords="865,112,1020,141"/>
+<area shape="rect" id="node25" href="$class_array.html#a5b752093b1b3ab4d82707115d1f41adc" title="Array::setSize" alt="" coords="891,165,995,195"/>
+<area shape="rect" id="node27" href="$class_array.html#af4cbe83b9a05e769dd54007402b9b3e1" title="Used simply to keep tracking of smoothing parameters throughout the workflow." alt="" coords="872,219,1013,248"/>
+<area shape="rect" id="node29" href="$class_array.html#a0af1f966c6f45c8ff7949ca8b290e01a" title="Array::setUpstreamSmoothing" alt="" coords="844,272,1041,301"/>
+</map>

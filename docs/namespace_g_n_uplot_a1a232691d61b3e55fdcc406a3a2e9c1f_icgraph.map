@@ -1,0 +1,14 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$namespace_g_n_uplot.html#ab276a6d946560395f9d6caa8cb6cb640" title="Plot a graph using GNUplot." alt="" coords="249,112,351,141"/>
+<area shape="rect" id="node5" href="$class_power_state_graph.html#a8c7b40b543c04d5f5b498a537093ae46" title="PowerStateGraph::displayAndPlotFingerprintList" alt="" coords="401,5,703,35"/>
+<area shape="rect" id="node11" href="$class_histogram.html#ad4a2b931c86c4a7f2ce465d0c737050f" title="Histogram::drawGraph" alt="" coords="476,59,628,88"/>
+<area shape="rect" id="node17" href="$class_array.html#acc8d9358f9cc9fa7d10d5010099cbc10" title="Array\&lt; Sample_t \&gt;::drawGraph" alt="" coords="451,112,653,141"/>
+<area shape="rect" id="node19" href="$class_signature.html#a80ab9f3c989f356fd8fd61282de3a994" title="Signature::drawHistWithStateBars" alt="" coords="441,165,663,195"/>
+<area shape="rect" id="node22" href="$class_power_state_sequence.html#a52cd95f5d505d6e199eb96fb488b4658" title="PowerStateSequence::plotGraph" alt="" coords="447,219,657,248"/>
+<area shape="rect" id="node7" href="$class_power_state_graph.html#a3823f720987e5e13eb7f1cfae7cdf4be" title="This is the main public interface to the disaggregation algorithm." alt="" coords="775,5,980,35"/>
+<area shape="rect" id="node9" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="1140,5,1191,35"/>
+<area shape="rect" id="node13" href="$class_signature.html#afebb6e34dcba3d828093eba1ffc7fad6" title="Runs through signature data to find power states and stores the resulting power states in powerStates..." alt="" coords="779,112,976,141"/>
+<area shape="rect" id="node15" href="$class_signature.html#ada861d4b0e402605478abc4217f35979" title="Signature::getPowerStates" alt="" coords="1076,112,1255,141"/>
+<area shape="rect" id="node24" href="$class_signature.html#af94cd3aa816030f1560410e4ad6f2dcc" title="Finding out where each &#39;powerState&#39; starts and ends." alt="" coords="752,219,1003,248"/>
+<area shape="rect" id="node26" href="$class_signature.html#abf3dc6265e852ecb66a928c682e3eb5f" title="Signature::getPowerStateSequence" alt="" coords="1051,219,1280,248"/>
+</map>

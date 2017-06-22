@@ -1,0 +1,12 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_power_state_graph.html#a222bc37f6c90142887eb36b4e31ab568" title="Iterates through each path in listOfPaths to find the one with the highest likelihood." alt="" coords="336,5,544,35"/>
+<area shape="rect" id="node7" href="$class_power_state_graph.html#a492bc7278329e94573559ec0cfdd2c7b" title="Trace the tree downwards from vertex recursively finding every path which successfully completes (i..." alt="" coords="275,59,605,88"/>
+<area shape="rect" id="node9" href="$class_power_state_graph.html#a0df76ca216d2d48aeb44d2bb08046e2f" title="PowerStateGraph::traceToEnd" alt="" coords="340,112,540,141"/>
+<area shape="rect" id="node5" href="$struct_statistic.html#a16764e35873ab9b1cfbffe5668515b47" title="The likelihood is normalised by dividing the raw likelihood by the likelihood of the distribution&amp;#39..." alt="" coords="999,5,1196,35"/>
+<area shape="rect" id="node11" href="$class_power_state_graph.html#a6de44e31afe85bf0ee18dc09a7be329c" title="Check if edge list a and edge list b are equal." alt="" coords="680,59,923,88"/>
+<area shape="rect" id="node13" href="$class_aggregate_data.html#ada468d155767d721c755405582d108ee" title="Find all spikes in aggregate data which fit spikeStats." alt="" coords="716,112,887,141"/>
+<area shape="rect" id="node22" href="$class_aggregate_data.html#a81a921c732483c6d97cbed3ac1b00366" title="Run through the raw aggregate data from startTime to endTime to make sure that no agg data sample has..." alt="" coords="655,165,948,195"/>
+<area shape="rect" id="node15" href="$namespace_utils.html#a30128571ef453645d7731302607a16de" title="Utils::between" alt="" coords="1044,59,1151,88"/>
+<area shape="rect" id="node17" href="$struct_statistic.html#aa487c5c0322d9d1fa96affa11939b393" title="Returns stdev if stdev &gt; mean/10, else returns mean/10." alt="" coords="1019,112,1176,141"/>
+<area shape="rect" id="node20" href="$namespace_utils.html#a297beaecb52c2c24b05b9666d080bb7e" title="Returns true if a and b are the same sign. Zero is assumed to be positive." alt="" coords="1040,165,1155,195"/>
+</map>

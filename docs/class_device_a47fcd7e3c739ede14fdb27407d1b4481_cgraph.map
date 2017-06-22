@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_aggregate_data.html#acdd54bd1cd18c492d43ab89474b0f8bb" title="Calculate the change between data[ i+1 ].reading and data[ i ].reading." alt="" coords="259,5,427,35"/>
+<area shape="rect" id="node5" href="$class_aggregate_data.html#a8f70bca861e1169bfecbf45936927506" title="Find &#39;delta&#39;. Start searching &#39;expectedDistance&#39; away from &#39;candidateIndex&#39;. DOESN&#39;T WORK YET." alt="" coords="260,59,425,88"/>
+<area shape="rect" id="node7" href="$class_device.html#a54d749a3f88565a707388b3e5e8cf3fe" title="Device::getSalientSpikes" alt="" coords="259,112,427,141"/>
+<area shape="rect" id="node11" href="$class_array.html#ae16b42080e87a53fe2b76af98995111b" title="Array::getSize" alt="" coords="291,165,395,195"/>
+<area shape="rect" id="node13" href="$class_aggregate_data.html#a3c1068f43dcb228159ec5c76d355f1e8" title="AggregateData::secondsSinceFirstSample" alt="" coords="208,219,477,248"/>
+<area shape="rect" id="node9" href="$struct_signature_1_1_spike.html#ad5c457fd1b72cd723bdf89f715f34abd" title="Signature::Spike::compareIndexAsc" alt="" coords="527,112,756,141"/>
+</map>

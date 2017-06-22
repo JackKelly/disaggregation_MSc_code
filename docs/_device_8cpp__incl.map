@@ -1,0 +1,13 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$_device_8h.html" title="Device.h" alt="" coords="1209,83,1284,112"/>
+<area shape="rect" id="node11" href="$_signature_8h.html" title="Signature.h" alt="" coords="535,237,623,267"/>
+<area shape="rect" id="node15" href="$_common_8h.html" title="Common.h" alt="" coords="384,701,469,731"/>
+<area shape="rect" id="node40" href="$_statistic_8h.html" title="Statistic.h" alt="" coords="1023,392,1103,421"/>
+<area shape="rect" id="node59" href="$_power_state_sequence_8h.html" title="PowerStateSequence.h" alt="" coords="616,315,773,344"/>
+<area shape="rect" id="node69" href="$_aggregate_data_8h.html" title="AggregateData.h" alt="" coords="1484,315,1604,344"/>
+<area shape="rect" id="node76" href="$_power_state_graph_8h.html" title="PowerStateGraph.h" alt="" coords="779,160,915,189"/>
+<area shape="rect" id="node13" href="$_array_8h.html" title="Array.h" alt="" coords="701,547,765,576"/>
+<area shape="rect" id="node55" href="$_histogram_8h.html" title="Histogram.h" alt="" coords="397,469,491,499"/>
+<area shape="rect" id="node21" href="$_utils_8h.html" title="Utils.h" alt="" coords="773,624,832,653"/>
+<area shape="rect" id="node26" href="$_g_n_uplot_8h.html" title="GNUplot.h" alt="" coords="616,624,699,653"/>
+</map>

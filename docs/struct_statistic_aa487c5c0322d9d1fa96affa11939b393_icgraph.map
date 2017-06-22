@@ -1,0 +1,9 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$class_aggregate_data.html#ada468d155767d721c755405582d108ee" title="Find all spikes in aggregate data which fit spikeStats." alt="" coords="268,5,439,35"/>
+<area shape="rect" id="node14" href="$struct_statistic.html#a16764e35873ab9b1cfbffe5668515b47" title="The likelihood is normalised by dividing the raw likelihood by the likelihood of the distribution&amp;#39..." alt="" coords="215,59,492,88"/>
+<area shape="rect" id="node16" href="$struct_statistic.html#a2809624bf38cbe0817c3c5e3c2639c71" title="A two&#45;sided Student T&#45;Test." alt="" coords="260,112,447,141"/>
+<area shape="rect" id="node5" href="$class_power_state_graph.html#a3823f720987e5e13eb7f1cfae7cdf4be" title="This is the main public interface to the disaggregation algorithm." alt="" coords="1060,7,1265,36"/>
+<area shape="rect" id="node9" href="$class_power_state_graph.html#a0df76ca216d2d48aeb44d2bb08046e2f" title="PowerStateGraph::traceToEnd" alt="" coords="541,32,741,61"/>
+<area shape="rect" id="node7" href="$_main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title="main" alt="" coords="1315,7,1365,36"/>
+<area shape="rect" id="node11" href="$class_power_state_graph.html#a0478f171d51d21613746640c7415fb0b" title="PowerStateGraph::initTraceToEnd" alt="" coords="789,32,1011,61"/>
+</map>
